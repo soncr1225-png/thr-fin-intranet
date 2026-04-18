@@ -15,6 +15,11 @@ var SH_CASES_ACTIVE  = '사건목록';
 var SH_CASES_ARCHIVE = '종료사건';
 var SH_TODOS         = 'ToDo';
 
+// ── 입찰/명도 시트명 ─────────────────────────────────────────
+var SH_AUCTION    = '입찰진행';
+var SH_MYEONGDO_A = '명도진행';
+var SH_MYEONGDO_D = '명도완료';
+
 // ── 블로그 관리 시트명 ───────────────────────────────────────
 var SH_BLOG_ACTIVE  = '더핀 블로그 일정표';
 var SH_BLOG_ARCHIVE = '보관함';
@@ -55,7 +60,11 @@ function shortDate() {
 // ============================================================
 function doGet(e) {
   var p = (e && e.parameter) ? e.parameter : {};
-  return (p.module === 'blog') ? blogGet(p) : casesGet(p);
+  if (p.module === 'blog')      return blogGet(p);
+  if (p.module === 'auction')   return auctionGet(p);
+  if (p.module === 'myeongdo')  return myeongdoGet(p);
+  if (p.module === 'stats')     return statsGet(p);
+  return casesGet(p);
 }
 
 function doPost(e) {
@@ -67,7 +76,10 @@ function doPost(e) {
     return json({ ok: true });
   }
   if (!b) return json({ error: 'no body' });
-  return (b.module === 'blog' || b.action === 'analyze') ? blogPost(b) : casesPost(b);
+  if (b.module === 'blog' || b.action === 'analyze') return blogPost(b);
+  if (b.module === 'auction')   return auctionPost(b);
+  if (b.module === 'myeongdo')  return myeongdoPost(b);
+  return casesPost(b);
 }
 
 // ============================================================
@@ -75,10 +87,36 @@ function doPost(e) {
 // ============================================================
 function casesGet(p) {
   var ss = casesSS();
-  if (p.action === 'getCases')   return json(loadCases(ss, SH_CASES_ACTIVE));
-  if (p.action === 'getArchive') return json(loadCases(ss, SH_CASES_ARCHIVE));
-  if (p.action === 'getTodos')   return json(loadTodos(ss));
+  if (p.action === 'getCases')    return json(loadCases(ss, SH_CASES_ACTIVE));
+  if (p.action === 'getArchive')  return json(loadCases(ss, SH_CASES_ARCHIVE));
+  if (p.action === 'getTodos')    return json(loadTodos(ss));
+  if (p.action === 'getCasesAll') {
+    return json(loadCases(ss, SH_CASES_ACTIVE).concat(loadCases(ss, SH_CASES_ARCHIVE)));
+  }
+  if (p.action === 'getBulk')     return getBulk(ss);
   return json({ error: 'unknown action' });
+}
+
+// ── 전체 데이터 일괄 반환 (1회 요청으로 모든 탭 데이터 로드)
+function getBulk(ss) {
+  if (!ss) ss = casesSS();
+  var bss        = blogSS();
+  var aRes       = loadAuction(ss, SH_AUCTION);
+  var maRes      = loadMyeongdo(ss, SH_MYEONGDO_A);
+  var mdRes      = loadMyeongdo(ss, SH_MYEONGDO_D);
+  var blogL      = loadBlogList(bss);
+  var blogA      = loadBlogArchive(bss);
+  return json({
+    cases:          loadCases(ss, SH_CASES_ACTIVE),
+    archive:        loadCases(ss, SH_CASES_ARCHIVE),
+    todos:          loadTodos(ss),
+    auction:        aRes.data  || [],
+    myeongdoActive: maRes.data || [],
+    myeongdoDone:   mdRes.data || [],
+    blogList:       blogL.data || [],
+    blogArchive:    blogA.data || [],
+    ts:             new Date().getTime()
+  });
 }
 
 // 사건목록/종료사건 컬럼:
@@ -350,11 +388,11 @@ function loadBlogList(ss) {
         caseNum:     String(r[0]),  name:        String(r[1]),
         date:        r[2] ? kstDate(r[2]) : '',   round:       String(r[3]),
         daysLeft:    disp[i][4],
-        blogA:  r[5],  blogADate:  disp[i][6],
-        blogB:  r[7],  blogBDate:  disp[i][8],
-        blogC:  r[9],  blogCDate:  disp[i][10],
-        blogD:  r[11], blogDDate:  disp[i][12],
-        keyword: r[13], keywordDate: disp[i][14],
+        blogA:  r[5],  blogADate:  r[6]  instanceof Date ? kstDate(r[6])  : (disp[i][6]  || ''),
+        blogB:  r[7],  blogBDate:  r[8]  instanceof Date ? kstDate(r[8])  : (disp[i][8]  || ''),
+        blogC:  r[9],  blogCDate:  r[10] instanceof Date ? kstDate(r[10]) : (disp[i][10] || ''),
+        blogD:  r[11], blogDDate:  r[12] instanceof Date ? kstDate(r[12]) : (disp[i][12] || ''),
+        keyword: r[13], keywordDate: r[14] instanceof Date ? kstDate(r[14]) : (disp[i][14] || ''),
         titles: String(r[15] || ''),
         status: String(r[16] || '정상')
       };
@@ -374,11 +412,11 @@ function loadBlogArchive(ss) {
       return {
         caseNum: String(r[0]),  name:   String(r[1]),
         date:    disp[i][2],    round:  String(r[3]),
-        blogA:  r[5],  blogADate:  disp[i][6],
-        blogB:  r[7],  blogBDate:  disp[i][8],
-        blogC:  r[9],  blogCDate:  disp[i][10],
-        blogD:  r[11], blogDDate:  disp[i][12],
-        keyword: r[13], keywordDate: disp[i][14],
+        blogA:  r[5],  blogADate:  r[6]  instanceof Date ? kstDate(r[6])  : (disp[i][6]  || ''),
+        blogB:  r[7],  blogBDate:  r[8]  instanceof Date ? kstDate(r[8])  : (disp[i][8]  || ''),
+        blogC:  r[9],  blogCDate:  r[10] instanceof Date ? kstDate(r[10]) : (disp[i][10] || ''),
+        blogD:  r[11], blogDDate:  r[12] instanceof Date ? kstDate(r[12]) : (disp[i][12] || ''),
+        keyword: r[13], keywordDate: r[14] instanceof Date ? kstDate(r[14]) : (disp[i][14] || ''),
         titles:     String(r[15] || ''),
         archivedAt: disp[i][16]
       };
@@ -846,6 +884,8 @@ function runDailyArchive() {
   var bss = blogSS();
   moveExpiredBlogItems(bss);
   updateBlogStats(bss);
+  var css = casesSS();
+  archiveAuctionByMonth(css);
 }
 
 // 기존 사건목록/종료사건 행에 ID 없으면 UUID 채워주는 1회성 함수
@@ -867,6 +907,322 @@ function migrateAddCaseIds() {
     }
     Logger.log(sheet.getName() + ': ' + fixed + '행 ID 추가 완료');
   });
+}
+
+// ============================================================
+// AUCTION — GET
+// ============================================================
+// 입찰진행 컬럼(12): id, caseNo(FK), clientName, content,
+//   saleDecisionDate, saleDecisionOk, appealDate, appealOk,
+//   balanceDate, note, status, createdAt
+// → caseNo로 사건목록/종료사건과 조인. 중복 필드 없음.
+
+function auctionGet(p) {
+  var ss = casesSS();
+  if (p.action === 'list') return json(loadAuction(ss, SH_AUCTION));
+  return json({ error: 'unknown auction action' });
+}
+
+function loadAuction(ss, shName) {
+  var sheet = sh(ss, shName);
+  if (sheet.getLastRow() < 2) return { ok: true, data: [] };
+  var vals = sheet.getRange(2, 1, sheet.getLastRow() - 1, 12).getValues();
+  return { ok: true, data: vals.map(mapAuctionRow) };
+}
+
+function mapAuctionRow(r) {
+  return {
+    id:               String(r[0]),
+    caseNo:           String(r[1]  || ''),
+    clientName:       String(r[2]  || ''),
+    content:          String(r[3]  || ''),
+    saleDecisionDate: r[4]  ? kstDate(r[4])  : '',
+    saleDecisionOk:   String(r[5]  || ''),
+    appealDate:       r[6]  ? kstDate(r[6])  : '',
+    appealOk:         String(r[7]  || ''),
+    balanceDate:      r[8]  ? kstDate(r[8])  : '',
+    note:             String(r[9]  || ''),
+    status:           String(r[10] || 'ongoing'),
+    createdAt:        r[11] ? kstDate(r[11]) : ''
+  };
+}
+
+// ============================================================
+// AUCTION — POST
+// ============================================================
+function auctionPost(b) {
+  var ss = casesSS();
+  var d  = b.data || {};
+  switch (b.action) {
+    case 'add':    return json(addAuction(ss, d));
+    case 'update': return json(updateAuction(ss, d));
+    case 'delete': return json(deleteAuction(ss, d));
+    default:       return json({ error: 'unknown auction action' });
+  }
+}
+
+function addAuction(ss, d) {
+  var sheet = sh(ss, SH_AUCTION);
+  if (sheet.getLastRow() === 0) setupAuctionSheet(sheet);
+  var id = Utilities.getUuid();
+  sheet.appendRow([
+    id,
+    d.caseNo          || '',
+    d.clientName      || '',
+    d.content         || '',
+    d.saleDecisionDate ? new Date(d.saleDecisionDate) : '',
+    d.saleDecisionOk  || '',
+    d.appealDate       ? new Date(d.appealDate)       : '',
+    d.appealOk         || '',
+    d.balanceDate      ? new Date(d.balanceDate)      : '',
+    d.note             || '',
+    d.status           || 'ongoing',
+    new Date()
+  ]);
+  return { ok: true, id: id };
+}
+
+function updateAuction(ss, d) {
+  var sheet   = sh(ss, SH_AUCTION);
+  var rowInfo = findRowById(sheet, d.id, 12);
+  if (!rowInfo) return { ok: false, error: '항목을 찾을 수 없습니다.' };
+  var r = rowInfo.row;
+  var sv = function(col, val) { if (val !== undefined) sheet.getRange(r, col).setValue(val); };
+  sv(2, d.caseNo); sv(3, d.clientName); sv(4, d.content);
+  if (d.saleDecisionDate !== undefined) sv(5, d.saleDecisionDate ? new Date(d.saleDecisionDate) : '');
+  sv(6, d.saleDecisionOk);
+  if (d.appealDate !== undefined) sv(7, d.appealDate ? new Date(d.appealDate) : '');
+  sv(8, d.appealOk);
+  if (d.balanceDate !== undefined) sv(9, d.balanceDate ? new Date(d.balanceDate) : '');
+  sv(10, d.note); sv(11, d.status);
+  return { ok: true };
+}
+
+function deleteAuction(ss, d) {
+  var sheet   = sh(ss, SH_AUCTION);
+  var rowInfo = findRowById(sheet, d.id, 12);
+  if (!rowInfo) return { ok: false, error: '항목을 찾을 수 없습니다.' };
+  sheet.deleteRow(rowInfo.row);
+  return { ok: true };
+}
+
+function setupAuctionSheet(sheet) {
+  var h = ['ID','사건번호(FK)','고객명','진행내용',
+           '매각결정기일','매각결정확정','항고기간','항고확정',
+           '잔금납부기일','비고','상태','등록일'];
+  sheet.getRange(1,1,1,12).setValues([h])
+    .setBackground('#1a1a2e').setFontColor('#ffffff').setFontWeight('bold').setFontSize(10)
+    .setHorizontalAlignment('center').setVerticalAlignment('middle');
+  sheet.setRowHeight(1,36); sheet.setFrozenRows(1); sheet.setTabColor('#8B6914');
+  var widths=[[1,0],[2,130],[3,90],[4,200],[5,100],[6,70],[7,100],[8,70],[9,100],[10,200],[11,80],[12,90]];
+  widths.forEach(function(p){ sheet.setColumnWidth(p[0], p[1]); });
+  ['E:E','G:G','I:I','L:L'].forEach(function(col){ sheet.getRange(col).setNumberFormat('yy.M.d'); });
+}
+
+// 통계용에서만 사용 — 사건목록에서 해당 사건의 auctionDate 조회
+function archiveAuctionByMonth(ss) { /* 입찰 항목은 적으므로 아카이브 불필요 */ }
+
+// ============================================================
+// MYEONGDO — GET
+// ============================================================
+// 명도 컬럼(15): id,clientName,auctionDate,court,caseNo,propertyName,content,
+//   commissionRatio,injunctionNo,respondent,warningDate,moveDate,note,status,createdAt
+
+function myeongdoGet(p) {
+  var ss = casesSS();
+  if (p.action === 'listActive') return json(loadMyeongdo(ss, SH_MYEONGDO_A));
+  if (p.action === 'listDone')   return json(loadMyeongdo(ss, SH_MYEONGDO_D));
+  return json({ error: 'unknown myeongdo action' });
+}
+
+function loadMyeongdo(ss, shName) {
+  var sheet = sh(ss, shName);
+  if (sheet.getLastRow() < 2) return { ok: true, data: [] };
+  var vals = sheet.getRange(2, 1, sheet.getLastRow() - 1, 15).getValues();
+  return { ok: true, data: vals.map(mapMyeongdoRow) };
+}
+
+function mapMyeongdoRow(r) {
+  return {
+    id:              String(r[0]),
+    clientName:      String(r[1]  || ''),
+    auctionDate:     r[2]  ? kstDate(r[2])  : '',
+    court:           String(r[3]  || ''),
+    caseNo:          String(r[4]  || ''),
+    propertyName:    String(r[5]  || ''),
+    content:         String(r[6]  || ''),
+    commissionRatio: String(r[7]  || ''),
+    injunctionNo:    String(r[8]  || ''),
+    respondent:      String(r[9]  || ''),
+    warningDate:     r[10] ? kstDate(r[10]) : '',
+    moveDate:        r[11] ? kstDate(r[11]) : '',
+    note:            String(r[12] || ''),
+    status:          String(r[13] || 'active'),
+    createdAt:       r[14] ? kstDate(r[14]) : ''
+  };
+}
+
+// ============================================================
+// MYEONGDO — POST
+// ============================================================
+function myeongdoPost(b) {
+  var ss = casesSS();
+  var d  = b.data || {};
+  switch (b.action) {
+    case 'add':      return json(addMyeongdo(ss, d));
+    case 'update':   return json(updateMyeongdo(ss, d));
+    case 'complete': return json(completeMyeongdo(ss, d));
+    case 'delete':   return json(deleteMyeongdo(ss, d));
+    default:         return json({ error: 'unknown myeongdo action' });
+  }
+}
+
+function addMyeongdo(ss, d) {
+  var sheet = sh(ss, SH_MYEONGDO_A);
+  if (sheet.getLastRow() === 0) setupMyeongdoSheet(sheet, false);
+  var id = Utilities.getUuid();
+  sheet.appendRow([
+    id, d.clientName || '', d.auctionDate ? new Date(d.auctionDate) : '',
+    d.court || '', d.caseNo || '', d.propertyName || '', d.content || '',
+    d.commissionRatio || '', d.injunctionNo || '', d.respondent || '',
+    d.warningDate ? new Date(d.warningDate) : '',
+    d.moveDate    ? new Date(d.moveDate)    : '',
+    d.note || '', 'active', new Date()
+  ]);
+  return { ok: true, id: id };
+}
+
+function updateMyeongdo(ss, d) {
+  var active  = sh(ss, SH_MYEONGDO_A);
+  var done    = sh(ss, SH_MYEONGDO_D);
+  var rowInfo = findRowById(active, d.id, 15) || findRowById(done, d.id, 15);
+  if (!rowInfo) return { ok: false, error: '항목을 찾을 수 없습니다.' };
+  var r = rowInfo.row; var sheet = rowInfo.sheet;
+  var sv = function(col, val) { if (val !== undefined) sheet.getRange(r, col).setValue(val); };
+  sv(2, d.clientName);
+  if (d.auctionDate !== undefined) sv(3, d.auctionDate ? new Date(d.auctionDate) : '');
+  sv(4, d.court); sv(5, d.caseNo); sv(6, d.propertyName); sv(7, d.content);
+  sv(8, d.commissionRatio); sv(9, d.injunctionNo); sv(10, d.respondent);
+  if (d.warningDate !== undefined) sv(11, d.warningDate ? new Date(d.warningDate) : '');
+  if (d.moveDate    !== undefined) sv(12, d.moveDate    ? new Date(d.moveDate)    : '');
+  sv(13, d.note); sv(14, d.status);
+  return { ok: true };
+}
+
+function completeMyeongdo(ss, d) {
+  var active  = sh(ss, SH_MYEONGDO_A);
+  var done    = sh(ss, SH_MYEONGDO_D);
+  if (done.getLastRow() === 0) setupMyeongdoSheet(done, true);
+  var rowInfo = findRowById(active, d.id, 15);
+  if (!rowInfo) return { ok: false, error: '항목을 찾을 수 없습니다.' };
+  var vals = rowInfo.vals.slice();
+  vals[13]  = 'done';
+  done.appendRow(vals);
+  active.deleteRow(rowInfo.row);
+  return { ok: true };
+}
+
+function deleteMyeongdo(ss, d) {
+  var active  = sh(ss, SH_MYEONGDO_A);
+  var done    = sh(ss, SH_MYEONGDO_D);
+  var rowInfo = findRowById(active, d.id, 15) || findRowById(done, d.id, 15);
+  if (!rowInfo) return { ok: false, error: '항목을 찾을 수 없습니다.' };
+  rowInfo.sheet.deleteRow(rowInfo.row);
+  return { ok: true };
+}
+
+function setupMyeongdoSheet(sheet, isDone) {
+  var h = ['ID','고객명','입찰기일','법원','사건번호','물건명','내용',
+           '수수료비율','인도명령번호','피신청인','계고일','이사날짜','특이사항','상태','등록일'];
+  var bg = isDone ? '#1a4731' : '#4a0e0e';
+  sheet.getRange(1,1,1,15).setValues([h])
+    .setBackground(bg).setFontColor('#ffffff').setFontWeight('bold').setFontSize(10)
+    .setHorizontalAlignment('center').setVerticalAlignment('middle');
+  sheet.setRowHeight(1,36); sheet.setFrozenRows(1);
+  sheet.setTabColor(isDone ? '#137333' : '#a61c00');
+  var widths=[[1,0],[2,90],[3,90],[4,90],[5,120],[6,160],[7,180],
+              [8,100],[9,110],[10,100],[11,90],[12,90],[13,200],[14,70],[15,90]];
+  widths.forEach(function(p){ sheet.setColumnWidth(p[0], p[1]); });
+  sheet.getRange('C:C').setNumberFormat('yy.M.d');
+  sheet.getRange('K:K').setNumberFormat('yy.M.d');
+  sheet.getRange('L:L').setNumberFormat('yy.M.d');
+}
+
+// ============================================================
+// 통계
+// ============================================================
+function statsGet(p) {
+  var ss  = casesSS();
+  var bss = blogSS();
+  var now = new Date();
+  var yr  = now.getFullYear();
+  var mo  = now.getMonth() + 1;
+  if (p.month) {
+    var pts = String(p.month).split('-');
+    if (pts.length === 2) { yr = parseInt(pts[0]); mo = parseInt(pts[1]); }
+  }
+  var targetMonth = String(yr) + '-' + String(mo).padStart(2,'0');
+
+  // 입찰 데이터: caseNo로 사건목록과 조인하여 해당 월 경매기일 사건의 입찰 항목만 집계
+  var aData = [];
+  var aSheet = sh(ss, SH_AUCTION);
+  if (aSheet.getLastRow() > 1)
+    aData = aSheet.getRange(2,1,aSheet.getLastRow()-1,12).getValues().map(mapAuctionRow);
+
+  // 사건목록(active+archived)에서 해당 월 auctionDate 사건번호 수집
+  var allCases = loadCases(ss, SH_CASES_ACTIVE).concat(loadCases(ss, SH_CASES_ARCHIVE));
+  var monthCaseNos = {};
+  allCases.forEach(function(c) {
+    if (c.auctionDate && c.auctionDate.substring(0,7) === targetMonth) monthCaseNos[c.caseNo] = true;
+  });
+  var monthAuction = aData.filter(function(a) { return monthCaseNos[a.caseNo]; });
+
+  // 명도 데이터
+  var mdA = loadMyeongdo(ss, SH_MYEONGDO_A).data || [];
+  var mdD = loadMyeongdo(ss, SH_MYEONGDO_D).data || [];
+
+  // 블로그 이번달 게시수
+  var blogItems = (loadBlogList(bss).data || []);
+  var bCnt = { A:0, B:0, C:0, D:0 };
+  blogItems.forEach(function(item) {
+    if (isStatMonth(item.blogADate, yr, mo)) bCnt.A++;
+    if (isStatMonth(item.blogBDate, yr, mo)) bCnt.B++;
+    if (isStatMonth(item.blogCDate, yr, mo)) bCnt.C++;
+    if (isStatMonth(item.blogDDate, yr, mo)) bCnt.D++;
+  });
+
+  // 물건조사 현황
+  var cases = loadCases(ss, SH_CASES_ACTIVE);
+  var actCases = cases.filter(function(c) {
+    return ['ongoing','done','report','confirmed'].indexOf(c.status) >= 0;
+  });
+
+  return json({
+    ok:    true,
+    month: targetMonth,
+    auction: {
+      total:   monthAuction.length,
+      won:     monthAuction.filter(function(a){ return a.status==='won'; }).length,
+      gaveup:  monthAuction.filter(function(a){ return a.status==='gaveup'; }).length,
+      ongoing: aData.filter(function(a){ return a.status==='ongoing'; }).length,
+      all:     aData.length
+    },
+    myeongdo: { active: mdA.length, done: mdD.length },
+    blog: {
+      total: bCnt.A + bCnt.B + bCnt.C + bCnt.D,
+      A: bCnt.A, B: bCnt.B, C: bCnt.C, D: bCnt.D
+    },
+    cases: { active: actCases.length }
+  });
+}
+
+function isStatMonth(ds, yr, mo) {
+  if (!ds) return false;
+  var s = String(ds).trim();
+  var m = s.match(/(\d{2,4})[.\-\s]+(\d{1,2})/);
+  if (!m) return false;
+  var y = parseInt(m[1]); if (y < 100) y += 2000;
+  return y === yr && parseInt(m[2]) === mo;
 }
 
 // 기존 블로그 GAS 시트에 상태 컬럼 없으면 1회 실행
