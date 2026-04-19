@@ -676,12 +676,192 @@ tr:hover td { background: #fafaf8; }
 .ag-print-btn:hover { background:#142040; color:#fff; }
 @media(max-width:640px){ .ag-grid{grid-template-columns:1fr;} .ag-grid-3{grid-template-columns:1fr 1fr;} .ag-doc-list{grid-template-columns:1fr;} }
 @media print {
-  body > *:not(#panel-guide) { display:none !important; }
+  body > *:not(#panel-guide):not(#panel-contract) { display:none !important; }
   #panel-guide { padding:0 !important; background:#fff !important; }
   .ag-form-card { display:none !important; }
   .ag-card-actions { display:none !important; }
   .ag-card { box-shadow:none !important; border:2px solid #142040 !important; }
+  /* 약정서 인쇄 */
+  #panel-contract { display:block !important; background:#fff !important; padding:0 !important; }
+  .ctr-form-area { display:none !important; }
+  .ctr-wrap { display:block !important; }
+  .ctr-preview-area { padding:0 !important; }
+  .ctr-doc { box-shadow:none !important; border:none !important; margin:0 !important; max-width:100% !important; }
+  .ctr-print-btn, .ctr-preview-btn { display:none !important; }
 }
+
+/* ══ 더핀 회원 탭 ══ */
+#panel-member { background:#f0ede8; min-height:calc(100vh - 60px); }
+#panel-member .container { max-width:1800px; padding-top:24px; padding-left:28px; padding-right:28px; }
+.mbr-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; gap:12px; flex-wrap:wrap; }
+.mbr-header-left { flex:1; }
+.mbr-title { font-size:20px; font-weight:800; color:var(--navy); }
+.mbr-subtitle { font-size:12px; color:#888; margin-top:3px; }
+.mbr-header-right { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.mbr-user-wrap { display:flex; align-items:center; gap:6px; background:#fff; border:1px solid #e0ddd5; border-radius:8px; padding:7px 12px; }
+.mbr-user-wrap label { font-size:11px; font-weight:700; color:#888; white-space:nowrap; }
+.mbr-user-wrap select { border:none; background:none; font-size:13px; font-weight:700; color:var(--navy); cursor:pointer; padding:0; }
+.mbr-add-btn { background:var(--navy); color:var(--gold); border:none; border-radius:8px; padding:10px 20px; font-size:13px; font-weight:700; cursor:pointer; letter-spacing:.04em; white-space:nowrap; }
+.mbr-add-btn:hover { background:#1e3060; }
+.mbr-smart-btn { background:#fff; color:var(--navy); border:1px solid var(--gold-dim); border-radius:8px; padding:10px 16px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.mbr-smart-btn:hover { background:#fffbf0; }
+.mbr-filter-bar { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
+.mbr-filter-bar input { flex:1; min-width:180px; padding:8px 14px; border:1px solid #ddd; border-radius:8px; font-size:13px; background:#fff; }
+.mbr-filter-bar select { padding:8px 12px; border:1px solid #ddd; border-radius:8px; font-size:12px; background:#fff; min-width:100px; }
+.mbr-stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:16px; }
+@media(max-width:900px){ .mbr-stats-row { grid-template-columns:repeat(3,1fr); } }
+.mbr-stat-card { background:#fff; border-radius:10px; padding:12px 16px; border:1px solid #e8e4dc; text-align:center; border-top:3px solid transparent; }
+.mbr-stat-card.s-navy { border-top-color:var(--navy); }
+.mbr-stat-card.s-gold { border-top-color:var(--gold); }
+.mbr-stat-card.s-blue { border-top-color:var(--blue); }
+.mbr-stat-card.s-green { border-top-color:var(--green); }
+.mbr-stat-card.s-amber { border-top-color:var(--amber); }
+.mbr-stat-num { font-size:22px; font-weight:900; color:var(--navy); }
+.mbr-stat-label { font-size:10px; color:#888; margin-top:2px; }
+.mbr-my-label { font-size:10px; color:var(--gold-dim); font-weight:700; }
+.mbr-table-wrap { background:#fff; border-radius:12px; border:1px solid #e8e4dc; overflow:hidden; }
+.mbr-table { width:100%; border-collapse:collapse; }
+.mbr-table th { background:#0f1f3d; color:#fff; font-size:11px; font-weight:700; padding:11px 10px; border-bottom:2px solid #c8a44a; white-space:nowrap; }
+.mbr-table td { padding:9px 10px; border-bottom:1px solid #f0ede8; font-size:12px; color:#374151; vertical-align:middle; }
+.mbr-table tr:last-child td { border-bottom:none; }
+.mbr-table tr:hover td { background:#faf8f5; }
+.mbr-badge { display:inline-block; padding:2px 9px; border-radius:99px; font-size:11px; font-weight:700; }
+.mbr-badge.개인 { background:#e8f0fe; color:#1a56db; }
+.mbr-badge.법인 { background:#fef3c7; color:#92400e; }
+.mbr-badge.공동명의 { background:#f3e8ff; color:#6b21a8; }
+.mbr-status { display:inline-block; padding:2px 9px; border-radius:99px; font-size:11px; font-weight:700; }
+.mbr-status.신규 { background:#f0f9ff; color:#0369a1; }
+.mbr-status.상담중 { background:#eff6ff; color:#1d4ed8; }
+.mbr-status.조사중 { background:#faf5ff; color:#7e22ce; }
+.mbr-status.입찰준비 { background:#fff7ed; color:#c2410c; }
+.mbr-status.입찰완료 { background:#fefce8; color:#a16207; }
+.mbr-status.낙찰 { background:#f0fdf4; color:#166534; }
+.mbr-status.종료 { background:#f9fafb; color:#374151; }
+.mbr-status.보류 { background:#fef2f2; color:#991b1b; }
+.mbr-action-btn { background:none; border:1px solid #ddd; border-radius:6px; padding:3px 9px; font-size:11px; cursor:pointer; margin-right:3px; color:#555; }
+.mbr-action-btn:hover { border-color:var(--navy); color:var(--navy); }
+.mbr-del-btn { background:none; border:1px solid #fca5a5; border-radius:6px; padding:3px 9px; font-size:11px; cursor:pointer; color:#dc2626; }
+.mbr-del-btn:hover { background:#fef2f2; }
+.mbr-empty { text-align:center; padding:48px; color:#aaa; font-size:14px; }
+/* 모달 */
+.mbr-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:flex-start; justify-content:center; padding-top:40px; overflow-y:auto; }
+.mbr-modal-overlay.open { display:flex; }
+.mbr-modal-box { background:#fff; border-radius:14px; padding:28px; width:680px; max-width:96vw; box-shadow:0 20px 60px rgba(0,0,0,.2); margin-bottom:40px; }
+.mbr-modal-title { font-size:16px; font-weight:800; color:var(--navy); margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; }
+.mbr-modal-close { background:none; border:none; font-size:18px; cursor:pointer; color:#888; padding:0 4px; }
+.mbr-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.mbr-form-field label { display:block; font-size:11px; font-weight:700; color:#555; margin-bottom:5px; letter-spacing:.04em; }
+.mbr-form-field input, .mbr-form-field select, .mbr-form-field textarea { width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:8px; font-size:13px; box-sizing:border-box; font-family:inherit; }
+.mbr-form-field textarea { resize:vertical; }
+.mbr-form-field.full { grid-column:1/-1; }
+.mbr-modal-btns { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+.mbr-btn-cancel { background:#f3f4f6; border:none; border-radius:8px; padding:10px 20px; font-size:13px; cursor:pointer; color:#555; }
+.mbr-btn-save { background:var(--navy); color:var(--gold); border:none; border-radius:8px; padding:10px 24px; font-size:13px; font-weight:700; cursor:pointer; }
+.mbr-btn-save:hover { background:#1e3060; }
+/* 스마트 파싱 패널 */
+.mbr-smart-panel { background:#fffbf2; border:1px solid #e8d99a; border-radius:10px; padding:16px; margin-bottom:14px; display:none; }
+.mbr-smart-panel.open { display:block; }
+.mbr-smart-panel-title { font-size:12px; font-weight:700; color:#7a5f10; margin-bottom:8px; }
+.mbr-smart-panel textarea { width:100%; min-height:80px; padding:10px 12px; border:1px solid #e0d090; border-radius:8px; font-size:13px; font-family:inherit; box-sizing:border-box; resize:vertical; background:#fff; }
+.mbr-smart-actions { display:flex; gap:8px; margin-top:8px; align-items:center; flex-wrap:wrap; }
+.mbr-parse-btn { background:var(--gold); color:var(--navy); border:none; border-radius:8px; padding:8px 16px; font-size:12px; font-weight:800; cursor:pointer; }
+.mbr-parse-btn:hover { background:var(--gold-lt); }
+.mbr-smart-hint { font-size:11px; color:#aaa; }
+/* 이미지 참고 영역 */
+.mbr-img-zone { border:2px dashed #ddd; border-radius:8px; padding:12px; text-align:center; cursor:pointer; margin-bottom:14px; transition:.2s; min-height:52px; }
+.mbr-img-zone:hover, .mbr-img-zone.dragover { border-color:var(--gold); background:#fffbf0; }
+.mbr-img-zone img { max-width:100%; max-height:180px; border-radius:6px; }
+.mbr-img-hint { font-size:12px; color:#bbb; }
+/* 폼 섹션 구분선 */
+.mbr-form-section-title { grid-column:1/-1; font-size:11px; font-weight:800; color:var(--gold-dim); letter-spacing:.08em; text-transform:uppercase; padding:4px 0 2px; border-bottom:1px solid #f0ede8; margin-top:4px; }
+/* 주택/목적 배지 */
+.mbr-housing { display:inline-block; padding:2px 8px; border-radius:99px; font-size:10px; font-weight:700; }
+.mbr-housing.무주택 { background:#ecfdf5; color:#065f46; }
+.mbr-housing.1주택 { background:#eff6ff; color:#1e40af; }
+.mbr-housing.2주택\20 이상 { background:#fef3c7; color:#92400e; }
+.mbr-purpose-tag { display:inline-block; padding:2px 8px; border-radius:99px; font-size:10px; font-weight:700; background:#f0f4ff; color:#3730a3; }
+/* 빠른 선택 칩 */
+.mbr-chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
+.mbr-chip { display:inline-block; padding:4px 10px; border-radius:99px; font-size:11px; font-weight:700; cursor:pointer; border:1px solid #e0ddd5; background:#f9f9f9; color:#555; transition:.15s; user-select:none; }
+.mbr-chip:hover { border-color:var(--navy); color:var(--navy); background:#f0f4ff; }
+.mbr-chip.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+.mbr-chip.chip-S.active { background:#92400e; border-color:#92400e; }
+.mbr-chip.chip-A.active { background:#065f46; border-color:#065f46; }
+.mbr-chip.chip-B.active { background:#1e40af; border-color:#1e40af; }
+.mbr-chip.chip-C.active { background:#6b7280; border-color:#6b7280; }
+.mbr-chip.chip-END.active { background:#991b1b; border-color:#991b1b; }
+.mbr-chip.chip-실거주.active { background:#0f766e; border-color:#0f766e; }
+.mbr-chip.chip-투자.active { background:#7c3aed; border-color:#7c3aed; }
+.mbr-chip.chip-임대.active { background:#b45309; border-color:#b45309; }
+/* 지역 그룹 */
+.mbr-region-groups { display:flex; flex-direction:column; gap:8px; margin-top:6px; }
+.mbr-region-group { background:#fafaf8; border-radius:8px; padding:8px 10px; border:1px solid #eee; }
+.mbr-region-label { font-size:10px; font-weight:800; color:#666; letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px; }
+.mbr-region-group .mbr-chips { gap:4px; }
+.mbr-region-extra { margin-top:6px; }
+.mbr-region-extra input { width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:8px; font-size:12px; box-sizing:border-box; background:#fff; }
+/* 인라인 팝오버 */
+.mbr-pop { position:fixed; z-index:9999; background:#fff; border:1px solid #e0ddd5; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,.18); padding:10px; display:flex; flex-wrap:wrap; gap:5px; min-width:160px; max-width:280px; animation:popIn .12s ease; }
+@keyframes popIn { from { opacity:0; transform:scale(.92) translateY(-4px); } to { opacity:1; transform:none; } }
+.mbr-pop-item { padding:5px 12px; border-radius:99px; font-size:12px; font-weight:700; cursor:pointer; border:1px solid #e0ddd5; background:#f9f9f9; color:#444; transition:.12s; white-space:nowrap; }
+.mbr-pop-item:hover { background:var(--navy); color:#fff; border-color:var(--navy); }
+.mbr-pop-item.cur { background:var(--navy); color:var(--gold); border-color:var(--navy); }
+.mbr-pop-label { width:100%; font-size:10px; font-weight:800; color:#aaa; letter-spacing:.06em; padding:0 4px 4px; border-bottom:1px solid #f0ede8; margin-bottom:2px; }
+/* 인라인 편집 가능 셀 */
+.mbr-editable { cursor:pointer; position:relative; }
+.mbr-editable:hover::after { content:'✎'; font-size:10px; color:#c8a44a; margin-left:4px; }
+/* 행 이름 셀 — 클릭해서 전체 수정 */
+.mbr-name-cell { cursor:pointer; }
+.mbr-name-cell:hover .mbr-name-txt { text-decoration:underline; text-decoration-color:var(--gold); text-underline-offset:2px; }
+/* 인라인 텍스트 에디터 */
+.mbr-inline-input { border:none; border-bottom:2px solid var(--gold); background:transparent; font-size:12px; font-weight:700; color:var(--navy); width:80px; outline:none; padding:1px 2px; }
+/* 응답률 배지 */
+.mbr-rrate { display:inline-block; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:800; letter-spacing:.03em; }
+.mbr-rrate.S { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+.mbr-rrate.A { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
+.mbr-rrate.B { background:#dbeafe; color:#1e40af; border:1px solid #93c5fd; }
+.mbr-rrate.C { background:#f3f4f6; color:#6b7280; border:1px solid #e5e7eb; }
+.mbr-rrate.END { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+.mbr-table-wrap { overflow-x:auto; }
+.mbr-table { min-width:1100px; }
+
+/* ══ 약정서 탭 ══ */
+#panel-contract { background:#f0ede8; min-height:calc(100vh - 60px); }
+.ctr-wrap { display:grid; grid-template-columns:360px 1fr; gap:0; min-height:calc(100vh - 60px); }
+.ctr-form-area { background:#fff; border-right:1px solid #e8e4dc; padding:28px 24px; overflow-y:auto; }
+.ctr-form-title { font-size:16px; font-weight:800; color:var(--navy); margin-bottom:18px; }
+.ctr-form-grid { display:flex; flex-direction:column; gap:14px; }
+.ctr-field label { display:block; font-size:11px; font-weight:700; color:#555; margin-bottom:5px; letter-spacing:.04em; }
+.ctr-field input, .ctr-field select, .ctr-field textarea { width:100%; padding:9px 12px; border:1px solid #ddd; border-radius:8px; font-size:13px; box-sizing:border-box; }
+.ctr-field input[readonly] { background:#f8f8f8; color:#888; }
+.ctr-field textarea { resize:vertical; }
+.ctr-preview-btn { background:#f0ede8; border:1px solid #ddd; border-radius:8px; padding:10px 18px; font-size:13px; cursor:pointer; color:var(--navy); font-weight:600; }
+.ctr-print-btn { background:var(--navy); color:var(--gold); border:none; border-radius:8px; padding:10px 22px; font-size:13px; font-weight:700; cursor:pointer; }
+.ctr-print-btn:hover { background:#1e3060; }
+.ctr-preview-area { background:#e8e4dc; padding:32px; overflow-y:auto; display:flex; justify-content:center; }
+/* 약정서 문서 */
+.ctr-doc { background:#fff; width:100%; max-width:680px; min-height:900px; padding:60px 60px 80px; box-shadow:0 4px 24px rgba(0,0,0,.1); font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; font-size:14px; line-height:1.8; color:#222; }
+.ctr-doc-header { text-align:center; margin-bottom:40px; }
+.ctr-doc-logo { font-size:22px; font-weight:900; color:#142040; letter-spacing:.12em; }
+.ctr-doc-logo-sub { font-size:10px; color:#c8a44a; letter-spacing:.08em; margin-top:2px; }
+.ctr-doc-title { font-size:26px; font-weight:900; color:#142040; margin:28px 0 8px; letter-spacing:.08em; }
+.ctr-doc-title-bar { width:60px; height:3px; background:#c8a44a; margin:0 auto 32px; }
+.ctr-doc-section { margin-bottom:28px; }
+.ctr-doc-section-title { font-size:13px; font-weight:800; color:#142040; border-left:3px solid #c8a44a; padding-left:10px; margin-bottom:14px; letter-spacing:.04em; }
+.ctr-doc-table { width:100%; border-collapse:collapse; margin-bottom:10px; }
+.ctr-doc-table th { background:#f5f3ef; font-size:12px; color:#555; font-weight:700; padding:10px 14px; border:1px solid #ddd; width:130px; text-align:left; white-space:nowrap; }
+.ctr-doc-table td { padding:10px 14px; border:1px solid #ddd; font-size:13px; color:#222; }
+.ctr-special-box { border:1px solid #ddd; border-radius:8px; padding:16px; min-height:80px; font-size:13px; color:#333; white-space:pre-wrap; background:#faf9f7; }
+.ctr-sign-area { display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-top:48px; }
+.ctr-sign-block { border-top:1.5px solid #222; padding-top:12px; }
+.ctr-sign-label { font-size:12px; color:#555; margin-bottom:32px; }
+.ctr-sign-line { border-top:1px solid #999; margin-top:8px; }
+.ctr-sign-name { font-size:13px; color:#222; margin-top:6px; }
+.ctr-doc-date { text-align:center; font-size:14px; color:#444; margin:32px 0 16px; }
+.ctr-doc-footer { text-align:center; margin-top:40px; border-top:1px solid #e8e4dc; padding-top:20px; }
+.ctr-doc-footer-logo { font-size:14px; font-weight:800; color:#142040; letter-spacing:.1em; }
+.ctr-doc-footer-sub { font-size:11px; color:#888; margin-top:2px; }
+@media(max-width:900px){ .ctr-wrap{grid-template-columns:1fr;} .ctr-preview-area{padding:16px;} .ctr-doc{padding:32px 20px;} }
 </style>
 </head>
 <body>
@@ -699,6 +879,10 @@ tr:hover td { background: #fafaf8; }
   </div>
 
   <nav class="main-tabs">
+    <div class="main-tab" id="mainTab-photo" onclick="switchMainTab('photo')">
+      <span class="tab-icon">📷</span>
+      사진 분석
+    </div>
     <div class="main-tab active" id="mainTab-cases" onclick="switchMainTab('cases')">
       <span class="tab-icon">🔍</span>
       물건조사 요청표
@@ -719,17 +903,18 @@ tr:hover td { background: #fafaf8; }
       명도
       <span class="tab-badge" id="mainBadge-myeongdo">—</span>
     </div>
-    <div class="main-tab" id="mainTab-stats" onclick="switchMainTab('stats');S_loadStats()">
-      <span class="tab-icon">📊</span>
-      더핀 통계
-    </div>
-    <div class="main-tab" id="mainTab-photo" onclick="switchMainTab('photo')">
-      <span class="tab-icon">📷</span>
-      사진 분석
-    </div>
     <div class="main-tab" id="mainTab-guide" onclick="switchMainTab('guide')">
       <span class="tab-icon">📋</span>
       입찰안내문
+    </div>
+    <div class="main-tab" id="mainTab-member" onclick="switchMainTab('member');MBR_render()">
+      <span class="tab-icon">👥</span>
+      더핀 회원
+      <span class="tab-badge" id="mainBadge-member">—</span>
+    </div>
+    <div class="main-tab" id="mainTab-contract" onclick="switchMainTab('contract');CTR_init()">
+      <span class="tab-icon">📄</span>
+      약정서
     </div>
   </nav>
 
@@ -737,6 +922,8 @@ tr:hover td { background: #fafaf8; }
     <div class="sync-badge" id="globalSync">
       <span>🟢</span><span>동기화됨</span>
     </div>
+    <div id="save-indicator" style="font-size:11px;color:#22c55e;display:none;transition:opacity .5s;">✓ 저장됨</div>
+    <div id="storage-warn" style="font-size:11px;color:#f59e0b;display:none;cursor:pointer;" onclick="SYS_showStorageDetail()" title="클릭해서 자세히 보기">⚠ 저장공간</div>
     <div style="font-size:11px;color:#787470;" id="headerDate"></div>
   </div>
 </header>
@@ -1471,11 +1658,28 @@ tr:hover td { background: #fafaf8; }
         </div>
       </div>
       <div class="ag-field">
-        <label>직접 / 대리인 입찰</label>
+        <label>명의 구분</label>
         <div class="ag-radio-group">
-          <label><input type="radio" name="ag-proxy" value="직접" checked onchange="AG_updateDocs()"><span>직접 입찰</span></label>
-          <label><input type="radio" name="ag-proxy" value="대리" onchange="AG_updateDocs()"><span>대리인 입찰</span></label>
+          <label><input type="radio" name="ag-ownership" value="단독" checked onchange="AG_toggleOwnership()"><span>단독명의</span></label>
+          <label><input type="radio" name="ag-ownership" value="공동" onchange="AG_toggleOwnership()"><span>공동명의</span></label>
         </div>
+      </div>
+    </div>
+    <!-- 단독명의: 직접/대리 선택 -->
+    <div id="ag-proxy-row" class="ag-field" style="margin-bottom:14px;">
+      <label>직접 / 대리인 입찰</label>
+      <div class="ag-radio-group">
+        <label><input type="radio" name="ag-proxy" value="직접" checked onchange="AG_updateDocs()"><span>직접 입찰</span></label>
+        <label><input type="radio" name="ag-proxy" value="대리" onchange="AG_updateDocs()"><span>대리인 입찰</span></label>
+      </div>
+    </div>
+    <!-- 공동명의: 참가 유형 선택 -->
+    <div id="ag-joint-row" class="ag-field" style="margin-bottom:14px;display:none;">
+      <label>공동명의 참가 유형</label>
+      <div class="ag-radio-group" style="flex-direction:column;gap:8px;">
+        <label><input type="radio" name="ag-joint" value="둘다직접" checked onchange="AG_updateDocs()"><span>둘다 직접 참가</span></label>
+        <label><input type="radio" name="ag-joint" value="1명직접1명위임" onchange="AG_updateDocs()"><span>1명 직접참가 · 1명 위임</span></label>
+        <label><input type="radio" name="ag-joint" value="둘다위임" onchange="AG_updateDocs()"><span>둘다 위임 (제3자 대리)</span></label>
       </div>
     </div>
     <div class="ag-field" style="max-width:220px;">
@@ -1599,17 +1803,12 @@ tr:hover td { background: #fafaf8; }
   <div style="background:#f5f3ef;padding:20px 22px;text-align:center;border-bottom:1px solid #e8e4dc;">
     <div style="font-size:11px;color:#888;letter-spacing:.08em;margin-bottom:6px;">경 매 기 일</div>
     <div id="mob-datetime" style="font-size:22px;font-weight:900;color:#142040;line-height:1.2;"></div>
-    <div style="margin-top:12px;display:inline-flex;gap:0;border-radius:10px;overflow:hidden;border:1px solid #ddd;">
-      <div style="background:#fff;padding:10px 20px;text-align:center;">
-        <div style="font-size:10px;color:#888;margin-bottom:3px;">입찰 시작</div>
-        <div id="mob-starttime" style="font-size:18px;font-weight:900;color:#142040;"></div>
-      </div>
-      <div style="background:#142040;padding:10px 16px;display:flex;align-items:center;">
-        <span style="color:#c8a44a;font-size:16px;font-weight:700;">→</span>
-      </div>
-      <div style="background:#fff3f3;padding:10px 20px;text-align:center;">
-        <div style="font-size:10px;color:#c00;font-weight:700;margin-bottom:3px;">입찰 마감</div>
-        <div id="mob-closetime" style="font-size:18px;font-weight:900;color:#c00;"></div>
+    <div style="margin-top:12px;display:inline-block;background:#fff;border:1px solid #ddd;border-radius:10px;padding:10px 22px;min-width:220px;">
+      <div style="font-size:10px;color:#888;margin-bottom:4px;letter-spacing:.05em;">입찰시간 (시작 → 마감)</div>
+      <div style="display:flex;align-items:center;gap:8px;justify-content:center;">
+        <span id="mob-starttime" style="font-size:16px;font-weight:900;color:#142040;"></span>
+        <span style="color:#c8a44a;font-size:14px;font-weight:700;">→</span>
+        <span id="mob-closetime" style="font-size:16px;font-weight:900;color:#c00;"></span>
       </div>
     </div>
   </div>
@@ -1671,6 +1870,498 @@ tr:hover td { background: #fafaf8; }
 </div>
 </div>
 
+<!-- ════════════════════════════════════
+     탭 8: 더핀 회원 관리
+════════════════════════════════════ -->
+<div class="tab-panel" id="panel-member">
+<div class="container">
+
+  <div class="mbr-header">
+    <div class="mbr-header-left">
+      <div class="mbr-title">더핀 회원 관리</div>
+      <div class="mbr-subtitle">전체 고객 정보를 관리합니다 — 담당자별로 구분됩니다</div>
+    </div>
+    <div class="mbr-header-right">
+      <div class="mbr-user-wrap">
+        <label>현재 담당자</label>
+        <select id="mbr-current-user" onchange="MBR_render()">
+          <option value="">전체 (대표)</option>
+          <option value="손청락">손청락 대표</option>
+          <option value="이이훈">이이훈 이사</option>
+          <option value="장한빛">장한빛 매니저</option>
+          <option value="정은진">정은진 매니저</option>
+        </select>
+      </div>
+      <button class="mbr-smart-btn" onclick="MBR_importFromNotion()" style="background:#f0fdf4;border-color:#6ee7b7;color:#065f46;">📥 노션 동기화</button>
+      <button class="mbr-smart-btn" onclick="MBR_exportAll()" style="background:#eff6ff;border-color:#93c5fd;color:#1d4ed8;">📤 전체 내보내기</button>
+      <button class="mbr-smart-btn" onclick="MBR_syncToSheets()" style="background:#f0fdf4;border-color:#86efac;color:#16a34a;">📊 구글시트 저장</button>
+      <button class="mbr-smart-btn" onclick="MBR_toggleBulkPanel()">📋 일괄 등록</button>
+      <button class="mbr-smart-btn" onclick="MBR_toggleSmartPanel()">🔍 스마트 입력</button>
+      <button class="mbr-add-btn" onclick="MBR_openForm()">+ 회원 추가</button>
+    </div>
+  </div>
+
+  <!-- 일괄 등록 패널 -->
+  <div class="mbr-smart-panel" id="mbr-bulk-panel" style="background:#f0f4ff;border-color:#c7d4f5;">
+    <div class="mbr-smart-panel-title" style="color:#1e3a8a;">📋 일괄 등록 — 이름을 한 줄에 하나씩 붙여넣으면 전체 등록됩니다 (나중에 개별 수정 가능)</div>
+    <textarea id="mbr-bulk-text" placeholder="이재훈&#10;송방은&#10;한세온&#10;안민석&#10;..." style="border-color:#c7d4f5;min-height:120px;"></textarea>
+    <div class="mbr-smart-actions">
+      <select id="mbr-bulk-staff" style="padding:7px 12px;border:1px solid #c7d4f5;border-radius:8px;font-size:12px;">
+        <option value="">담당자 미지정</option>
+        <option value="손청락">손청락 대표</option>
+        <option value="이이훈">이이훈 이사</option>
+        <option value="장한빛">장한빛 매니저</option>
+        <option value="정은진">정은진 매니저</option>
+      </select>
+      <button class="mbr-parse-btn" style="background:#1e3a8a;color:#fff;" onclick="MBR_bulkImport()">일괄 등록하기</button>
+      <button class="mbr-parse-btn" style="background:#c8a44a;color:#0b1120;" onclick="MBR_loadNotion30()">노션 30명 불러오기</button>
+      <span class="mbr-smart-hint">중복 이름은 건너뜁니다</span>
+    </div>
+  </div>
+
+  <!-- 스마트 텍스트 파싱 패널 -->
+  <div class="mbr-smart-panel" id="mbr-smart-panel">
+    <div class="mbr-smart-panel-title">📋 스마트 입력 — 고객 상담 내용을 붙여넣으면 이름·연락처·이메일·예산·담당자를 자동 인식합니다</div>
+    <textarea id="mbr-smart-text" placeholder="예) 홍길동 010-1234-5678 hong@email.com&#10;아파트 관심, 예산 5억, 블로그 통해 연락, 강남구 관심&#10;담당: 장한빛"></textarea>
+    <div class="mbr-smart-actions">
+      <button class="mbr-parse-btn" onclick="MBR_parseAndOpen()">자동 파싱 후 폼 열기</button>
+      <span class="mbr-smart-hint">텍스트를 붙여넣고 파싱 버튼을 누르면 폼이 자동 완성됩니다</span>
+    </div>
+  </div>
+
+  <div class="mbr-filter-bar">
+    <input type="text" id="mbr-search" placeholder="이름, 연락처, 메모 검색..." oninput="MBR_render()">
+    <select id="mbr-filter-type" onchange="MBR_render()">
+      <option value="">전체 유형</option>
+      <option value="개인">개인</option>
+      <option value="법인">법인</option>
+      <option value="공동명의">공동명의</option>
+    </select>
+    <select id="mbr-filter-staff" onchange="MBR_render()">
+      <option value="">전체 담당자</option>
+      <option value="손청락">손청락</option>
+      <option value="이이훈">이이훈</option>
+      <option value="장한빛">장한빛</option>
+      <option value="정은진">정은진</option>
+    </select>
+    <select id="mbr-filter-status" onchange="MBR_render()">
+      <option value="">전체 진행상황</option>
+      <option value="신규">신규</option>
+      <option value="상담중">상담중</option>
+      <option value="조사중">조사중</option>
+      <option value="입찰준비">입찰준비</option>
+      <option value="입찰완료">입찰완료</option>
+      <option value="낙찰">낙찰</option>
+      <option value="종료">종료</option>
+      <option value="보류">보류</option>
+    </select>
+    <select id="mbr-filter-rrate" onchange="MBR_render()">
+      <option value="">전체 응답률</option>
+      <option value="S">S 최우선</option>
+      <option value="A">A 적극적</option>
+      <option value="B">B 보통</option>
+      <option value="C">C 소극적</option>
+      <option value="END">END 종결</option>
+    </select>
+    <select id="mbr-filter-purpose" onchange="MBR_render()">
+      <option value="">전체 목적</option>
+      <option value="실거주">실거주</option>
+      <option value="투자">투자</option>
+      <option value="임대">임대</option>
+    </select>
+  </div>
+
+  <div class="mbr-stats-row">
+    <div class="mbr-stat-card s-navy">
+      <div class="mbr-stat-num" id="mbr-stat-total">0</div>
+      <div class="mbr-stat-label">전체 회원</div>
+    </div>
+    <div class="mbr-stat-card s-gold">
+      <div class="mbr-stat-num" id="mbr-stat-mine">0</div>
+      <div class="mbr-stat-label mbr-my-label" id="mbr-stat-mine-label">내 회원</div>
+    </div>
+    <div class="mbr-stat-card s-blue">
+      <div class="mbr-stat-num" id="mbr-stat-active">0</div>
+      <div class="mbr-stat-label">진행중</div>
+    </div>
+    <div class="mbr-stat-card s-green">
+      <div class="mbr-stat-num" id="mbr-stat-won">0</div>
+      <div class="mbr-stat-label">낙찰</div>
+    </div>
+    <div class="mbr-stat-card s-amber">
+      <div class="mbr-stat-num" id="mbr-stat-new">0</div>
+      <div class="mbr-stat-label">이번달 신규</div>
+    </div>
+  </div>
+
+  <div class="mbr-table-wrap">
+    <table class="mbr-table">
+      <thead>
+        <tr>
+          <th>이름</th>
+          <th>응답률</th>
+          <th>연락처</th>
+          <th>담당자</th>
+          <th>희망지역</th>
+          <th>관심물건</th>
+          <th>예산</th>
+          <th>투자목적</th>
+          <th>주택보유</th>
+          <th>수수료</th>
+          <th>진행상황</th>
+          <th>관리</th>
+        </tr>
+      </thead>
+      <tbody id="mbr-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- 회원 추가/수정 모달 -->
+  <div class="mbr-modal-overlay" id="mbr-modal" onclick="MBR_closeForm(event)">
+    <div class="mbr-modal-box" onclick="event.stopPropagation()">
+      <div class="mbr-modal-title">
+        <span id="mbr-modal-title">회원 추가</span>
+        <button class="mbr-modal-close" onclick="MBR_closeForm()">✕</button>
+      </div>
+
+      <!-- 사진 참고 영역 -->
+      <div class="mbr-img-zone" id="mbr-img-zone"
+        ondrop="MBR_dropImg(event)" ondragover="MBR_dragOver(event)" ondragleave="MBR_dragLeave(event)"
+        onclick="document.getElementById('mbr-img-file').click()">
+        <div id="mbr-img-preview"><span class="mbr-img-hint">📷 고객 질문지 사진 드래그 또는 클릭 (참고용 — 사진 보면서 아래 폼 입력)</span></div>
+      </div>
+      <input type="file" id="mbr-img-file" accept="image/*" style="display:none" onchange="MBR_loadImgFile(event)">
+
+      <input type="hidden" id="mbr-edit-id">
+      <div class="mbr-form-grid">
+        <div class="mbr-form-field">
+          <label>이름 *</label>
+          <input type="text" id="mbr-name" placeholder="홍길동">
+        </div>
+        <div class="mbr-form-field">
+          <label>연락처 *</label>
+          <input type="text" id="mbr-phone" placeholder="010-0000-0000">
+        </div>
+        <div class="mbr-form-field">
+          <label>이메일</label>
+          <input type="email" id="mbr-email" placeholder="example@email.com">
+        </div>
+        <div class="mbr-form-field">
+          <label>담당자</label>
+          <select id="mbr-staff">
+            <option value="">미배정</option>
+            <option value="손청락">손청락 대표</option>
+            <option value="이이훈">이이훈 이사</option>
+            <option value="장한빛">장한빛 매니저</option>
+            <option value="정은진">정은진 매니저</option>
+          </select>
+        </div>
+        <div class="mbr-form-field">
+          <label>생년월일</label>
+          <input type="date" id="mbr-birthdate" placeholder="1990-01-01">
+        </div>
+        <div class="mbr-form-field full">
+          <label>주소 (도로명 기준)</label>
+          <input type="text" id="mbr-address" placeholder="예: 서울시 강남구 테헤란로 123">
+        </div>
+        <div class="mbr-form-field">
+          <label>회원 유형</label>
+          <select id="mbr-type">
+            <option value="개인">개인</option>
+            <option value="법인">법인</option>
+            <option value="공동명의">공동명의</option>
+          </select>
+        </div>
+        <div class="mbr-form-field">
+          <label>유입경로</label>
+          <select id="mbr-source">
+            <option value="">—</option>
+            <option value="블로그">블로그</option>
+            <option value="지인소개">지인소개</option>
+            <option value="재상담">재상담</option>
+            <option value="SNS">SNS</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+
+        <div class="mbr-form-section-title">부동산 정보</div>
+
+        <div class="mbr-form-field">
+          <label>주택 보유 현황</label>
+          <input type="hidden" id="mbr-housing">
+          <div class="mbr-chips">
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-housing','무주택')">무주택</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-housing','1주택')">1주택</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-housing','2주택 이상')">2주택 이상</span>
+          </div>
+        </div>
+        <div class="mbr-form-field">
+          <label>생애최초 주택구입</label>
+          <input type="hidden" id="mbr-firsthome">
+          <div class="mbr-chips">
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-firsthome','해당')">해당</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-firsthome','미해당')">미해당</span>
+          </div>
+        </div>
+        <div class="mbr-form-field">
+          <label>희망 물건 유형</label>
+          <input type="hidden" id="mbr-proptype">
+          <div class="mbr-chips">
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-proptype','아파트')">아파트</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-proptype','빌라')">빌라</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-proptype','다가구')">다가구</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-proptype','오피스텔')">오피스텔</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-proptype','상가')">상가</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-proptype','토지')">토지</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-proptype','빌딩')">빌딩</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-proptype','특수물건')">특수물건</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-proptype','기타')">기타</span>
+          </div>
+        </div>
+        <div class="mbr-form-field full">
+          <label>희망 지역 <span style="font-size:10px;color:#aaa;font-weight:400">다중 선택 가능 — 다시 클릭하면 해제</span></label>
+          <input type="hidden" id="mbr-region">
+          <div class="mbr-region-groups">
+            <div class="mbr-region-group">
+              <div class="mbr-region-label">서울 — 강남권</div>
+              <div class="mbr-chips mbr-region-chips">
+                <span class="mbr-chip" data-region="서울 강남구" onclick="MBR_regionChip(this)">강남구</span>
+                <span class="mbr-chip" data-region="서울 서초구" onclick="MBR_regionChip(this)">서초구</span>
+                <span class="mbr-chip" data-region="서울 송파구" onclick="MBR_regionChip(this)">송파구</span>
+                <span class="mbr-chip" data-region="서울 강동구" onclick="MBR_regionChip(this)">강동구</span>
+                <span class="mbr-chip" data-region="서울 용산구" onclick="MBR_regionChip(this)">용산구</span>
+                <span class="mbr-chip" data-region="서울 성동구" onclick="MBR_regionChip(this)">성동구</span>
+                <span class="mbr-chip" data-region="서울 광진구" onclick="MBR_regionChip(this)">광진구</span>
+              </div>
+            </div>
+            <div class="mbr-region-group">
+              <div class="mbr-region-label">서울 — 서북·동북권</div>
+              <div class="mbr-chips mbr-region-chips">
+                <span class="mbr-chip" data-region="서울 마포구" onclick="MBR_regionChip(this)">마포구</span>
+                <span class="mbr-chip" data-region="서울 은평구" onclick="MBR_regionChip(this)">은평구</span>
+                <span class="mbr-chip" data-region="서울 서대문구" onclick="MBR_regionChip(this)">서대문구</span>
+                <span class="mbr-chip" data-region="서울 노원구" onclick="MBR_regionChip(this)">노원구</span>
+                <span class="mbr-chip" data-region="서울 도봉구" onclick="MBR_regionChip(this)">도봉구</span>
+                <span class="mbr-chip" data-region="서울 중랑구" onclick="MBR_regionChip(this)">중랑구</span>
+                <span class="mbr-chip" data-region="서울 동대문구" onclick="MBR_regionChip(this)">동대문구</span>
+                <span class="mbr-chip" data-region="서울 성북구" onclick="MBR_regionChip(this)">성북구</span>
+                <span class="mbr-chip" data-region="서울 강북구" onclick="MBR_regionChip(this)">강북구</span>
+              </div>
+            </div>
+            <div class="mbr-region-group">
+              <div class="mbr-region-label">서울 — 서남권</div>
+              <div class="mbr-chips mbr-region-chips">
+                <span class="mbr-chip" data-region="서울 영등포구" onclick="MBR_regionChip(this)">영등포구</span>
+                <span class="mbr-chip" data-region="서울 양천구" onclick="MBR_regionChip(this)">양천구</span>
+                <span class="mbr-chip" data-region="서울 강서구" onclick="MBR_regionChip(this)">강서구</span>
+                <span class="mbr-chip" data-region="서울 구로구" onclick="MBR_regionChip(this)">구로구</span>
+                <span class="mbr-chip" data-region="서울 금천구" onclick="MBR_regionChip(this)">금천구</span>
+                <span class="mbr-chip" data-region="서울 관악구" onclick="MBR_regionChip(this)">관악구</span>
+                <span class="mbr-chip" data-region="서울 동작구" onclick="MBR_regionChip(this)">동작구</span>
+                <span class="mbr-chip" data-region="서울 전체" onclick="MBR_regionChip(this)" style="font-weight:800;border-style:dashed;">서울 전체</span>
+              </div>
+            </div>
+            <div class="mbr-region-group">
+              <div class="mbr-region-label">경기</div>
+              <div class="mbr-chips mbr-region-chips">
+                <span class="mbr-chip" data-region="경기 성남시" onclick="MBR_regionChip(this)">성남시</span>
+                <span class="mbr-chip" data-region="경기 안양시" onclick="MBR_regionChip(this)">안양시</span>
+                <span class="mbr-chip" data-region="경기 수원시" onclick="MBR_regionChip(this)">수원시</span>
+                <span class="mbr-chip" data-region="경기 용인시" onclick="MBR_regionChip(this)">용인시</span>
+                <span class="mbr-chip" data-region="경기 고양시" onclick="MBR_regionChip(this)">고양시</span>
+                <span class="mbr-chip" data-region="경기 하남시" onclick="MBR_regionChip(this)">하남시</span>
+                <span class="mbr-chip" data-region="경기 남양주시" onclick="MBR_regionChip(this)">남양주시</span>
+                <span class="mbr-chip" data-region="경기 과천시" onclick="MBR_regionChip(this)">과천시</span>
+                <span class="mbr-chip" data-region="경기 광명시" onclick="MBR_regionChip(this)">광명시</span>
+                <span class="mbr-chip" data-region="경기 의왕시" onclick="MBR_regionChip(this)">의왕시</span>
+                <span class="mbr-chip" data-region="경기 구리시" onclick="MBR_regionChip(this)">구리시</span>
+                <span class="mbr-chip" data-region="경기 기타" onclick="MBR_regionChip(this)" style="border-style:dashed;">경기 기타</span>
+              </div>
+            </div>
+            <div class="mbr-region-group">
+              <div class="mbr-region-label">인천</div>
+              <div class="mbr-chips mbr-region-chips">
+                <span class="mbr-chip" data-region="인천 연수구" onclick="MBR_regionChip(this)">연수구</span>
+                <span class="mbr-chip" data-region="인천 남동구" onclick="MBR_regionChip(this)">남동구</span>
+                <span class="mbr-chip" data-region="인천 서구" onclick="MBR_regionChip(this)">서구</span>
+                <span class="mbr-chip" data-region="인천 중구" onclick="MBR_regionChip(this)">중구</span>
+                <span class="mbr-chip" data-region="인천 부평구" onclick="MBR_regionChip(this)">부평구</span>
+                <span class="mbr-chip" data-region="인천 계양구" onclick="MBR_regionChip(this)">계양구</span>
+                <span class="mbr-chip" data-region="인천 전체" onclick="MBR_regionChip(this)" style="border-style:dashed;">인천 전체</span>
+              </div>
+            </div>
+          </div>
+          <div class="mbr-region-extra">
+            <input type="text" id="mbr-region-text" placeholder="위 버튼 외 지역 직접 입력 (예: 여수, 부산)" oninput="MBR_regionTextChange()">
+          </div>
+        </div>
+        <div class="mbr-form-field">
+          <label>투자 목적</label>
+          <input type="hidden" id="mbr-purpose">
+          <div class="mbr-chips">
+            <span class="mbr-chip chip-실거주" onclick="MBR_chipToggle(this,'mbr-purpose','실거주')">실거주</span>
+            <span class="mbr-chip chip-투자" onclick="MBR_chipToggle(this,'mbr-purpose','투자')">투자</span>
+            <span class="mbr-chip chip-임대" onclick="MBR_chipToggle(this,'mbr-purpose','임대')">임대</span>
+          </div>
+        </div>
+        <div class="mbr-form-field">
+          <label>자기자본 예산 (대출 제외)</label>
+          <input type="text" id="mbr-budget" placeholder="예: 3억, 5~7억">
+          <div class="mbr-chips" style="margin-top:5px;">
+            <span class="mbr-chip" onclick="MBR_setVal('mbr-budget','1억')">1억</span>
+            <span class="mbr-chip" onclick="MBR_setVal('mbr-budget','3억')">3억</span>
+            <span class="mbr-chip" onclick="MBR_setVal('mbr-budget','5억')">5억</span>
+            <span class="mbr-chip" onclick="MBR_setVal('mbr-budget','7억')">7억</span>
+            <span class="mbr-chip" onclick="MBR_setVal('mbr-budget','10억')">10억</span>
+            <span class="mbr-chip" onclick="MBR_setVal('mbr-budget','15억')">15억</span>
+            <span class="mbr-chip" onclick="MBR_setVal('mbr-budget','20억')">20억</span>
+          </div>
+        </div>
+        <div class="mbr-form-field">
+          <label>희망 낙찰 시기</label>
+          <input type="hidden" id="mbr-timeline">
+          <div class="mbr-chips">
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-timeline','1개월 내')">1개월 내</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-timeline','3개월 내')">3개월 내</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-timeline','6개월 내')">6개월 내</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-timeline','미정')">미정</span>
+          </div>
+        </div>
+        <div class="mbr-form-field">
+          <label>진행 상황</label>
+          <input type="hidden" id="mbr-status" value="신규">
+          <div class="mbr-chips">
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-status','신규')">신규</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-status','상담중')">상담중</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-status','조사중')">조사중</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-status','입찰준비')">입찰준비</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-status','입찰완료')">입찰완료</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-status','낙찰')">낙찰</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-status','종료')">종료</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-status','보류')">보류</span>
+          </div>
+        </div>
+        <div class="mbr-form-field">
+          <label>상담일</label>
+          <input type="date" id="mbr-joindate">
+        </div>
+        <div class="mbr-form-field">
+          <label>고객 응답률</label>
+          <input type="hidden" id="mbr-responserate">
+          <div class="mbr-chips">
+            <span class="mbr-chip chip-S" onclick="MBR_chipToggle(this,'mbr-responserate','S')">S 최우선</span>
+            <span class="mbr-chip chip-A" onclick="MBR_chipToggle(this,'mbr-responserate','A')">A 적극적</span>
+            <span class="mbr-chip chip-B" onclick="MBR_chipToggle(this,'mbr-responserate','B')">B 보통</span>
+            <span class="mbr-chip chip-C" onclick="MBR_chipToggle(this,'mbr-responserate','C')">C 소극적</span>
+            <span class="mbr-chip chip-END" onclick="MBR_chipToggle(this,'mbr-responserate','END')">END 종결</span>
+          </div>
+        </div>
+        <div class="mbr-form-field">
+          <label>수수료율</label>
+          <input type="hidden" id="mbr-feerate">
+          <div class="mbr-chips">
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-feerate','0.8%')">0.8%</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-feerate','1%')">1%</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-feerate','2%')">2%</span>
+            <span class="mbr-chip" onclick="MBR_chipToggle(this,'mbr-feerate','3%')">3%</span>
+          </div>
+        </div>
+        <div class="mbr-form-field full">
+          <label>메모 / 상담내용</label>
+          <textarea id="mbr-memo" rows="3" placeholder="상담 내용, 특이사항, 요청사항 등"></textarea>
+        </div>
+      </div>
+      <!-- 연관 사건 섹션 -->
+      <div id="mbr-linked-cases" style="margin:12px 0 0;background:#f8f6f1;border-radius:8px;padding:10px 14px;display:none;">
+        <div style="font-size:11px;font-weight:800;color:#555;margin-bottom:8px;letter-spacing:.04em;">🔗 연관 사건 / 경매</div>
+        <div id="mbr-linked-cases-body" style="font-size:12px;color:#444;"></div>
+      </div>
+      <div class="mbr-modal-btns">
+        <button class="mbr-btn-cancel" onclick="MBR_closeForm()">취소</button>
+        <button style="background:#f0f9ff;border:1px solid #93c5fd;color:#1d4ed8;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;" onclick="MBR_exportOne()">📋 노션 복사</button>
+        <button class="mbr-btn-save" onclick="MBR_save()">저장</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════════════════════════════════
+     탭 9: 약정서
+════════════════════════════════════ -->
+<div class="tab-panel" id="panel-contract">
+  <div class="ctr-wrap">
+
+    <!-- 왼쪽: 입력 폼 -->
+    <div class="ctr-form-area">
+      <div class="ctr-form-title">약정서 작성</div>
+      <div class="ctr-form-grid">
+        <div class="ctr-field">
+          <label>회원 선택</label>
+          <select id="ctr-member" onchange="CTR_fillMember()">
+            <option value="">회원 선택...</option>
+          </select>
+        </div>
+        <div class="ctr-field">
+          <label>약정일</label>
+          <input type="date" id="ctr-date">
+        </div>
+        <div class="ctr-field">
+          <label>물건 소재지</label>
+          <input type="text" id="ctr-addr" placeholder="예: 서울특별시 강남구 ○○로 123">
+        </div>
+        <div class="ctr-field">
+          <label>물건 유형</label>
+          <select id="ctr-prop-type" onchange="CTR_autoRate()">
+            <option value="아파트">아파트 (1%)</option>
+            <option value="다가구">다가구 (2%)</option>
+            <option value="빌딩">빌딩 (2%)</option>
+            <option value="공장">공장 (2%)</option>
+            <option value="토지">토지 (2%)</option>
+            <option value="특수물건">특수물건 (3%)</option>
+          </select>
+        </div>
+        <div class="ctr-field">
+          <label>약정 금액 (낙찰 예정가)</label>
+          <input type="text" id="ctr-amount" placeholder="예: 500,000,000" oninput="CTR_calcFee()">
+        </div>
+        <div class="ctr-field">
+          <label>수수료율</label>
+          <select id="ctr-fee-rate" onchange="CTR_calcFee()">
+            <option value="1">1%</option>
+            <option value="2">2%</option>
+            <option value="3">3%</option>
+          </select>
+        </div>
+        <div class="ctr-field">
+          <label>수수료 금액 (자동 계산)</label>
+          <input type="text" id="ctr-fee-amount" readonly placeholder="자동 계산됩니다">
+        </div>
+        <div class="ctr-field">
+          <label>특약사항</label>
+          <textarea id="ctr-special" rows="5" placeholder="특약사항을 입력하세요..."></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="ctr-preview-btn" onclick="CTR_preview()">미리보기 갱신</button>
+        <button class="ctr-print-btn" onclick="CTR_print()">🖨️ 약정서 출력</button>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 약정서 미리보기 -->
+    <div class="ctr-preview-area">
+      <div class="ctr-doc" id="ctr-doc">
+        <!-- 약정서 문서 — CTR_preview()로 채워짐 -->
+        <div style="text-align:center;padding:80px 0;color:#bbb;font-size:14px;">
+          왼쪽 폼을 작성하고<br>「미리보기 갱신」을 눌러주세요
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
@@ -1698,6 +2389,32 @@ function switchMainTab(t) {
 
 const _dd=new Date(),_days=['일','월','화','수','목','금','토'];
 document.getElementById('headerDate').textContent=`${_dd.getFullYear()}년 ${_dd.getMonth()+1}월 ${_dd.getDate()}일 (${_days[_dd.getDay()]})`;
+setTimeout(() => {
+  // 구버전 MBR 전체 저장분 → delta로 자동 마이그레이션
+  try {
+    const raw = localStorage.getItem('thefin_members_v1');
+    if (raw) {
+      const arr = JSON.parse(raw);
+      // 50명 이상이면 구버전 전체 저장 형식 → delta로 재저장
+      if (Array.isArray(arr) && arr.length >= 10) {
+        const notionNames = new Set((typeof MBR_NOTION_DATA !== 'undefined' ? MBR_NOTION_DATA : []).map(x=>x.name));
+        if (notionNames.size > 0) {
+          const notionMap = {};
+          (typeof MBR_NOTION_DATA !== 'undefined' ? MBR_NOTION_DATA : []).forEach(d => { notionMap[d.name] = d; });
+          const delta = arr.filter(m => {
+            const orig = notionMap[m.name];
+            if (!orig) return true;
+            const fields = ['phone','email','birthdate','address','staff','housing','firsthome','proptype','region','purpose','budget','timeline','status','responseRate','feeRate','memo'];
+            return fields.some(f => (m[f]||'') !== (orig[f]||''));
+          });
+          localStorage.setItem('thefin_members_v1', JSON.stringify(delta));
+          console.log(`MBR 마이그레이션: ${arr.length}명 → delta ${delta.length}건`);
+        }
+      }
+    }
+  } catch(e) {}
+  if(typeof SYS_checkStorage==='function') SYS_checkStorage();
+}, 500);
 
 
 // ══════════════════════════════════════════════════════════════════
@@ -1710,7 +2427,23 @@ const C_MANAGERS=['손청락','이제훈','장한빛','정은진'];
 let C_cases=[], C_todos=[], C_tab='active', C_filt='all', C_filtArc='all', C_undoStack=[], C_syncTimer=null;
 
 function C_cacheLoad(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
-function C_cacheSave(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function C_cacheSave(k,v){
+  try{
+    localStorage.setItem(k,JSON.stringify(v));
+    if(typeof SYS_flashSaved==='function'){SYS_flashSaved();SYS_checkStorage();}
+  }catch(e){
+    // 공간 부족 시: BULK_CACHE 자동 정리 후 재시도 (BULK는 매 페이지 로드 시 다시 받아옴)
+    try{
+      localStorage.removeItem('thefin_bulk_v2');
+      localStorage.removeItem('thefin_bulk_age');
+      localStorage.setItem(k,JSON.stringify(v));
+      if(typeof SYS_flashSaved==='function'){SYS_flashSaved();SYS_checkStorage();}
+      console.warn('저장공간 정리: BULK 캐시를 삭제했습니다.');
+    }catch(e2){
+      alert('저장 실패: 저장공간이 부족합니다.\n설정 > 저장공간 정리 버튼을 눌러주세요.');
+    }
+  }
+}
 
 async function C_api(action,data){
   try{
@@ -3251,11 +3984,9 @@ function _bulkAge() {
 function applyBulkData(d) {
   const allCases = [...(d.cases||[]), ...(d.archive||[])];
 
-  // 사건 관리
+  // 사건 관리 (C_CACHE_CASES/TODOS는 BULK_CACHE에 이미 포함 — 중복 저장 하지 않음)
   C_cases = allCases;
   C_todos = d.todos || [];
-  C_cacheSave(C_CACHE_CASES, C_cases);
-  C_cacheSave(C_CACHE_TODOS, C_todos);
   C_renderTodos(); C_render();
 
   // 블로그 물건추천
@@ -3530,12 +4261,11 @@ const AG_DOCS = {
     '주민등록초본 (주소 변경 이력 포함)',
   ],
   '개인_대리': [
-    '위임장 (본인 인감 날인)',
-    '본인 인감증명서 (3개월 이내)',
+    '위임장 (법원 현장 작성 · 본인 인감 날인)',
+    '본인 인감증명서 (3개월 이내, 전자인감 불가)',
     '대리인 신분증',
     '대리인 도장',
     '입찰보증금 (자기앞수표)',
-    '본인 주민등록초본',
   ],
   '법인_직접': [
     '법인 인감도장',
@@ -3545,26 +4275,78 @@ const AG_DOCS = {
     '입찰보증금 (자기앞수표)',
   ],
   '법인_대리': [
-    '위임장 (법인 인감 날인)',
-    '법인 인감증명서 (3개월 이내)',
+    '위임장 (법원 현장 작성 · 법인 인감 날인)',
+    '법인 인감증명서 (3개월 이내, 전자인감 불가)',
     '법인등기사항전부증명서 (3개월 이내)',
+    '대리인 신분증',
+    '대리인 도장',
+    '입찰보증금 (자기앞수표)',
+  ],
+  // 공동명의 — 둘다 직접 참가
+  '공동_둘다직접': [
+    '공동명의자 A 신분증',
+    '공동명의자 A 도장',
+    '공동명의자 B 신분증',
+    '공동명의자 B 도장',
+    '입찰보증금 (자기앞수표)',
+  ],
+  // 공동명의 — 1명 직접참가, 1명 위임
+  '공동_1명직접1명위임': [
+    '직접참가자 신분증',
+    '직접참가자 도장',
+    '위임자 위임장 (법원 현장 작성 · 인감 날인)',
+    '위임자 인감증명서 (3개월 이내, 전자인감 불가)',
+    '입찰보증금 (자기앞수표)',
+  ],
+  // 공동명의 — 둘다 위임 (제3자 대리인)
+  '공동_둘다위임': [
+    '위임장 2매 (법원 현장 작성 · 각자 인감 날인)',
+    '인감증명서 2부 (각 3개월 이내, 전자인감 불가)',
     '대리인 신분증',
     '대리인 도장',
     '입찰보증금 (자기앞수표)',
   ],
 };
 
+function AG_toggleOwnership() {
+  const ownership = document.querySelector('input[name="ag-ownership"]:checked')?.value || '단독';
+  const proxyRow = document.getElementById('ag-proxy-row');
+  const jointRow = document.getElementById('ag-joint-row');
+  if (ownership === '공동') {
+    proxyRow.style.display = 'none';
+    jointRow.style.display = '';
+  } else {
+    proxyRow.style.display = '';
+    jointRow.style.display = 'none';
+  }
+  AG_updateDocs();
+}
+
 function AG_updateDocs() {
-  const type = document.querySelector('input[name="ag-type"]:checked')?.value || '개인';
-  const proxy = document.querySelector('input[name="ag-proxy"]:checked')?.value || '직접';
-  const key = `${type}_${proxy}`;
+  const ownership = document.querySelector('input[name="ag-ownership"]:checked')?.value || '단독';
+  let key, labelText;
+  if (ownership === '공동') {
+    const joint = document.querySelector('input[name="ag-joint"]:checked')?.value || '둘다직접';
+    key = `공동_${joint}`;
+    const jointLabels = {
+      '둘다직접':    '(공동명의 · 둘다 직접 참가)',
+      '1명직접1명위임': '(공동명의 · 1명 직접참가 · 1명 위임)',
+      '둘다위임':    '(공동명의 · 둘다 위임 · 제3자 대리)',
+    };
+    labelText = jointLabels[joint] || '';
+  } else {
+    const type = document.querySelector('input[name="ag-type"]:checked')?.value || '개인';
+    const proxy = document.querySelector('input[name="ag-proxy"]:checked')?.value || '직접';
+    key = `${type}_${proxy}`;
+    labelText = `(${type} · ${proxy} 입찰)`;
+  }
   const docs = AG_DOCS[key] || [];
   const ul = document.getElementById('ag-out-docs');
   if (ul) {
     ul.innerHTML = docs.map(d => `<li>${d}</li>`).join('');
   }
   const lbl = document.getElementById('ag-out-type-label');
-  if (lbl) lbl.textContent = `(${type} · ${proxy} 입찰)`;
+  if (lbl) lbl.textContent = labelText;
 }
 
 function AG_fmtDate(dateStr) {
@@ -3600,6 +4382,8 @@ function AG_generate() {
   const staff = document.getElementById('ag-staff').value;
   const type = document.querySelector('input[name="ag-type"]:checked')?.value || '개인';
   const proxy = document.querySelector('input[name="ag-proxy"]:checked')?.value || '직접';
+  const ownership = document.querySelector('input[name="ag-ownership"]:checked')?.value || '단독';
+  const joint = document.querySelector('input[name="ag-joint"]:checked')?.value || '1명참가';
 
   if (!court) { alert('법원명을 선택하거나 입력해주세요.'); return; }
   if (!date)  { alert('경매기일을 입력해주세요.'); return; }
@@ -3637,7 +4421,15 @@ function AG_generate() {
   document.getElementById('mob-minprice').textContent   = minprice ? minprice + '원' : '—';
   document.getElementById('mob-deposit').textContent    = deposit ? deposit + '원' : '—';
   document.getElementById('mob-staff').textContent      = staff;
-  document.getElementById('mob-type-label').textContent = `(${type} · ${proxy} 입찰)`;
+  const jointLabels = {
+    '둘다직접':    '(공동명의 · 둘다 직접 참가)',
+    '1명직접1명위임': '(공동명의 · 1명 직접참가 · 1명 위임)',
+    '둘다위임':    '(공동명의 · 둘다 위임 · 제3자 대리)',
+  };
+  const mobTypeLabel = ownership === '공동'
+    ? (jointLabels[joint] || '(공동명의)')
+    : `(${type} · ${proxy} 입찰)`;
+  document.getElementById('mob-type-label').textContent = mobTypeLabel;
 
   const mobCaseWrap = document.getElementById('mob-caseno-wrap');
   if (caseno) { document.getElementById('mob-caseno').textContent = caseno; mobCaseWrap.style.display=''; }
@@ -3680,13 +4472,24 @@ async function AG_capture(btn) {
   const orig = btn.textContent;
   btn.textContent = '캡처 중...';
   btn.disabled = true;
+
+  // html2canvas가 off-screen 요소의 텍스트를 놓치는 문제 방지:
+  // 캡처 직전에 화면 내 숨김 위치로 이동 후 복원
+  const prevStyle = card.getAttribute('style');
+  card.style.cssText = 'position:fixed;left:0;top:0;width:390px;z-index:-1;pointer-events:none;background:#fff;font-family:\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif;';
+
   try {
+    await new Promise(r => setTimeout(r, 50)); // 레이아웃 재계산 대기
     const canvas = await html2canvas(card, {
       scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
-      logging: false
+      logging: false,
+      x: 0,
+      y: 0,
+      scrollX: 0,
+      scrollY: 0,
     });
 
     // 클립보드 복사 시도 → 성공하면 카톡에 바로 붙여넣기 가능
@@ -3709,6 +4512,9 @@ async function AG_capture(btn) {
   } catch(e) {
     alert('캡처 실패: ' + e.message);
   } finally {
+    // 카드 원래 위치로 복원
+    if (prevStyle !== null) card.setAttribute('style', prevStyle);
+    else card.removeAttribute('style');
     btn.textContent = orig;
     btn.disabled = false;
   }
@@ -3738,6 +4544,1014 @@ function AG_copyText() {
 
   navigator.clipboard.writeText(txt).then(()=>alert('클립보드에 복사되었습니다.')).catch(()=>alert('복사 실패 — 직접 선택 후 복사해주세요.'));
 }
+
+// ══════════════════════════════════════════════════════════════════
+//  탭 8: 더핀 회원 관리 (MBR_ 네임스페이스)
+// ══════════════════════════════════════════════════════════════════
+const MBR_CACHE_KEY = 'thefin_members_v1';
+let MBR_members = [];
+
+function MBR_load() {
+  // 기본 데이터(MBR_NOTION_DATA)는 HTML에 하드코딩 → localStorage에는 사용자 수정/추가분(delta)만 저장
+  try {
+    const delta = JSON.parse(localStorage.getItem(MBR_CACHE_KEY)) || [];
+    const deltaMap = {};
+    delta.forEach(d => { if(d.name) deltaMap[d.name] = d; });
+    // 기본 47명: NOTION_DATA 기반, delta로 덮어쓰기
+    const base = MBR_NOTION_DATA.map(d => deltaMap[d.name] ? deltaMap[d.name] : {id:'notion_'+d.name, joindate:'', ...d});
+    // 사용자가 직접 추가한 신규 회원 (NOTION_DATA에 없는 이름)
+    const notionNames = new Set(MBR_NOTION_DATA.map(x=>x.name));
+    const extra = delta.filter(d => !notionNames.has(d.name));
+    MBR_members = [...base, ...extra];
+  } catch(e) {
+    MBR_members = MBR_NOTION_DATA.map(d => ({id:'notion_'+d.name, joindate:'', ...d}));
+  }
+}
+
+function MBR_save_store() {
+  // delta만 저장: NOTION_DATA와 다른 레코드 + 신규 추가 레코드
+  const notionMap = {};
+  MBR_NOTION_DATA.forEach(d => { notionMap[d.name] = d; });
+  const delta = MBR_members.filter(m => {
+    const orig = notionMap[m.name];
+    if (!orig) return true; // 신규 추가
+    // 주요 필드 중 하나라도 다르면 delta에 포함
+    const fields = ['phone','email','birthdate','address','staff','housing','firsthome','proptype','region','purpose','budget','timeline','status','responseRate','feeRate','memo','type','source'];
+    return fields.some(f => (m[f]||'') !== (orig[f]||''));
+  });
+  try {
+    localStorage.setItem(MBR_CACHE_KEY, JSON.stringify(delta));
+  } catch(e) {
+    localStorage.removeItem('thefin_bulk_v2');
+    localStorage.removeItem('thefin_bulk_age');
+    try { localStorage.setItem(MBR_CACHE_KEY, JSON.stringify(delta)); } catch(e2) {}
+  }
+  SYS_flashSaved();
+  SYS_checkStorage();
+}
+
+function MBR_render() {
+  MBR_load();
+  const search = (document.getElementById('mbr-search')?.value || '').trim().toLowerCase();
+  const typeFilter = document.getElementById('mbr-filter-type')?.value || '';
+  const staffFilter = document.getElementById('mbr-filter-staff')?.value || '';
+  const statusFilter = document.getElementById('mbr-filter-status')?.value || '';
+  const rrateFilter = document.getElementById('mbr-filter-rrate')?.value || '';
+  const purposeFilter = document.getElementById('mbr-filter-purpose')?.value || '';
+  const currentUser = document.getElementById('mbr-current-user')?.value || '';
+
+  // 매니저는 본인 담당 회원만 볼 수 있음
+  const isManager = currentUser === '장한빛' || currentUser === '정은진';
+
+  const filtered = MBR_members.filter(m => {
+    if (isManager && m.staff !== currentUser) return false;
+    const matchSearch = !search ||
+      (m.name||'').toLowerCase().includes(search) ||
+      (m.phone||'').includes(search) ||
+      (m.memo||'').toLowerCase().includes(search) ||
+      (m.email||'').toLowerCase().includes(search) ||
+      (m.region||'').toLowerCase().includes(search);
+    const matchType = !typeFilter || m.type === typeFilter;
+    const matchStaff = !staffFilter || m.staff === staffFilter;
+    const matchStatus = !statusFilter || m.status === statusFilter;
+    const matchRrate = !rrateFilter || m.responseRate === rrateFilter;
+    const matchPurpose = !purposeFilter || m.purpose === purposeFilter;
+    return matchSearch && matchType && matchStaff && matchStatus && matchRrate && matchPurpose;
+  });
+
+  // 통계
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const activeStatuses = ['상담중','조사중','입찰준비','입찰완료'];
+
+  document.getElementById('mbr-stat-total').textContent = MBR_members.length;
+
+  const myMembers = currentUser ? MBR_members.filter(m => m.staff === currentUser) : MBR_members;
+  document.getElementById('mbr-stat-mine').textContent = myMembers.length;
+  const mineLabel = document.getElementById('mbr-stat-mine-label');
+  if (mineLabel) mineLabel.textContent = currentUser ? `${currentUser} 회원` : '전체';
+
+  document.getElementById('mbr-stat-active').textContent = MBR_members.filter(m => activeStatuses.includes(m.status)).length;
+  document.getElementById('mbr-stat-won').textContent = MBR_members.filter(m => m.status === '낙찰').length;
+  document.getElementById('mbr-stat-new').textContent = MBR_members.filter(m => (m.joindate||'').startsWith(thisMonth)).length;
+
+  const badge = document.getElementById('mainBadge-member');
+  if (badge) badge.textContent = MBR_members.length || '—';
+
+  const tbody = document.getElementById('mbr-tbody');
+  if (!tbody) return;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="12" class="mbr-empty">등록된 회원이 없습니다.<br><span style="font-size:12px;color:#bbb;">「📥 노션 동기화」 또는 「+ 회원 추가」 버튼을 이용해주세요</span></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(m => {
+    const mid = m.id;
+    const rrHtml = m.responseRate
+      ? `<span class="mbr-rrate ${m.responseRate} mbr-editable" title="클릭해서 응답률 변경" onclick="MBR_popRrate(event,'${mid}')">${m.responseRate}</span>`
+      : `<span class="mbr-editable" style="color:#ccc;font-size:11px;" onclick="MBR_popRrate(event,'${mid}')">—</span>`;
+    const stHtml = `<span class="mbr-status ${m.status||'신규'} mbr-editable" title="클릭해서 진행상황 변경" onclick="MBR_popStatus(event,'${mid}')">${m.status||'신규'}</span>`;
+    const feeHtml = m.feeRate
+      ? `<span class="mbr-editable" style="font-size:11px;color:#555;" title="클릭해서 수수료 변경" onclick="MBR_popFee(event,'${mid}')">${m.feeRate}</span>`
+      : `<span class="mbr-editable" style="color:#ccc;font-size:11px;" onclick="MBR_popFee(event,'${mid}')">—</span>`;
+    const staffHtml = m.staff
+      ? `<span class="mbr-editable" style="font-size:11px;font-weight:700;color:var(--navy);" title="클릭해서 담당자 변경" onclick="MBR_popStaff(event,'${mid}')">${m.staff}</span>`
+      : `<span class="mbr-editable" style="color:#ccc;font-size:11px;" onclick="MBR_popStaff(event,'${mid}')">미배정</span>`;
+    const memoTip = m.memo ? ` title="${m.memo.replace(/"/g,'&quot;')}"` : '';
+    return `
+    <tr>
+      <td class="mbr-name-cell" onclick="MBR_openForm('${mid}')" title="클릭해서 전체 수정">
+        <strong class="mbr-name-txt" style="font-size:13px;">${m.name}</strong>
+        ${m.phone ? `<div style="font-size:10px;color:#888;margin-top:1px;">${m.phone}</div>` : ''}
+        ${m.memo ? `<div style="font-size:10px;color:#bbb;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;"${memoTip}>${m.memo}</div>` : ''}
+      </td>
+      <td>${rrHtml}</td>
+      <td>${staffHtml}</td>
+      <td style="font-size:11px;max-width:200px;line-height:1.4;">${m.region || '<span style="color:#ccc">—</span>'}</td>
+      <td style="font-size:11px;">${m.proptype || '<span style="color:#ccc">—</span>'}</td>
+      <td>
+        <span class="mbr-editable" style="font-size:12px;font-weight:700;" title="클릭해서 예산 수정" onclick="MBR_inlineBudget(event,'${mid}')">${m.budget || '<span style=\\"color:#ccc\\">—</span>'}</span>
+      </td>
+      <td>${m.purpose ? `<span class="mbr-purpose-tag mbr-editable" onclick="MBR_popPurpose(event,'${mid}')" title="클릭해서 목적 변경">${m.purpose}</span>` : `<span class="mbr-editable" style="color:#ccc;font-size:11px;" onclick="MBR_popPurpose(event,'${mid}')">—</span>`}</td>
+      <td>${m.housing ? `<span class="mbr-housing ${m.housing} mbr-editable" onclick="MBR_popHousing(event,'${mid}')" title="클릭해서 주택보유 변경">${m.housing}</span>` : `<span class="mbr-editable" style="color:#ccc;font-size:11px;" onclick="MBR_popHousing(event,'${mid}')">—</span>`}</td>
+      <td>${feeHtml}</td>
+      <td>${stHtml}</td>
+      <td style="white-space:nowrap;">
+        <button class="mbr-action-btn" onclick="MBR_openForm('${mid}')">전체수정</button>
+        <button class="mbr-del-btn" onclick="MBR_delete('${mid}')">삭제</button>
+      </td>
+    </tr>`; }).join('');
+}
+
+// ── 칩 헬퍼 ──
+
+// 단일선택 칩 (응답률·수수료·목적·주택·진행상황 등)
+function MBR_chipToggle(el, fieldId, val) {
+  const field = document.getElementById(fieldId);
+  if (!field) return;
+  const alreadyActive = el.classList.contains('active');
+  el.closest('.mbr-chips').querySelectorAll('.mbr-chip').forEach(c => c.classList.remove('active'));
+  if (alreadyActive) { field.value = ''; }
+  else { field.value = val; el.classList.add('active'); }
+}
+
+// 단순 값 세팅 (예산 빠른입력)
+function MBR_setVal(fieldId, val) {
+  const field = document.getElementById(fieldId);
+  if (field) field.value = val;
+}
+
+// 지역 다중선택 칩
+function MBR_regionChip(el) {
+  el.classList.toggle('active');
+  MBR_rebuildRegion();
+}
+
+// 지역 직접입력 변경
+function MBR_regionTextChange() {
+  MBR_rebuildRegion();
+}
+
+// 선택된 지역칩 + 직접입력을 합산해 hidden input 업데이트
+function MBR_rebuildRegion() {
+  const chips = document.querySelectorAll('.mbr-region-chips .mbr-chip.active');
+  const selected = Array.from(chips).map(c => c.getAttribute('data-region'));
+  const extra = (document.getElementById('mbr-region-text')?.value || '').trim();
+  const all = [...selected];
+  if (extra) all.push(extra);
+  const field = document.getElementById('mbr-region');
+  if (field) field.value = all.join(' / ');
+}
+
+// 저장된 지역 문자열로 칩 복원
+function MBR_syncRegionChips(regionStr) {
+  // 모든 지역칩 초기화
+  document.querySelectorAll('.mbr-region-chips .mbr-chip').forEach(c => c.classList.remove('active'));
+  document.getElementById('mbr-region-text') && (document.getElementById('mbr-region-text').value = '');
+  if (!regionStr) return;
+  const parts = regionStr.split(/\s*\/\s*/).map(s => s.trim()).filter(Boolean);
+  const chipRegions = new Set(
+    Array.from(document.querySelectorAll('.mbr-region-chips .mbr-chip')).map(c => c.getAttribute('data-region'))
+  );
+  const extras = [];
+  parts.forEach(p => {
+    const chip = document.querySelector(`.mbr-region-chips .mbr-chip[data-region="${p}"]`);
+    if (chip) chip.classList.add('active');
+    else if (!chipRegions.has(p)) extras.push(p);
+  });
+  if (extras.length && document.getElementById('mbr-region-text')) {
+    document.getElementById('mbr-region-text').value = extras.join(' / ');
+  }
+}
+
+// 단일선택 칩 동기화 (openForm 시 복원)
+function MBR_syncChips(fieldId, val) {
+  const chips = document.querySelectorAll(`.mbr-chips .mbr-chip[onclick*="${fieldId}"]`);
+  chips.forEach(chip => {
+    chip.classList.remove('active');
+    // onclick 마지막 인수와 val 비교: 'mbr-status','신규') → 마지막 '...' 추출
+    const m = chip.getAttribute('onclick').match(/,\s*'([^']+)'\s*\)\s*$/);
+    if (m && m[1] === val) chip.classList.add('active');
+  });
+}
+
+function MBR_toggleSmartPanel() {
+  document.getElementById('mbr-bulk-panel')?.classList.remove('open');
+  document.getElementById('mbr-smart-panel')?.classList.toggle('open');
+}
+
+function MBR_toggleBulkPanel() {
+  document.getElementById('mbr-smart-panel')?.classList.remove('open');
+  document.getElementById('mbr-bulk-panel')?.classList.toggle('open');
+}
+
+// 노션에서 가져온 30명 목록
+const MBR_NOTION_30 = [
+  '이재훈','송방은','한세온','안민석','임영경','정형학','김종명','최서연','심현보','윤형조',
+  '이은정','김문수','권순화','송지안','유희정','가영은','한승희','윤승아','이효선','박연우',
+  '박민정','김민혁','성은주','임서진','이다예','박경열','김보연','신성욱','권희영','최세화'
+];
+
+function MBR_loadNotion30() {
+  document.getElementById('mbr-bulk-text').value = MBR_NOTION_30.join('\n');
+}
+
+// 노션 전체 데이터 (2026-04-19 동기화)
+const MBR_NOTION_DATA = [
+  {name:'이재훈',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'',purpose:'투자',budget:'5억',timeline:'',status:'상담중',responseRate:'',feeRate:'',memo:'현금 5억 보유'},
+  {name:'송방은',phone:'010-3141-6806',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'경기 성남시',purpose:'',budget:'10억',timeline:'',status:'입찰준비',responseRate:'S',feeRate:'0.8%',memo:''},
+  {name:'한세온',phone:'',email:'',birthdate:'1989-05-20',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 강남구 / 서울 송파구 / 서울 용산구 / 서울 서초구',purpose:'투자',budget:'17억',timeline:'',status:'입찰준비',responseRate:'A',feeRate:'0.8%',memo:'재건축 아파트 위주 추천 / 공무원 DSR 주의 | 소득 8천만원, 개인대출 최대 5.3억'},
+  {name:'안민석',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 성동구 / 서울 용산구 / 서울 광진구 / 서울 송파구 / 서울 강남구',purpose:'실거주',budget:'5.5억',timeline:'',status:'상담중',responseRate:'B',feeRate:'1%',memo:'인도네시아 거주 / BC카드 근무 / 전세 후 실거주 목적'},
+  {name:'임영경',phone:'010-4927-9872',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'1주택',firsthome:'',proptype:'아파트',region:'서울 강남구 / 서울 서초구 / 서울 송파구 / 서울 용산구 / 경기 성남시',purpose:'투자',budget:'8억',timeline:'',status:'입찰준비',responseRate:'A',feeRate:'',memo:'1주택자(광교) - 현재 아파트 3년 후 매도 후 입주 또는 갭투, 역세권'},
+  {name:'김종명',phone:'010-7532-2753',email:'jinmangmang@naver.com',birthdate:'1986-01-29',address:'서울시 송파구 바람드리5길 9-4, 2층',staff:'손청락',type:'개인',source:'',housing:'무주택',firsthome:'',proptype:'아파트',region:'경기 성남시',purpose:'',budget:'6억',timeline:'',status:'종료',responseRate:'END',feeRate:'0.8%',memo:'어머니와 공동입찰 희망 | 희망지역: 서울, 성남'},
+  {name:'최서연',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'경기 안양시',purpose:'',budget:'',timeline:'',status:'입찰준비',responseRate:'A',feeRate:'1%',memo:''},
+  {name:'심현보',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 영등포구 / 서울 양천구 / 서울 강서구 / 서울 구로구',purpose:'투자',budget:'2.4억',timeline:'',status:'상담중',responseRate:'B',feeRate:'1%',memo:'투자물건 희망 / 현재 집 매도 상태로 당분간 경매 중지 요청 | 4/30 집 비워줘야 함'},
+  {name:'윤형조',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'1주택',firsthome:'',proptype:'아파트',region:'서울 강남구 / 서울 서초구 / 서울 송파구 / 서울 영등포구',purpose:'',budget:'33억',timeline:'',status:'상담중',responseRate:'',feeRate:'',memo:''},
+  {name:'이은정',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 / 경기',purpose:'투자',budget:'3.5억',timeline:'',status:'종료',responseRate:'END',feeRate:'0.8%',memo:'갭투자 가능하면서 투자가치 있는 물건 추천 | 부모님 집 거주(아시아선수촌)'},
+  {name:'김문수',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'경기 성남시 / 서울 성동구 / 서울 마포구',purpose:'',budget:'15억',timeline:'',status:'입찰준비',responseRate:'A',feeRate:'',memo:'분당 판교·이매역, 성동구 성수·옥수역, 마포구 공덕역, 송파구 30~40평'},
+  {name:'권순화',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울',purpose:'',budget:'4억',timeline:'',status:'상담중',responseRate:'B',feeRate:'1%',memo:'서울 재개발 물건'},
+  {name:'송지안',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'기타',region:'여수',purpose:'',budget:'15억',timeline:'',status:'입찰준비',responseRate:'A',feeRate:'1%',memo:'희망지역: 여수 | 시내 가까운 곳 / 서울 비규제지역 아파트도 추천'},
+  {name:'유희정',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트 / 기타',region:'서울 강남구 / 서울 서초구 / 서울 송파구',purpose:'투자',budget:'20억',timeline:'',status:'상담중',responseRate:'B',feeRate:'1%',memo:'실거주 및 투자'},
+  {name:'가영은',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'경기 안양시',purpose:'',budget:'',timeline:'',status:'낙찰',responseRate:'END',feeRate:'0.8%',memo:'덕원역이나 평촌(안양 동안구) 근처 희망 | 부모님 물건 입찰'},
+  {name:'윤승아',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'무주택',firsthome:'',proptype:'아파트 / 빌라',region:'서울 강남구 / 서울 서초구',purpose:'',budget:'15억',timeline:'',status:'상담중',responseRate:'B',feeRate:'1%',memo:'대지지분 높은 아파트 or 빌라 희망 | 싱가폴 영주권자, 대출 無, 단독명의'},
+  {name:'이효선',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'1주택',firsthome:'',proptype:'아파트',region:'경기 성남시',purpose:'투자',budget:'4억',timeline:'',status:'상담중',responseRate:'B',feeRate:'1%',memo:'투자물건 희망 / 23-57390 입찰희망 | 희망지역: 분당, 서울'},
+  {name:'박연우',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 강남구 / 서울 송파구',purpose:'실거주',budget:'8억',timeline:'',status:'입찰준비',responseRate:'A',feeRate:'0.8%',memo:'25평이상 학군 위주, 대단지 비선호 | 전세 6.5억 + 현금 1.5억'},
+  {name:'박민정',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 강남구',purpose:'',budget:'7억',timeline:'',status:'상담중',responseRate:'B',feeRate:'',memo:'30평대 재건축 or 일반 아파트'},
+  {name:'김민혁',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 강남구 / 서울 송파구 / 경기 성남시',purpose:'투자',budget:'8억',timeline:'',status:'입찰준비',responseRate:'A',feeRate:'1%',memo:'실거주 또는 전세주면서 투자 전망 좋은 아파트 추천희망'},
+  {name:'이다예',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'상가',region:'경기',purpose:'투자',budget:'1억',timeline:'',status:'입찰준비',responseRate:'A',feeRate:'1%',memo:'수익률 5~6%선 추천 희망 | 이후 주거물건도 희망(남양주, 광주, 안산, 구리 등)'},
+  {name:'김보연',phone:'',email:'pooh7812@naver.com',birthdate:'1978-11-22',address:'경기도 성남시 분당구 정자일로 230, 105-704',staff:'손청락',type:'개인',source:'',housing:'1주택',firsthome:'',proptype:'아파트',region:'서울 강남구',purpose:'투자',budget:'',timeline:'',status:'입찰준비',responseRate:'S',feeRate:'0.8%',memo:'재건축 물건 희망 / 압구정미성 의뢰 / 개포현대1차 포기 | 1주택(비규제지역)'},
+  {name:'신성욱',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'기타',region:'서울 강남구 / 서울 송파구 / 서울 서초구 / 서울 용산구',purpose:'투자',budget:'12억',timeline:'',status:'보류',responseRate:'END',feeRate:'0.8%',memo:'대치 전세집 매매 완료 / 수익형 부동산 추천'},
+  {name:'권희영',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'무주택',firsthome:'',proptype:'아파트',region:'서울 전체',purpose:'',budget:'7억',timeline:'',status:'상담중',responseRate:'B',feeRate:'0.8%',memo:''},
+  {name:'최세화',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울',purpose:'실거주',budget:'8억',timeline:'',status:'상담중',responseRate:'S',feeRate:'1%',memo:'희망지역: 서울(광역) | 15억 이하 투자 및 실거주'},
+  {name:'임서진',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 강남구 / 서울 서초구 / 서울 송파구',purpose:'',budget:'20억',timeline:'',status:'상담중',responseRate:'S',feeRate:'0.8%',memo:'봉은사 미켈란 주복 희망 / 청담린든그로브 입찰 | 테라스 선호 | 현재 하남 대형평형 거주'},
+  {name:'정형학',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'토지 / 기타',region:'경기 남양주시',purpose:'투자',budget:'5억',timeline:'',status:'상담중',responseRate:'B',feeRate:'',memo:''},
+  {name:'한승희',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 강남구',purpose:'',budget:'9억',timeline:'',status:'상담중',responseRate:'',feeRate:'',memo:''},
+  {name:'성은주',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 강남구 / 서울 송파구 / 서울 서초구 / 서울 용산구',purpose:'투자',budget:'15억',timeline:'',status:'상담중',responseRate:'B',feeRate:'1%',memo:''},
+  {name:'박경열',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 강남구 / 서울 서초구 / 서울 용산구',purpose:'실거주',budget:'',timeline:'',status:'상담중',responseRate:'B',feeRate:'',memo:''},
+  {name:'박성천',phone:'010-5254-0348',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 강남구 / 서울 서초구 / 서울 송파구',purpose:'',budget:'55억',timeline:'',status:'상담중',responseRate:'C',feeRate:'1%',memo:'700세대 이상 2회 유찰 물건'},
+  {name:'고영선',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 전체',purpose:'투자',budget:'15억',timeline:'',status:'낙찰',responseRate:'S',feeRate:'1%',memo:'희망지역: 서울(광역) | 투자가치 높은 물건'},
+  {name:'남영택',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 강남구',purpose:'',budget:'60억',timeline:'',status:'보류',responseRate:'S',feeRate:'1%',memo:'압구정 구현대 60~70억선 물건 추천 / 1층 비선호'},
+  {name:'차정연',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 서초구 / 서울 강남구',purpose:'',budget:'40억',timeline:'',status:'상담중',responseRate:'B',feeRate:'1%',memo:'30평이상/반래퍼 꾸준히 보는중 | 반포/압구정 희망, 반래퍼 45억'},
+  {name:'박성진',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 강남구 / 서울 용산구 / 서울 서초구 / 서울 송파구',purpose:'',budget:'20억',timeline:'',status:'상담중',responseRate:'C',feeRate:'0.7%',memo:'20억 전후 추천/와이프와 소통'},
+  {name:'김은영',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 전체',purpose:'투자',budget:'10억',timeline:'',status:'종료',responseRate:'END',feeRate:'',memo:'재건축 목적 목동3단지 입찰/매매완료'},
+  {name:'조현포',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'2주택이상',firsthome:'',proptype:'아파트',region:'서울 서초구 / 서울 송파구',purpose:'임대',budget:'10억',timeline:'',status:'상담중',responseRate:'B',feeRate:'1%',memo:'1순위 방배·잠원, 2순위 잠실'},
+  {name:'이지연',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'2주택이상',firsthome:'',proptype:'아파트',region:'서울 강남구 / 서울 서초구',purpose:'',budget:'30억',timeline:'',status:'상담중',responseRate:'S',feeRate:'0.8%',memo:'해외거주, 2주택자(25.12.01 처분예정)'},
+  {name:'강지애',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 강남구 / 서울 서초구 / 서울 송파구',purpose:'실거주',budget:'20억',timeline:'',status:'상담중',responseRate:'S',feeRate:'0.8%',memo:'실거주 및 전세 가능'},
+  {name:'김태헌',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'1주택',firsthome:'',proptype:'아파트',region:'서울 송파구',purpose:'실거주',budget:'10억',timeline:'',status:'낙찰',responseRate:'END',feeRate:'0.8%',memo:'실투자금7억+전세금 합쳐 10억 | 완료 고객'},
+  {name:'김태열',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 마포구 / 서울 동작구 / 경기 성남시',purpose:'실거주',budget:'9억',timeline:'',status:'상담중',responseRate:'C',feeRate:'',memo:'30~40평대 실거주 목적'},
+  {name:'이경미',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 전체',purpose:'투자',budget:'20억',timeline:'',status:'상담중',responseRate:'S',feeRate:'0.8%',memo:'20억 이하 투자물건/대출X'},
+  {name:'구영철',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'아파트',region:'서울 양천구',purpose:'',budget:'17억',timeline:'',status:'상담중',responseRate:'B',feeRate:'0.8%',memo:'추후 실거주 목적시 전세금 10억 추가 활용'},
+  {name:'정종우',phone:'010-7136-4706',email:'jongwoo3001@cityeyelab.com',birthdate:'1993-09-13',address:'',staff:'손청락',type:'개인',source:'',housing:'무주택',firsthome:'생애최초',proptype:'아파트',region:'경기 성남시 / 서울 서초구',purpose:'실거주',budget:'15억',timeline:'',status:'상담중',responseRate:'S',feeRate:'0.8%',memo:'신분당선라인, 내년 9월 결혼 | 분당 정자동 희망'},
+  {name:'장원산',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'1주택',firsthome:'',proptype:'아파트',region:'서울 전체',purpose:'실거주',budget:'30억',timeline:'',status:'상담중',responseRate:'S',feeRate:'1%',memo:'강남 둨끨한 한채로 갈아타기 희망 | 현재 고덕그라시움 1주택자'},
+  {name:'김종걸',phone:'',email:'',birthdate:'',address:'',staff:'손청락',type:'개인',source:'',housing:'',firsthome:'',proptype:'기타',region:'서울 전체',purpose:'투자',budget:'40억',timeline:'',status:'상담중',responseRate:'S',feeRate:'0.8%',memo:'시세차익 볼 수 있는 모든 부동산 추천 | 법인/개인 모두 응찰 가능'},
+  {name:'홍율경',phone:'010-2700-9148',email:'yulkyunghong@gmail.com',birthdate:'1983-09-17',address:'서울 영등포구 영중로145 102동 603호',staff:'손청락',type:'개인',source:'',housing:'1주택',firsthome:'',proptype:'아파트',region:'서울 강남구 / 서울 서초구 / 서울 송파구',purpose:'',budget:'18억',timeline:'',status:'상담중',responseRate:'B',feeRate:'1%',memo:'싱가폴거주, 강남3구 및 서울 중심지 아파트 매입희망'},
+];
+
+function MBR_importFromNotion() {
+  MBR_load();
+  const existing = new Set(MBR_members.map(m => m.name));
+  let added = 0, updated = 0;
+  const today = new Date().toISOString().slice(0,10);
+
+  MBR_NOTION_DATA.forEach(d => {
+    if (existing.has(d.name)) {
+      // 기존 레코드 업데이트 (응답률·수수료·메모 등)
+      const idx = MBR_members.findIndex(m => m.name === d.name);
+      if (idx !== -1) {
+        const m = MBR_members[idx];
+        if (!m.responseRate && d.responseRate) { m.responseRate = d.responseRate; }
+        if (!m.feeRate && d.feeRate) { m.feeRate = d.feeRate; }
+        if (!m.budget && d.budget) { m.budget = d.budget; }
+        if (!m.region && d.region) { m.region = d.region; }
+        if (!m.proptype && d.proptype) { m.proptype = d.proptype; }
+        if (!m.purpose && d.purpose) { m.purpose = d.purpose; }
+        if (!m.housing && d.housing) { m.housing = d.housing; }
+        if (!m.phone && d.phone) { m.phone = d.phone; }
+        if (!m.email && d.email) { m.email = d.email; }
+        if (!m.birthdate && d.birthdate) { m.birthdate = d.birthdate; }
+        if (!m.address && d.address) { m.address = d.address; }
+        if (!m.memo && d.memo) { m.memo = d.memo; }
+        if (d.status && m.status === '신규') { m.status = d.status; }
+        updated++;
+      }
+    } else {
+      MBR_members.push({
+        id: 'notion_' + d.name + '_' + Date.now(),
+        ...d,
+        joindate: today,
+      });
+      existing.add(d.name);
+      added++;
+    }
+  });
+
+  MBR_save_store();
+  MBR_render();
+  CTR_syncMemberDropdown();
+  alert(`노션 동기화 완료!\n신규 추가: ${added}명\n정보 업데이트: ${updated}명`);
+}
+
+function MBR_bulkImport() {
+  const raw = (document.getElementById('mbr-bulk-text')?.value || '').trim();
+  if (!raw) { alert('이름을 입력해주세요.'); return; }
+
+  const staffVal = document.getElementById('mbr-bulk-staff')?.value || '';
+  const names = raw.split(/[\n,]/).map(s => s.trim()).filter(s => /[가-힣]{2,5}/.test(s));
+
+  if (names.length === 0) { alert('한글 이름을 인식하지 못했습니다.'); return; }
+
+  MBR_load();
+  const existing = new Set(MBR_members.map(m => m.name));
+  let added = 0;
+
+  names.forEach(name => {
+    const clean = name.match(/[가-힣]{2,5}/)?.[0];
+    if (!clean || existing.has(clean)) return;
+    MBR_members.push({
+      id: 'mbr_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      name: clean,
+      phone: '', email: '', birthdate: '', address: '',
+      staff: staffVal, type: '개인', source: '',
+      housing: '', firsthome: '', proptype: '', region: '',
+      purpose: '', budget: '', timeline: '',
+      status: '신규',
+      joindate: new Date().toISOString().slice(0,10),
+      memo: '',
+    });
+    existing.add(clean);
+    added++;
+  });
+
+  MBR_save_store();
+  document.getElementById('mbr-bulk-panel')?.classList.remove('open');
+  document.getElementById('mbr-bulk-text').value = '';
+  MBR_render();
+  CTR_syncMemberDropdown();
+  alert(`${added}명 등록 완료! (중복 ${names.length - added}명 제외)\n각 회원을 클릭해서 상세 정보를 추가해주세요.`);
+}
+
+function MBR_parseAndOpen() {
+  const raw = (document.getElementById('mbr-smart-text')?.value || '').trim();
+  if (!raw) { alert('텍스트를 먼저 입력해주세요.'); return; }
+
+  const parsed = {};
+
+  // ── 번호형 질문지 파싱 (1. 성함 : 홍길동 형식) ──
+  const getQ = (n, text) => {
+    const r = new RegExp(n + '\\.\\s*[^:：]+[:：]\\s*(.+)', 'i');
+    const m = text.match(r);
+    return m ? m[1].trim() : null;
+  };
+
+  const q1 = getQ(1, raw);  if (q1 && /[가-힣]{2,5}/.test(q1)) parsed.name = q1.match(/[가-힣]{2,5}/)[0];
+  const q2 = getQ(2, raw);  if (q2) parsed.birthdate = MBR_normDate(q2);
+  const q3 = getQ(3, raw);  if (q3) parsed.address = q3;
+  const q4 = getQ(4, raw);  if (q4 && q4.includes('@')) parsed.email = q4;
+  const q5 = getQ(5, raw);  if (q5) { parsed.phone = q5.replace(/\s/g,''); if (!parsed.phone.includes('-')) parsed.phone = parsed.phone.replace(/^(01[0-9])(\d{3,4})(\d{4})$/, '$1-$2-$3'); }
+  const q6 = getQ(6, raw);  if (q6) { if (/무주택/.test(q6)) parsed.housing='무주택'; else if (/2주택/.test(q6)) parsed.housing='2주택 이상'; else if (/1주택/.test(q6)) parsed.housing='1주택'; }
+  const q7 = getQ(7, raw);  if (q7) parsed.firsthome = /미해당/.test(q7) ? '미해당' : '해당';
+  const q8 = getQ(8, raw);  if (q8) { const pt = ['아파트','빌라','상가','토지','오피스텔','다가구','빌딩','공장','특수물건','기타'].find(v=>q8.includes(v)); if (pt) parsed.proptype = pt; }
+  const q9 = getQ(9, raw);  if (q9) parsed.region = q9;
+  const q10 = getQ(10, raw); if (q10) { if (/투자/.test(q10)) parsed.purpose='투자'; else if (/임대/.test(q10)) parsed.purpose='임대'; else if (/실거주/.test(q10)) parsed.purpose='실거주'; }
+  const q11 = getQ(11, raw); if (q11) parsed.budget = q11;
+  const q12 = getQ(12, raw); if (q12) { if (/1개월/.test(q12)) parsed.timeline='1개월 내'; else if (/3개월/.test(q12)) parsed.timeline='3개월 내'; else if (/6개월/.test(q12)) parsed.timeline='6개월 내'; else parsed.timeline='미정'; }
+
+  // ── 자유 텍스트 fallback ──
+  if (!parsed.phone) {
+    const m = raw.match(/01[0-9][-\s]?\d{3,4}[-\s]?\d{4}/);
+    if (m) { parsed.phone = m[0].replace(/\s/g,''); if (!parsed.phone.includes('-')) parsed.phone = parsed.phone.replace(/^(01[0-9])(\d{3,4})(\d{4})$/, '$1-$2-$3'); }
+  }
+  if (!parsed.email) { const m = raw.match(/[\w.+-]+@[\w.-]+\.\w+/); if (m) parsed.email = m[0]; }
+  if (!parsed.budget) { const m = raw.match(/\d+(?:[~\-]\d+)?억(?:\s*\d+천만)?|\d+천만원?/); if (m) parsed.budget = m[0]; }
+  if (!parsed.name) { const m = raw.match(/^([가-힣]{2,5})/) || raw.match(/(?<![가-힣])([가-힣]{2,5})(?=\s|$)/m); if (m) parsed.name = m[1]; }
+  if (!parsed.proptype) {
+    if (/아파트/.test(raw)) parsed.proptype='아파트';
+    else if (/빌라/.test(raw)) parsed.proptype='빌라';
+    else if (/오피스텔/.test(raw)) parsed.proptype='오피스텔';
+    else if (/상가/.test(raw)) parsed.proptype='상가';
+    else if (/토지/.test(raw)) parsed.proptype='토지';
+  }
+  if (!parsed.source) {
+    if (/블로그/.test(raw)) parsed.source='블로그';
+    else if (/지인|소개/.test(raw)) parsed.source='지인소개';
+    else if (/SNS|인스타/.test(raw)) parsed.source='SNS';
+    else if (/재상담|재방문/.test(raw)) parsed.source='재상담';
+  }
+  const staffM = raw.match(/담당\s*[:\s]\s*(손청락|청락|이이훈|장한빛|정은진)/);
+  if (staffM) parsed.staff = staffM[1] === '청락' ? '손청락' : staffM[1];
+
+  MBR_openForm(null, parsed);
+  document.getElementById('mbr-smart-panel')?.classList.remove('open');
+  document.getElementById('mbr-smart-text').value = '';
+}
+
+function MBR_normDate(s) {
+  // 생년월일 정규화: 1990.03.15 → 1990-03-15 / 900315 → 1990-03-15
+  if (!s) return '';
+  const d = s.trim().replace(/[./]/g,'-');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+  if (/^\d{6}$/.test(d)) {
+    const y = parseInt(d.slice(0,2)); return `${y>=0&&y<=24?'20':'19'}${d.slice(0,2)}-${d.slice(2,4)}-${d.slice(4,6)}`;
+  }
+  return s;
+}
+
+// ── 인라인 팝오버 엔진 ──────────────────────────────────────────
+function MBR_closePop() {
+  const el = document.getElementById('mbr-pop-el');
+  if (el) el.remove();
+  document.removeEventListener('mousedown', MBR_popOutside);
+}
+function MBR_popOutside(e) {
+  const el = document.getElementById('mbr-pop-el');
+  if (el && !el.contains(e.target)) MBR_closePop();
+}
+function MBR_showPop(event, items, onSelect, curVal) {
+  MBR_closePop();
+  const pop = document.createElement('div');
+  pop.id = 'mbr-pop-el';
+  pop.className = 'mbr-pop';
+  items.forEach(item => {
+    const btn = document.createElement('span');
+    btn.className = 'mbr-pop-item' + (item === curVal ? ' cur' : '');
+    btn.textContent = item;
+    btn.onclick = (e) => { e.stopPropagation(); onSelect(item); MBR_closePop(); };
+    pop.appendChild(btn);
+  });
+  document.body.appendChild(pop);
+  const rect = event.target.getBoundingClientRect();
+  let top = rect.bottom + 6;
+  let left = rect.left;
+  if (left + 280 > window.innerWidth) left = window.innerWidth - 290;
+  if (top + 200 > window.innerHeight) top = rect.top - pop.offsetHeight - 6;
+  pop.style.top = top + 'px';
+  pop.style.left = left + 'px';
+  setTimeout(() => document.addEventListener('mousedown', MBR_popOutside), 10);
+}
+function MBR_inlineSave(id, field, val) {
+  MBR_load();
+  const m = MBR_members.find(x => x.id === id);
+  if (m) { m[field] = val; MBR_save_store(); MBR_render(); }
+}
+function MBR_popRrate(event, id) {
+  MBR_load();
+  const m = MBR_members.find(x => x.id === id);
+  MBR_showPop(event, ['S 최우선','A 적극적','B 보통','C 소극적','END 종결','—'], val => {
+    const v = val === '—' ? '' : val.split(' ')[0];
+    MBR_inlineSave(id, 'responseRate', v);
+  }, m ? m.responseRate : '');
+  event.stopPropagation();
+}
+function MBR_popStatus(event, id) {
+  MBR_load();
+  const m = MBR_members.find(x => x.id === id);
+  MBR_showPop(event, ['신규','상담중','조사중','입찰준비','입찰완료','낙찰','종료','보류'], val => {
+    MBR_inlineSave(id, 'status', val);
+  }, m ? m.status : '');
+  event.stopPropagation();
+}
+function MBR_popFee(event, id) {
+  MBR_load();
+  const m = MBR_members.find(x => x.id === id);
+  MBR_showPop(event, ['0.8%','1%','2%','3%','—'], val => {
+    MBR_inlineSave(id, 'feeRate', val === '—' ? '' : val);
+  }, m ? m.feeRate : '');
+  event.stopPropagation();
+}
+function MBR_popStaff(event, id) {
+  MBR_load();
+  const m = MBR_members.find(x => x.id === id);
+  MBR_showPop(event, ['손청락','이이훈','장한빛','정은진','미배정'], val => {
+    MBR_inlineSave(id, 'staff', val === '미배정' ? '' : val);
+  }, m ? m.staff : '');
+  event.stopPropagation();
+}
+function MBR_popPurpose(event, id) {
+  MBR_load();
+  const m = MBR_members.find(x => x.id === id);
+  MBR_showPop(event, ['실거주','투자','임대','—'], val => {
+    MBR_inlineSave(id, 'purpose', val === '—' ? '' : val);
+  }, m ? m.purpose : '');
+  event.stopPropagation();
+}
+function MBR_popHousing(event, id) {
+  MBR_load();
+  const m = MBR_members.find(x => x.id === id);
+  MBR_showPop(event, ['무주택','1주택','2주택 이상','—'], val => {
+    MBR_inlineSave(id, 'housing', val === '—' ? '' : val);
+  }, m ? m.housing : '');
+  event.stopPropagation();
+}
+function MBR_inlineBudget(event, id) {
+  event.stopPropagation();
+  const span = event.target;
+  const cur = span.textContent === '—' ? '' : span.textContent;
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = cur;
+  inp.style.cssText = 'width:80px;font-size:12px;border:1px solid var(--gold);border-radius:4px;padding:2px 6px;outline:none;';
+  span.replaceWith(inp);
+  inp.focus();
+  const save = () => {
+    MBR_inlineSave(id, 'budget', inp.value.trim());
+  };
+  inp.onblur = save;
+  inp.onkeydown = (e) => { if (e.key === 'Enter') { inp.blur(); } if (e.key === 'Escape') { MBR_render(); } };
+}
+// ── 인라인 팝오버 엔진 끝 ──────────────────────────────────────
+
+// ── 시스템 유틸 (저장 표시 / 용량 경고) ─────────────────────────
+let _saveTimer = null;
+function SYS_flashSaved() {
+  const el = document.getElementById('save-indicator');
+  if (!el) return;
+  const now = new Date();
+  el.textContent = `✓ 저장됨 ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  el.style.display = 'block';
+  el.style.opacity = '1';
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => { el.style.opacity = '0'; setTimeout(() => { el.style.display = 'none'; }, 600); }, 3000);
+}
+function SYS_checkStorage() {
+  try {
+    let total = 0;
+    for (const k in localStorage) {
+      if (Object.prototype.hasOwnProperty.call(localStorage, k)) {
+        total += (localStorage[k].length + k.length) * 2;
+      }
+    }
+    const mb = (total / 1024 / 1024).toFixed(1);
+    const warn = document.getElementById('storage-warn');
+    if (!warn) return;
+    if (total > 4 * 1024 * 1024) {
+      warn.style.display = 'block';
+      warn.textContent = `⚠ ${mb}MB/5MB`;
+    } else {
+      warn.style.display = 'none';
+    }
+  } catch(e) {}
+}
+function SYS_showStorageDetail() {
+  try {
+    let total = 0;
+    const lines = [];
+    for (const k in localStorage) {
+      if (Object.prototype.hasOwnProperty.call(localStorage, k)) {
+        const sz = (localStorage[k].length + k.length) * 2;
+        total += sz;
+        lines.push(`${k}: ${(sz/1024).toFixed(1)}KB`);
+      }
+    }
+    const msg = `총 사용량: ${(total/1024/1024).toFixed(2)}MB / 5MB\n\n${lines.join('\n')}\n\n──────────────────────\n지금 바로 정리하려면 확인을 누르세요.\n(BULK 캐시만 삭제 — 회원·사건 데이터는 보존됨)`;
+    if (confirm(msg)) {
+      localStorage.removeItem('thefin_bulk_v2');
+      localStorage.removeItem('thefin_bulk_age');
+      SYS_checkStorage();
+      alert('정리 완료! BULK 캐시를 삭제했습니다.\n다음 새로고침 시 자동으로 재다운로드됩니다.');
+    }
+  } catch(e) {}
+}
+// ── 시스템 유틸 끝 ──────────────────────────────────────────────
+
+// ── 연관 사건 (회원 ↔ 사건/경매 연동) ───────────────────────────
+function MBR_loadLinkedCases(memberName) {
+  const section = document.getElementById('mbr-linked-cases');
+  const body = document.getElementById('mbr-linked-cases-body');
+  if (!section || !body) return;
+
+  const rows = [];
+
+  // 더핀 일정표(A_items)에서 고객명 매칭
+  if (typeof A_items !== 'undefined') {
+    A_items.filter(i => (i.clientName||'').includes(memberName)).forEach(i => {
+      rows.push(`<div style="padding:4px 0;border-bottom:1px solid #eee;">
+        <span style="background:#eff6ff;color:#1d4ed8;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-right:6px;">경매</span>
+        <strong style="font-size:12px;">${i.caseNo||'—'}</strong>
+        <span style="color:#888;margin-left:8px;font-size:11px;">${i.propertyName||i.court||''}</span>
+        <span style="color:#c8a44a;margin-left:8px;font-size:11px;">${i.auctionDate||''}</span>
+      </div>`);
+    });
+  }
+
+  // 명도(M_items)에서 고객명 매칭
+  if (typeof M_items !== 'undefined') {
+    M_items.filter(i => (i.clientName||'').includes(memberName)).forEach(i => {
+      rows.push(`<div style="padding:4px 0;border-bottom:1px solid #eee;">
+        <span style="background:#f0fdf4;color:#15803d;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-right:6px;">명도</span>
+        <strong style="font-size:12px;">${i.caseNo||'—'}</strong>
+        <span style="color:#888;margin-left:8px;font-size:11px;">${i.propertyName||''}</span>
+        <span style="color:#c8a44a;margin-left:8px;font-size:11px;">${i.auctionDate||''}</span>
+      </div>`);
+    });
+  }
+
+  if (rows.length > 0) {
+    body.innerHTML = rows.join('');
+    section.style.display = 'block';
+  } else {
+    section.style.display = 'none';
+  }
+}
+// ── 연관 사건 끝 ────────────────────────────────────────────────
+
+// ── 노션 내보내기 ───────────────────────────────────────────────
+function MBR_exportOne() {
+  const name = document.getElementById('mbr-name')?.value.trim();
+  if (!name) { alert('먼저 회원 정보를 입력해주세요.'); return; }
+  MBR_load();
+  const m = MBR_members.find(x => x.name === name) || {
+    name,
+    phone: document.getElementById('mbr-phone')?.value,
+    region: document.getElementById('mbr-region')?.value,
+    proptype: document.getElementById('mbr-proptype')?.value,
+    budget: document.getElementById('mbr-budget')?.value,
+    purpose: document.getElementById('mbr-purpose')?.value,
+    housing: document.getElementById('mbr-housing')?.value,
+    status: document.getElementById('mbr-status')?.value,
+    responseRate: document.getElementById('mbr-responserate')?.value,
+    feeRate: document.getElementById('mbr-feerate')?.value,
+    memo: document.getElementById('mbr-memo')?.value,
+  };
+  const text = _MBR_formatForNotion([m]);
+  navigator.clipboard.writeText(text).then(() => alert(`${name} 회원 정보를 클립보드에 복사했습니다!\n노션에 붙여넣으세요.`)).catch(() => { prompt('아래 내용을 복사하세요:', text); });
+}
+function MBR_exportAll() {
+  MBR_load();
+  if (MBR_members.length === 0) { alert('회원 데이터가 없습니다.'); return; }
+  const text = _MBR_formatForNotion(MBR_members);
+  navigator.clipboard.writeText(text).then(() => alert(`전체 ${MBR_members.length}명 데이터를 클립보드에 복사했습니다!\n노션 테이블에 붙여넣으세요.`)).catch(() => { prompt('아래 내용을 복사하세요 (Ctrl+A → Ctrl+C):', text); });
+}
+function _MBR_formatForNotion(members) {
+  const header = '이름\t연락처\t담당자\t진행상황\t응답률\t수수료\t희망지역\t관심물건\t예산\t투자목적\t주택보유\t메모\t등록일';
+  const rows = members.map(m => [
+    m.name||'', m.phone||'', m.staff||'', m.status||'', m.responseRate||'',
+    m.feeRate||'', m.region||'', m.proptype||'', m.budget||'',
+    m.purpose||'', m.housing||'', (m.memo||'').replace(/\n/g,' '), m.joindate||''
+  ].join('\t'));
+  return [header, ...rows].join('\n');
+}
+// ── 구글시트 동기화 ──────────────────────────────────────────────
+async function MBR_syncToSheets() {
+  MBR_load();
+  if (MBR_members.length === 0) { alert('회원 데이터가 없습니다.'); return; }
+  const btn = event && event.target;
+  if (btn) { btn.disabled = true; btn.textContent = '저장 중...'; }
+  try {
+    const payload = {
+      action: 'saveMembers',
+      data: MBR_members.map(m => ({
+        name: m.name||'', phone: m.phone||'', email: m.email||'',
+        birthdate: m.birthdate||'', address: m.address||'',
+        staff: m.staff||'', housing: m.housing||'', firsthome: m.firsthome||'',
+        proptype: m.proptype||'', region: m.region||'', purpose: m.purpose||'',
+        budget: m.budget||'', timeline: m.timeline||'', status: m.status||'',
+        responseRate: m.responseRate||'', feeRate: m.feeRate||'',
+        memo: m.memo||'', joindate: m.joindate||'', type: m.type||''
+      }))
+    };
+    const r = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify(payload)
+    });
+    const res = await r.json();
+    if (res && res.result === 'ok') {
+      alert(`구글시트 저장 완료! ${MBR_members.length}명`);
+    } else {
+      alert('저장 완료 (GAS 응답: ' + JSON.stringify(res) + ')');
+    }
+  } catch(e) {
+    alert('구글시트 연결 실패: ' + e.message + '\n\nGAS에 saveMembers 액션을 추가해야 합니다.\nhandoff.md 참고');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📊 구글시트 저장'; }
+  }
+}
+// ── 구글시트 동기화 끝 ───────────────────────────────────────────
+
+function MBR_openForm(id, prefill) {
+  MBR_load();
+  const modal = document.getElementById('mbr-modal');
+  const titleEl = document.getElementById('mbr-modal-title');
+  document.getElementById('mbr-edit-id').value = id || '';
+  // 이미지 초기화
+  document.getElementById('mbr-img-preview').innerHTML =
+    '<span class="mbr-img-hint">📷 고객 질문지 사진 드래그 또는 클릭 (참고용 — 사진 보면서 아래 폼 입력)</span>';
+
+  if (id) {
+    const m = MBR_members.find(x => x.id === id);
+    if (!m) return;
+    titleEl.textContent = '회원 수정';
+    document.getElementById('mbr-name').value = m.name || '';
+    document.getElementById('mbr-phone').value = m.phone || '';
+    document.getElementById('mbr-email').value = m.email || '';
+    document.getElementById('mbr-birthdate').value = m.birthdate || '';
+    document.getElementById('mbr-address').value = m.address || '';
+    document.getElementById('mbr-staff').value = m.staff || '';
+    document.getElementById('mbr-type').value = m.type || '개인';
+    document.getElementById('mbr-source').value = m.source || '';
+    document.getElementById('mbr-housing').value = m.housing || '';
+    document.getElementById('mbr-firsthome').value = m.firsthome || '';
+    document.getElementById('mbr-proptype').value = m.proptype || '';
+    document.getElementById('mbr-region').value = m.region || '';
+    document.getElementById('mbr-purpose').value = m.purpose || '';
+    document.getElementById('mbr-budget').value = m.budget || '';
+    document.getElementById('mbr-timeline').value = m.timeline || '';
+    document.getElementById('mbr-status').value = m.status || '신규';
+    document.getElementById('mbr-joindate').value = m.joindate || '';
+    document.getElementById('mbr-responserate').value = m.responseRate || '';
+    document.getElementById('mbr-feerate').value = m.feeRate || '';
+    document.getElementById('mbr-memo').value = m.memo || '';
+    ['mbr-housing','mbr-firsthome','mbr-proptype','mbr-purpose','mbr-timeline','mbr-status','mbr-responserate','mbr-feerate'].forEach(id => {
+      MBR_syncChips(id, document.getElementById(id).value);
+    });
+    MBR_syncRegionChips(m.region || '');
+    MBR_loadLinkedCases(m.name);
+  } else {
+    document.getElementById('mbr-linked-cases').style.display = 'none';
+    titleEl.textContent = '회원 추가';
+    const pf = prefill || {};
+    document.getElementById('mbr-name').value = pf.name || '';
+    document.getElementById('mbr-phone').value = pf.phone || '';
+    document.getElementById('mbr-email').value = pf.email || '';
+    document.getElementById('mbr-birthdate').value = pf.birthdate || '';
+    document.getElementById('mbr-address').value = pf.address || '';
+    document.getElementById('mbr-staff').value = pf.staff || (document.getElementById('mbr-current-user')?.value || '');
+    document.getElementById('mbr-type').value = pf.type || '개인';
+    document.getElementById('mbr-source').value = pf.source || '';
+    document.getElementById('mbr-housing').value = pf.housing || '';
+    document.getElementById('mbr-firsthome').value = pf.firsthome || '';
+    document.getElementById('mbr-proptype').value = pf.proptype || '';
+    document.getElementById('mbr-region').value = pf.region || '';
+    document.getElementById('mbr-purpose').value = pf.purpose || '';
+    document.getElementById('mbr-budget').value = pf.budget || '';
+    document.getElementById('mbr-timeline').value = pf.timeline || '';
+    document.getElementById('mbr-status').value = pf.status || '신규';
+    document.getElementById('mbr-joindate').value = new Date().toISOString().slice(0,10);
+    document.getElementById('mbr-responserate').value = pf.responseRate || '';
+    document.getElementById('mbr-feerate').value = pf.feeRate || '';
+    document.getElementById('mbr-memo').value = pf.memo || '';
+    ['mbr-housing','mbr-firsthome','mbr-proptype','mbr-purpose','mbr-timeline','mbr-status','mbr-responserate','mbr-feerate'].forEach(id => {
+      MBR_syncChips(id, document.getElementById(id).value);
+    });
+    MBR_syncRegionChips(pf.region || '');
+  }
+  modal.classList.add('open');
+  setTimeout(() => document.getElementById('mbr-name').focus(), 50);
+}
+
+function MBR_closeForm(e) {
+  if (e && e.target !== document.getElementById('mbr-modal')) return;
+  document.getElementById('mbr-modal').classList.remove('open');
+  document.querySelectorAll('.mbr-region-chips .mbr-chip').forEach(c => c.classList.remove('active'));
+  const rtext = document.getElementById('mbr-region-text'); if (rtext) rtext.value = '';
+}
+
+function MBR_save() {
+  const name = document.getElementById('mbr-name').value.trim();
+  const phone = document.getElementById('mbr-phone').value.trim();
+  if (!name) { alert('이름을 입력해주세요.'); return; }
+
+  MBR_load();
+  const editId = document.getElementById('mbr-edit-id').value;
+  const record = {
+    id: editId || ('mbr_' + Date.now()),
+    name,
+    phone,
+    email: document.getElementById('mbr-email').value.trim(),
+    birthdate: document.getElementById('mbr-birthdate').value,
+    address: document.getElementById('mbr-address').value.trim(),
+    staff: document.getElementById('mbr-staff').value,
+    type: document.getElementById('mbr-type').value,
+    source: document.getElementById('mbr-source').value,
+    housing: document.getElementById('mbr-housing').value,
+    firsthome: document.getElementById('mbr-firsthome').value,
+    proptype: document.getElementById('mbr-proptype').value,
+    region: document.getElementById('mbr-region').value.trim(),
+    purpose: document.getElementById('mbr-purpose').value,
+    budget: document.getElementById('mbr-budget').value.trim(),
+    timeline: document.getElementById('mbr-timeline').value,
+    status: document.getElementById('mbr-status').value,
+    joindate: document.getElementById('mbr-joindate').value,
+    responseRate: document.getElementById('mbr-responserate').value,
+    feeRate: document.getElementById('mbr-feerate').value,
+    memo: document.getElementById('mbr-memo').value.trim(),
+  };
+
+  if (editId) {
+    const idx = MBR_members.findIndex(m => m.id === editId);
+    if (idx !== -1) MBR_members[idx] = record;
+  } else {
+    MBR_members.unshift(record);
+  }
+
+  MBR_save_store();
+  document.getElementById('mbr-modal').classList.remove('open');
+  // 지역칩 초기화
+  document.querySelectorAll('.mbr-region-chips .mbr-chip').forEach(c => c.classList.remove('active'));
+  const rtext = document.getElementById('mbr-region-text'); if (rtext) rtext.value = '';
+  MBR_render();
+  CTR_syncMemberDropdown();
+}
+
+function MBR_delete(id) {
+  if (!confirm('이 회원을 삭제하시겠습니까?')) return;
+  MBR_load();
+  MBR_members = MBR_members.filter(m => m.id !== id);
+  MBR_save_store();
+  MBR_render();
+  CTR_syncMemberDropdown();
+}
+
+// 이미지 드래그앤드롭 / 파일 선택
+function MBR_dropImg(e) {
+  e.preventDefault();
+  document.getElementById('mbr-img-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) MBR_showImg(file);
+}
+function MBR_dragOver(e) { e.preventDefault(); document.getElementById('mbr-img-zone').classList.add('dragover'); }
+function MBR_dragLeave() { document.getElementById('mbr-img-zone').classList.remove('dragover'); }
+function MBR_loadImgFile(e) { const f = e.target.files[0]; if (f) MBR_showImg(f); }
+function MBR_showImg(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('mbr-img-preview').innerHTML =
+      `<img src="${ev.target.result}" alt="참고 사진"><br><span style="font-size:11px;color:#aaa">사진을 참고하여 아래 정보를 입력해주세요</span>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  탭 9: 약정서 (CTR_ 네임스페이스)
+// ══════════════════════════════════════════════════════════════════
+function CTR_init() {
+  CTR_syncMemberDropdown();
+  // 오늘 날짜 기본 세팅
+  const dateEl = document.getElementById('ctr-date');
+  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+}
+
+function CTR_syncMemberDropdown() {
+  MBR_load();
+  const sel = document.getElementById('ctr-member');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">회원 선택...</option>' +
+    MBR_members.map(m => `<option value="${m.id}">${m.name} (${m.phone || '—'})</option>`).join('');
+  sel.value = cur;
+}
+
+function CTR_fillMember() {
+  MBR_load();
+  const id = document.getElementById('ctr-member').value;
+  // 회원 데이터는 약정서 내 참조용으로만 사용 (별도 필드 없음)
+}
+
+function CTR_autoRate() {
+  const propType = document.getElementById('ctr-prop-type').value;
+  const rateMap = { '아파트':1, '다가구':2, '빌딩':2, '공장':2, '토지':2, '특수물건':3 };
+  const rateEl = document.getElementById('ctr-fee-rate');
+  if (rateEl) rateEl.value = rateMap[propType] || 1;
+  CTR_calcFee();
+}
+
+function CTR_calcFee() {
+  const raw = (document.getElementById('ctr-amount').value || '').replace(/,/g,'').replace(/[^0-9]/g,'');
+  const rate = parseFloat(document.getElementById('ctr-fee-rate').value || 1);
+  if (!raw) { document.getElementById('ctr-fee-amount').value = ''; return; }
+  const amt = parseInt(raw, 10);
+  document.getElementById('ctr-amount').value = amt.toLocaleString('ko-KR');
+  const fee = Math.round(amt * rate / 100);
+  document.getElementById('ctr-fee-amount').value = fee.toLocaleString('ko-KR') + '원';
+}
+
+function CTR_fmt(dateStr) {
+  if (!dateStr) return '____년 __월 __일';
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
+}
+
+function CTR_preview() {
+  MBR_load();
+  const memberId = document.getElementById('ctr-member').value;
+  const member = MBR_members.find(m => m.id === memberId);
+  const memberName = member ? member.name : '_______________';
+  const memberPhone = member ? (member.phone || '—') : '—';
+  const memberType = member ? member.type : '개인';
+
+  const date = document.getElementById('ctr-date').value;
+  const addr = document.getElementById('ctr-addr').value.trim() || '_______________________________________________';
+  const propType = document.getElementById('ctr-prop-type').value;
+  const amount = document.getElementById('ctr-amount').value.trim() || '—';
+  const feeRate = document.getElementById('ctr-fee-rate').value;
+  const feeAmount = document.getElementById('ctr-fee-amount').value.trim() || '—';
+  const special = document.getElementById('ctr-special').value.trim() || '없음';
+
+  document.getElementById('ctr-doc').innerHTML = `
+    <div class="ctr-doc-header">
+      <div class="ctr-doc-logo">THE FIN</div>
+      <div class="ctr-doc-logo-sub">더핀중개법인 · 경매·공매 전문</div>
+      <div class="ctr-doc-title">중 개 약 정 서</div>
+      <div class="ctr-doc-title-bar"></div>
+    </div>
+
+    <div class="ctr-doc-section">
+      <div class="ctr-doc-section-title">당 사 자</div>
+      <table class="ctr-doc-table">
+        <tr><th>의 뢰 인</th><td>${memberName} (${memberType})</td></tr>
+        <tr><th>연 락 처</th><td>${memberPhone}</td></tr>
+        <tr><th>중 개 인</th><td>THE FIN 더핀중개법인</td></tr>
+        <tr><th>중개인 연락처</th><td>대표 손청락</td></tr>
+      </table>
+    </div>
+
+    <div class="ctr-doc-section">
+      <div class="ctr-doc-section-title">약 정 내 용</div>
+      <table class="ctr-doc-table">
+        <tr><th>물건 소재지</th><td>${addr}</td></tr>
+        <tr><th>물건 유형</th><td>${propType}</td></tr>
+        <tr><th>약정 금액</th><td><strong>${amount}원</strong></td></tr>
+        <tr><th>수 수 료 율</th><td>${feeRate}%</td></tr>
+        <tr><th>수 수 료 액</th><td><strong>${feeAmount}</strong></td></tr>
+      </table>
+    </div>
+
+    <div class="ctr-doc-section">
+      <div class="ctr-doc-section-title">약 정 조 항</div>
+      <p style="font-size:13px;line-height:2;color:#333;margin:0 0 10px;">
+        제1조 의뢰인은 위 표시 부동산을 경매·공매 입찰함에 있어 더핀중개법인에 중개를 의뢰하며,
+        낙찰 성공 시 위 수수료를 지급하기로 한다.
+      </p>
+      <p style="font-size:13px;line-height:2;color:#333;margin:0 0 10px;">
+        제2조 의뢰인은 낙찰 결정기일 확정 후 7일 이내에 수수료를 지급한다.
+      </p>
+      <p style="font-size:13px;line-height:2;color:#333;margin:0;">
+        제3조 의뢰인이 정당한 사유 없이 계약을 취소하거나 타 중개업체를 통해 동일 물건을 낙찰받는 경우,
+        수수료 상당의 위약금을 지급한다.
+      </p>
+    </div>
+
+    <div class="ctr-doc-section">
+      <div class="ctr-doc-section-title">특 약 사 항</div>
+      <div class="ctr-special-box">${special}</div>
+    </div>
+
+    <div class="ctr-doc-date">${CTR_fmt(date)}</div>
+
+    <div class="ctr-sign-area">
+      <div class="ctr-sign-block">
+        <div class="ctr-sign-label">의뢰인</div>
+        <div style="font-size:13px;margin-bottom:40px;">성명: ${memberName}</div>
+        <div style="font-size:13px;margin-bottom:4px;">서명:</div>
+        <div class="ctr-sign-line"></div>
+      </div>
+      <div class="ctr-sign-block">
+        <div class="ctr-sign-label">중개인</div>
+        <div style="font-size:13px;margin-bottom:40px;">THE FIN 더핀중개법인 대표 손청락</div>
+        <div style="font-size:13px;margin-bottom:4px;">서명:</div>
+        <div class="ctr-sign-line"></div>
+      </div>
+    </div>
+
+    <div class="ctr-doc-footer">
+      <div class="ctr-doc-footer-logo">THE FIN 더핀중개법인</div>
+      <div class="ctr-doc-footer-sub">경매·공매 전문 중개법인</div>
+    </div>
+  `;
+}
+
+function CTR_print() {
+  CTR_preview(); // 최신 내용으로 갱신
+  // 약정서 탭을 active로 설정 후 인쇄
+  document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+  document.getElementById('panel-contract').classList.add('active');
+  setTimeout(() => window.print(), 100);
+}
+
+// 초기 로드
+MBR_load();
+MBR_render();
 </script>
 </body>
 </html>
