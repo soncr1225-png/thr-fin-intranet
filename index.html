@@ -1532,6 +1532,7 @@ function C_chStatus(id,ns){
     A_render();
     C_api('updateCase',{id,status:ns}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
   }
+  if(ns==='closed') A_autoAddMyeongdo(c);
 }
 function C_delCase(id){
   if(!confirm('삭제하시겠습니까?'))return;
@@ -2149,10 +2150,20 @@ function A_caseRow(cas, cust, isFirst) {
       <div id="A_ic_${cust.id}_content" class="a-editable" style="font-size:11px;min-height:14px;"
         onclick="A_inlineEdit('${cust.id}','content','${A_escHtml(cust.content||'')}',false)">${A_escHtml(cust.content||'')}</div>
     </td>
-    <td id="A_ic_${cust.id}_saleDecisionDate" class="a-editable" style="white-space:nowrap;${inactiveTdStyle}"
-      onclick="A_inlineEditDate('${cust.id}','saleDecisionDate','${cust.saleDecisionDate||''}','appealDate','appealOk')">${saleLbl}</td>
-    <td id="A_ic_${cust.id}_appealDate" class="a-editable" style="white-space:nowrap;${inactiveTdStyle}"
-      onclick="A_inlineEditDate('${cust.id}','appealDate','${cust.appealDate||''}','','appealOk')">${appealLbl}</td>
+    <td id="A_ic_${cust.id}_saleDecisionDate" style="white-space:nowrap;${inactiveTdStyle}">
+      <span class="a-editable" style="font-size:11px;"
+        onclick="A_inlineEditDate('${cust.id}','saleDecisionDate','${cust.saleDecisionDate||''}')">${A_fmt(cust.saleDecisionDate)||'—'}</span>
+      <button onclick="A_toggleOk('${cust.id}','saleDecisionOk')"
+        style="margin-left:3px;background:${sdOk?'#dcfce7':'none'};border:1px solid ${sdOk?'#16a34a':'#d1d5db'};border-radius:3px;padding:0 4px;cursor:pointer;font-size:11px;color:${sdOk?'#16a34a':'#d1d5db'};font-weight:700;line-height:1.5;"
+        title="${sdOk?'확인 취소':'확인 표시'}">✓</button>
+    </td>
+    <td id="A_ic_${cust.id}_appealDate" style="white-space:nowrap;${inactiveTdStyle}">
+      <span class="a-editable" style="font-size:11px;"
+        onclick="A_inlineEditDate('${cust.id}','appealDate','${cust.appealDate||''}')">${A_fmt(cust.appealDate)||'—'}</span>
+      <button onclick="A_toggleOk('${cust.id}','appealOk')"
+        style="margin-left:3px;background:${appealOk?'#dcfce7':'none'};border:1px solid ${appealOk?'#16a34a':'#d1d5db'};border-radius:3px;padding:0 4px;cursor:pointer;font-size:11px;color:${appealOk?'#16a34a':'#d1d5db'};font-weight:700;line-height:1.5;"
+        title="${appealOk?'확인 취소':'확인 표시'}">✓</button>
+    </td>
     ${editTd('balanceDate', cust.balanceDate, true)}
     ${editTd('note', cust.note, false, 'max-width:140px;color:#555;')}
     <td style="white-space:nowrap;${inactiveTdStyle}">
@@ -2161,6 +2172,38 @@ function A_caseRow(cas, cust, isFirst) {
       <button onclick="A_deleteRow('${cust.id}')" style="font-size:11px;background:none;border:none;cursor:pointer;color:#dc2626;">✕</button>
     </td>
   </tr>`;
+}
+
+// ── 매각결정기일·항고기간 확인 토글
+async function A_toggleOk(id, field) {
+  const item = A_items.find(i => i.id === id); if (!item) return;
+  const newVal = item[field] === 'O' ? '' : 'O';
+  item[field] = newVal;
+  A_render();
+  setSync('loading');
+  const r = await A_gasPost('update', { id, [field]: newVal });
+  setSync(r && r.ok ? 'ok' : 'err');
+}
+
+// ── 낙찰종료 시 명도 탭 자동 등록
+async function A_autoAddMyeongdo(cas) {
+  const exists = [...M_active, ...M_done].some(m => m.caseNo === cas.caseNo);
+  if (exists) return;
+  const linked = A_items.filter(i => i.caseNo === cas.caseNo);
+  const clientName = linked.length > 0 ? (linked[0].clientName || '') : '';
+  const tempItem = {
+    id: 'tmp_' + Date.now(), clientName,
+    auctionDate: cas.auctionDate||'', court: cas.court||'',
+    caseNo: cas.caseNo||'', propertyName: cas.address||'',
+    content:'', commissionRatio:'', injunctionNo:'',
+    respondent:'', warningDate:'', moveDate:'', note:'', status:'active'
+  };
+  M_active.unshift(tempItem);
+  document.getElementById('mainBadge-myeongdo').textContent = M_active.length;
+  M_render();
+  const r = await M_gasPost('add', { clientName, auctionDate: cas.auctionDate, court: cas.court, caseNo: cas.caseNo, propertyName: cas.address });
+  if (r && r.ok) { tempItem.id = r.id; setSync('ok'); }
+  else { M_active = M_active.filter(m => m !== tempItem); document.getElementById('mainBadge-myeongdo').textContent = M_active.length; M_render(); setSync('err'); }
 }
 
 // ── 경매기일 인라인 편집 (수정 시 매각결정기일·항고기간·잔금납부기일 자동 재계산)
