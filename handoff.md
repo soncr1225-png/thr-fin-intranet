@@ -1,6 +1,50 @@
 # THE FIN 인트라넷 — 인수인계 메모
 
-> 최종 업데이트: 2026-04-19 (세션 3)
+> 최종 업데이트: 2026-04-19 (세션 4)
+
+---
+
+## 세션 4 작업 내역 (2026-04-19)
+
+### 더핀 회원 노션 전체 동기화 완료
+- `MBR_NOTION_DATA`에 **총 50명** 등록 (이번 세션 신규 14명: 차정연·박성진·김은영·조현포·이지연·강지애·김태헌·김태열·이경미·구영철·정종우·장원산·김종걸·홍율경)
+
+### localStorage 저장 공간 부족 문제 해결
+- **원인**: BULK 캐시(2-3MB) + cases 중복 캐시 → 5MB 초과
+- **해결**: `applyBulkData`에서 cases/todos 중복 저장 제거
+- **자동 복구**: 저장 실패 시 BULK 캐시 자동 삭제 후 재시도
+- **MBR 델타 저장**: 기본 50명은 HTML 하드코딩, localStorage엔 수정분만 저장
+- **⚠ 버튼 클릭 → 확인**: 수동 저장공간 정리 (BULK만 삭제, 회원/사건 보존)
+
+### 구글시트 회원 동기화 버튼 추가
+- 더핀 회원 탭 > **📊 구글시트 저장** 버튼 → `MBR_syncToSheets()` 호출
+- **⚠ GAS에 `saveMembers` 액션 추가 필요** (아래 참고)
+
+---
+
+## ⚠️ 다음 세션 필수: GAS에 saveMembers 추가
+
+`doPost` 스위치에 아래 케이스 추가 후 재배포:
+
+```javascript
+case 'saveMembers': {
+  const sheet = SpreadsheetApp.getActive().getSheetByName('더핀회원')
+    || SpreadsheetApp.getActive().insertSheet('더핀회원');
+  const members = data;
+  const headers = ['이름','연락처','이메일','생년월일','주소','담당자','유형','주택보유',
+    '생애최초','관심물건','희망지역','투자목적','예산','타임라인','상태','응답률','수수료율','메모','등록일'];
+  if (sheet.getLastRow() === 0) sheet.appendRow(headers);
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) sheet.deleteRows(2, lastRow - 1);
+  members.forEach(m => sheet.appendRow([
+    m.name,m.phone,m.email,m.birthdate,m.address,m.staff,m.type,m.housing,
+    m.firsthome,m.proptype,m.region,m.purpose,m.budget,m.timeline,m.status,
+    m.responseRate,m.feeRate,m.memo,m.joindate
+  ]));
+  return ContentService.createTextOutput(JSON.stringify({result:'ok',count:members.length}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+```
 
 ---
 
