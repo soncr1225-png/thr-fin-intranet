@@ -197,7 +197,8 @@ function casesPost(b) {
     case 'deleteCase':   return json(deleteCase(ss, d));
     case 'restoreCase':  return json(restoreCase(ss, d));
     case 'saveTodos':    return json(saveTodos(ss, b.data));
-    case 'analyzeImage': return json(analyzeImage(d, 'case'));
+    case 'analyzeImage':      return json(analyzeImage(d, 'case'));
+    case 'analyzeImageGuide': return json(analyzeImage(d, 'guide'));
     case 'addAuction':       return json(addAuction(ss, d));
     case 'updateAuction':    return json(updateAuction(ss, d));
     case 'deleteAuction':    return json(deleteAuction(ss, d));
@@ -322,6 +323,8 @@ function analyzeImage(d, mode) {
 
   var prompt = (mode === 'blog')
     ? '경매 공고 이미지를 분석해서 아래 JSON 형식으로만 응답해. 코드블록 없이 순수 JSON만.\n{"caseNum":"사건번호","name":"아파트명+동+층+호수(띄어쓰기없이)","date":"YYYY-MM-DD","round":"차수숫자만","minPrice":"최저가(원단위포함)","title1":"블로그추천제목1","title2":"블로그추천제목2","title3":"블로그추천제목3"}'
+    : (mode === 'guide')
+    ? '경매 입찰 관련 이미지를 분석해서 아래 JSON 형식으로만 응답해. 코드블록 없이 순수 JSON만. 없는 항목은 빈 문자열로.\n{"court":"법원명(예:서울중앙지방법원)","auctionDate":"YYYY-MM-DD","auctionTime":"HH:MM(24시간제,없으면빈값)","room":"법정호수(예:207호 법정,없으면빈값)","caseNo":"사건번호","address":"물건소재지(간략히)","minPrice":"최저매각가격숫자만(콤마없이,없으면빈값)"}'
     : '경매 공고 이미지를 분석해서 아래 JSON 형식으로만 응답해. 코드블록 없이 순수 JSON만.\n{"caseNo":"사건번호","address":"주소 또는 아파트명+동호수","auctionDate":"YYYY-MM-DD","court":"법원명"}';
 
   var payload = {

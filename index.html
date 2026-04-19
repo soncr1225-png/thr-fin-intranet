@@ -618,6 +618,70 @@ tr:hover td { background: #fafaf8; }
 .photo-card-note { font-size:11px; color:#aaa; margin-top:10px; text-align:center; }
 .photo-card .paste-zone { flex:none; width:100%; min-height:90px; justify-content:center; flex-direction:column; text-align:center; }
 @media(max-width:640px){ .photo-grid{grid-template-columns:1fr;} }
+
+/* ══ 입찰안내문 탭 ══ */
+#panel-guide { background:#f0ede8; min-height:calc(100vh - 60px); padding:28px 24px 60px; }
+.ag-wrap { max-width:900px; margin:0 auto; }
+.ag-page-title { font-size:18px; font-weight:800; color:var(--navy); margin-bottom:4px; }
+.ag-page-sub { font-size:13px; color:#888; margin-bottom:24px; }
+.ag-form-card { background:#fff; border:1px solid #e8e4dc; border-radius:var(--radius); padding:24px; margin-bottom:24px; }
+.ag-form-card h3 { font-size:13px; font-weight:700; color:var(--navy); margin-bottom:16px; border-bottom:1px solid #f0ede8; padding-bottom:10px; }
+.ag-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.ag-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+.ag-field { display:flex; flex-direction:column; gap:5px; }
+.ag-field label { font-size:11px; font-weight:700; color:#555; letter-spacing:.04em; }
+.ag-field input, .ag-field select { border:1px solid #ddd; border-radius:6px; padding:8px 10px; font-size:13px; background:#fff; color:#1a1a1a; outline:none; transition:border .15s; font-family:inherit; }
+.ag-field input:focus, .ag-field select:focus { border-color:var(--navy); }
+.ag-radio-group { display:flex; gap:8px; }
+.ag-radio-group label { display:flex; align-items:center; gap:5px; cursor:pointer; font-size:13px; color:#374151; background:#f8f6f1; border:1px solid #ddd; border-radius:6px; padding:7px 14px; transition:all .15s; font-weight:600; }
+.ag-radio-group input[type=radio] { display:none; }
+.ag-radio-group input[type=radio]:checked + span { color:var(--navy); }
+.ag-radio-group label:has(input:checked) { background:var(--gold); color:var(--navy); border-color:var(--gold-dim); }
+.ag-btn { background:var(--navy); color:#fff; border:none; border-radius:8px; padding:11px 32px; font-size:14px; font-weight:700; cursor:pointer; letter-spacing:.04em; transition:background .15s; margin-top:6px; }
+.ag-btn:hover { background:#1e3060; }
+.ag-btn-clear { background:#f0ede8; color:#555; border:1px solid #ddd; border-radius:8px; padding:11px 20px; font-size:13px; font-weight:600; cursor:pointer; transition:background .15s; margin-top:6px; margin-left:8px; }
+.ag-btn-clear:hover { background:#e0ddd8; }
+
+/* 생성된 안내 카드 */
+.ag-card-wrap { display:none; }
+.ag-card-wrap.show { display:block; }
+.ag-card { background:#fff; border:2px solid #142040; border-radius:12px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,.1); }
+.ag-card-header { background:#142040; padding:20px 28px; display:flex; justify-content:space-between; align-items:center; }
+.ag-card-header-left .brand-name { font-size:20px; font-weight:900; color:#fff; letter-spacing:.12em; }
+.ag-card-header-left .brand-sub { font-size:11px; color:var(--gold); letter-spacing:.08em; margin-top:2px; }
+.ag-card-header-right { text-align:right; }
+.ag-card-header-right .card-title { font-size:15px; font-weight:800; color:var(--gold); letter-spacing:.06em; }
+.ag-card-header-right .card-date { font-size:11px; color:#aab; margin-top:3px; }
+.ag-card-body { padding:24px 28px; }
+.ag-card-section { margin-bottom:20px; }
+.ag-card-section:last-child { margin-bottom:0; }
+.ag-section-title { font-size:11px; font-weight:700; color:#142040; letter-spacing:.08em; text-transform:uppercase; border-left:3px solid var(--gold); padding-left:8px; margin-bottom:10px; }
+.ag-info-row { display:flex; gap:0; border:1px solid #e8e4dc; border-radius:8px; overflow:hidden; margin-bottom:8px; }
+.ag-info-key { background:#f8f6f1; font-size:12px; font-weight:700; color:#555; padding:9px 14px; min-width:110px; border-right:1px solid #e8e4dc; display:flex; align-items:center; }
+.ag-info-val { font-size:13px; color:#1a1a1a; padding:9px 14px; display:flex; align-items:center; flex:1; }
+.ag-info-val.bold { font-weight:700; color:#142040; }
+.ag-info-val.gold { font-weight:800; color:#b8860b; font-size:15px; }
+.ag-doc-list { list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.ag-doc-list li { font-size:12px; color:#374151; background:#f8f6f1; border:1px solid #e8e4dc; border-radius:6px; padding:7px 12px; display:flex; align-items:center; gap:6px; }
+.ag-doc-list li::before { content:'✓'; color:#142040; font-weight:700; flex-shrink:0; }
+.ag-doc-list li.optional { background:#fff8ed; border-color:#fde68a; }
+.ag-doc-list li.optional::before { content:'★'; color:#d97706; }
+.ag-card-notice { background:#f0f4ff; border:1px solid #bfcfff; border-radius:8px; padding:12px 16px; font-size:12px; color:#1e3a8a; line-height:1.7; }
+.ag-card-notice strong { color:#142040; }
+.ag-card-footer { background:#f8f6f1; border-top:2px solid #e8e4dc; padding:14px 28px; display:flex; justify-content:space-between; align-items:center; }
+.ag-card-footer-staff { font-size:12px; color:#555; }
+.ag-card-footer-staff strong { color:#142040; font-size:13px; }
+.ag-card-footer-contact { font-size:12px; color:#888; text-align:right; }
+.ag-print-btn { background:#fff; border:1px solid #142040; color:#142040; border-radius:6px; padding:7px 16px; font-size:12px; font-weight:700; cursor:pointer; transition:all .15s; }
+.ag-print-btn:hover { background:#142040; color:#fff; }
+@media(max-width:640px){ .ag-grid{grid-template-columns:1fr;} .ag-grid-3{grid-template-columns:1fr 1fr;} .ag-doc-list{grid-template-columns:1fr;} }
+@media print {
+  body > *:not(#panel-guide) { display:none !important; }
+  #panel-guide { padding:0 !important; background:#fff !important; }
+  .ag-form-card { display:none !important; }
+  .ag-card-actions { display:none !important; }
+  .ag-card { box-shadow:none !important; border:2px solid #142040 !important; }
+}
 </style>
 </head>
 <body>
@@ -662,6 +726,10 @@ tr:hover td { background: #fafaf8; }
     <div class="main-tab" id="mainTab-photo" onclick="switchMainTab('photo')">
       <span class="tab-icon">📷</span>
       사진 분석
+    </div>
+    <div class="main-tab" id="mainTab-guide" onclick="switchMainTab('guide')">
+      <span class="tab-icon">📋</span>
+      입찰안내문
     </div>
   </nav>
 
@@ -1186,12 +1254,13 @@ tr:hover td { background: #fafaf8; }
       <div class="photo-card-icon">🔍</div>
       <div class="photo-card-title">물건조사 요청</div>
       <div class="photo-card-desc">사건번호·주소·경매기일 등을 자동 추출하여<br>물건조사 요청표에 등록합니다</div>
-      <div class="paste-zone" id="C_pasteZone2"
+      <div class="paste-zone" id="C_pasteZone2" tabindex="0"
         onclick="document.getElementById('C_pasteFileInput2').click();photoMode='cases';"
         ondragover="event.preventDefault();this.style.borderColor='var(--gold)';"
         ondragleave="this.style.borderColor='';"
         ondrop="event.preventDefault();this.style.borderColor='';photoMode='cases';C_handleImageFile(event.dataTransfer.files[0]);"
-        onmouseenter="photoMode='cases'">
+        onmouseenter="photoMode='cases'"
+        onpaste="photoMode='cases';_handlePasteImg(event)">
         <span style="font-size:24px;margin-bottom:6px;">📋</span>
         <div style="font-weight:700;color:#374151;">사진 붙여넣기 / 드래그 / 클릭</div>
         <div style="font-size:11px;margin-top:2px;">Ctrl+V 가능</div>
@@ -1205,12 +1274,13 @@ tr:hover td { background: #fafaf8; }
       <div class="photo-card-icon">📝</div>
       <div class="photo-card-title">블로그 추천 등록</div>
       <div class="photo-card-desc">사건번호·물건내용·추천 키워드를 자동 추출하여<br>블로그 물건추천 탭에 등록합니다</div>
-      <div class="paste-zone" id="B_pasteZone2"
+      <div class="paste-zone" id="B_pasteZone2" tabindex="0"
         onclick="document.getElementById('B_pasteFileInput2').click();photoMode='blog';"
         ondragover="event.preventDefault();this.style.borderColor='var(--gold)';"
         ondragleave="this.style.borderColor='';"
         ondrop="event.preventDefault();this.style.borderColor='';photoMode='blog';B_handleImageFile(event.dataTransfer.files[0]);"
-        onmouseenter="photoMode='blog'">
+        onmouseenter="photoMode='blog'"
+        onpaste="photoMode='blog';_handlePasteImg(event)">
         <span style="font-size:24px;margin-bottom:6px;">📋</span>
         <div style="font-weight:700;color:#374151;">사진 붙여넣기 / 드래그 / 클릭</div>
         <div style="font-size:11px;margin-top:2px;">Ctrl+V 가능</div>
@@ -1223,7 +1293,386 @@ tr:hover td { background: #fafaf8; }
 </div>
 </div>
 
+<!-- ════════════════════════════════════
+     탭 7: 입찰안내문
+════════════════════════════════════ -->
+<div class="tab-panel" id="panel-guide">
+<div class="ag-wrap">
+
+  <div class="ag-page-title">입찰안내문 생성</div>
+  <div class="ag-page-sub">경매 사진을 붙여넣거나, 직접 입력 후 안내 카드를 생성합니다</div>
+
+  <!-- AI 분석 오버레이 -->
+  <div id="ag-aiOverlay" style="display:none;position:fixed;inset:0;background:rgba(10,18,35,.75);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+    <div style="width:48px;height:48px;border:4px solid #c8a44a;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;"></div>
+    <div id="ag-aiStatus" style="color:#fff;font-size:15px;font-weight:700;letter-spacing:.04em;">분석 중...</div>
+  </div>
+
+  <!-- 사진 붙여넣기 영역 -->
+  <div class="ag-form-card" style="border-style:dashed;border-color:#c8a44a;background:#fffdf7;">
+    <h3 style="color:#b8860b;">📷 사진으로 자동 입력 (선택)</h3>
+    <div class="paste-zone" id="ag-pasteZone" tabindex="0"
+      onclick="document.getElementById('ag-fileInput').click()"
+      ondragover="event.preventDefault();this.style.borderColor='var(--gold)';"
+      ondragleave="this.style.borderColor='';"
+      ondrop="event.preventDefault();this.style.borderColor='';AG_handleImageFile(event.dataTransfer.files[0]);"
+      onpaste="_handlePasteImg(event)"
+      style="min-height:90px;justify-content:center;flex-direction:column;text-align:center;width:100%;">
+      <span style="font-size:24px;margin-bottom:6px;">📋</span>
+      <div style="font-weight:700;color:#374151;">경매 화면 붙여넣기 / 드래그 / 클릭</div>
+      <div style="font-size:11px;color:#888;margin-top:2px;">Ctrl+V · 파일 첨부 가능 — AI가 법원·날짜·금액을 자동 추출합니다</div>
+      <input type="file" id="ag-fileInput" accept="image/*" style="display:none" onchange="AG_handleImageFile(this.files[0])">
+    </div>
+  </div>
+
+  <!-- 입력 폼 -->
+  <div class="ag-form-card">
+    <h3>경매 기본 정보</h3>
+    <div class="ag-grid" style="margin-bottom:14px;">
+      <div class="ag-field">
+        <label>법원명</label>
+        <select id="ag-court">
+          <option value="">선택하세요</option>
+          <optgroup label="── 서울">
+            <option value="서울중앙지방법원">서울중앙지방법원</option>
+            <option value="서울동부지방법원">서울동부지방법원</option>
+            <option value="서울서부지방법원">서울서부지방법원</option>
+            <option value="서울남부지방법원">서울남부지방법원</option>
+            <option value="서울북부지방법원">서울북부지방법원</option>
+          </optgroup>
+          <optgroup label="── 경기 · 인천">
+            <option value="수원지방법원">수원지방법원</option>
+            <option value="수원지방법원 성남지원">수원지방법원 성남지원</option>
+            <option value="수원지방법원 여주지원">수원지방법원 여주지원</option>
+            <option value="수원지방법원 평택지원">수원지방법원 평택지원</option>
+            <option value="수원지방법원 안산지원">수원지방법원 안산지원</option>
+            <option value="수원지방법원 안양지원">수원지방법원 안양지원</option>
+            <option value="의정부지방법원">의정부지방법원</option>
+            <option value="의정부지방법원 고양지원">의정부지방법원 고양지원</option>
+            <option value="의정부지방법원 남양주지원">의정부지방법원 남양주지원</option>
+            <option value="인천지방법원">인천지방법원</option>
+            <option value="인천지방법원 부천지원">인천지방법원 부천지원</option>
+          </optgroup>
+          <optgroup label="── 강원">
+            <option value="춘천지방법원">춘천지방법원</option>
+            <option value="춘천지방법원 강릉지원">춘천지방법원 강릉지원</option>
+            <option value="춘천지방법원 원주지원">춘천지방법원 원주지원</option>
+            <option value="춘천지방법원 속초지원">춘천지방법원 속초지원</option>
+          </optgroup>
+          <optgroup label="── 충청">
+            <option value="대전지방법원">대전지방법원</option>
+            <option value="대전지방법원 천안지원">대전지방법원 천안지원</option>
+            <option value="대전지방법원 홍성지원">대전지방법원 홍성지원</option>
+            <option value="대전지방법원 공주지원">대전지방법원 공주지원</option>
+            <option value="대전지방법원 논산지원">대전지방법원 논산지원</option>
+            <option value="청주지방법원">청주지방법원</option>
+            <option value="청주지방법원 충주지원">청주지방법원 충주지원</option>
+            <option value="청주지방법원 제천지원">청주지방법원 제천지원</option>
+            <option value="청주지방법원 영동지원">청주지방법원 영동지원</option>
+          </optgroup>
+          <optgroup label="── 전라">
+            <option value="광주지방법원">광주지방법원</option>
+            <option value="광주지방법원 목포지원">광주지방법원 목포지원</option>
+            <option value="광주지방법원 순천지원">광주지방법원 순천지원</option>
+            <option value="광주지방법원 해남지원">광주지방법원 해남지원</option>
+            <option value="전주지방법원">전주지방법원</option>
+            <option value="전주지방법원 군산지원">전주지방법원 군산지원</option>
+            <option value="전주지방법원 정읍지원">전주지방법원 정읍지원</option>
+          </optgroup>
+          <optgroup label="── 경상">
+            <option value="대구지방법원">대구지방법원</option>
+            <option value="대구지방법원 서부지원">대구지방법원 서부지원</option>
+            <option value="대구지방법원 안동지원">대구지방법원 안동지원</option>
+            <option value="대구지방법원 경주지원">대구지방법원 경주지원</option>
+            <option value="대구지방법원 포항지원">대구지방법원 포항지원</option>
+            <option value="대구지방법원 김천지원">대구지방법원 김천지원</option>
+            <option value="대구지방법원 상주지원">대구지방법원 상주지원</option>
+            <option value="부산지방법원">부산지방법원</option>
+            <option value="부산지방법원 동부지원">부산지방법원 동부지원</option>
+            <option value="부산지방법원 서부지원">부산지방법원 서부지원</option>
+            <option value="울산지방법원">울산지방법원</option>
+            <option value="창원지방법원">창원지방법원</option>
+            <option value="창원지방법원 마산지원">창원지방법원 마산지원</option>
+            <option value="창원지방법원 진주지원">창원지방법원 진주지원</option>
+            <option value="창원지방법원 통영지원">창원지방법원 통영지원</option>
+            <option value="창원지방법원 밀양지원">창원지방법원 밀양지원</option>
+          </optgroup>
+          <optgroup label="── 제주">
+            <option value="제주지방법원">제주지방법원</option>
+          </optgroup>
+          <optgroup label="──────">
+            <option value="직접입력">직접 입력</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="ag-field" id="ag-court-custom-wrap" style="display:none;">
+        <label>법원명 직접 입력</label>
+        <input type="text" id="ag-court-custom" placeholder="예: 인천지방법원">
+      </div>
+      <div class="ag-field">
+        <label>법원 주소</label>
+        <input type="text" id="ag-court-addr" placeholder="자동 입력됩니다">
+      </div>
+    </div>
+    <div class="ag-grid" style="margin-bottom:14px;">
+      <div class="ag-field">
+        <label>경매기일 (날짜)</label>
+        <input type="date" id="ag-date">
+      </div>
+      <div class="ag-field">
+        <label>법정 호수</label>
+        <input type="text" id="ag-room" placeholder="예: 207호 법정">
+      </div>
+    </div>
+    <div class="ag-grid-3" style="margin-bottom:14px;">
+      <div class="ag-field">
+        <label>입찰 시작시간</label>
+        <input type="time" id="ag-time" value="10:00">
+      </div>
+      <div class="ag-field">
+        <label>입찰 마감시간</label>
+        <input type="time" id="ag-close-time" placeholder="자동입력">
+      </div>
+      <div class="ag-field">
+        <label style="color:#888;font-size:10px;">법원 선택 시 자동입력</label>
+        <div style="font-size:11px;color:#aaa;padding:8px 10px;background:#f8f6f1;border-radius:6px;border:1px solid #eee;">시작·마감 자동설정</div>
+      </div>
+    </div>
+    <div class="ag-grid" style="margin-bottom:14px;">
+      <div class="ag-field">
+        <label>사건번호</label>
+        <input type="text" id="ag-caseno" placeholder="예: 2024타경12345">
+      </div>
+      <div class="ag-field">
+        <label>물건 소재지 (요약)</label>
+        <input type="text" id="ag-addr" placeholder="예: 서울 강남구 역삼동 xxx">
+      </div>
+    </div>
+    <div class="ag-grid" style="margin-bottom:14px;">
+      <div class="ag-field">
+        <label>최저매각가격</label>
+        <input type="text" id="ag-min-price" placeholder="예: 350,000,000" oninput="AG_autoDeposit()">
+      </div>
+      <div class="ag-field">
+        <label>입찰보증금 (최저가의 10%)</label>
+        <input type="text" id="ag-deposit" placeholder="자동 계산됩니다">
+      </div>
+    </div>
+  </div>
+
+  <div class="ag-form-card">
+    <h3>고객 유형 선택</h3>
+    <div class="ag-grid" style="margin-bottom:14px;">
+      <div class="ag-field">
+        <label>개인 / 법인</label>
+        <div class="ag-radio-group">
+          <label><input type="radio" name="ag-type" value="개인" checked onchange="AG_updateDocs()"><span>개인</span></label>
+          <label><input type="radio" name="ag-type" value="법인" onchange="AG_updateDocs()"><span>법인</span></label>
+        </div>
+      </div>
+      <div class="ag-field">
+        <label>직접 / 대리인 입찰</label>
+        <div class="ag-radio-group">
+          <label><input type="radio" name="ag-proxy" value="직접" checked onchange="AG_updateDocs()"><span>직접 입찰</span></label>
+          <label><input type="radio" name="ag-proxy" value="대리" onchange="AG_updateDocs()"><span>대리인 입찰</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="ag-field" style="max-width:220px;">
+      <label>담당자</label>
+      <select id="ag-staff">
+        <option value="손청락">손청락 대표</option>
+        <option value="이제훈">이제훈 이사</option>
+        <option value="장한빛">장한빛 매니저</option>
+        <option value="정은진">정은진 매니저</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:0;margin-bottom:28px;">
+    <button class="ag-btn" onclick="AG_generate()">안내 카드 생성</button>
+    <button class="ag-btn-clear" onclick="AG_clear()">초기화</button>
+  </div>
+
+  <!-- 생성된 카드 -->
+  <div class="ag-card-wrap" id="ag-card-wrap">
+
+    <div class="ag-card-actions" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="ag-btn" style="padding:9px 22px;font-size:13px;" onclick="AG_capture(this)">📸 이미지 저장 (카톡 전송용)</button>
+      <button class="ag-print-btn" onclick="window.print()">🖨️ 인쇄</button>
+      <button class="ag-print-btn" onclick="AG_copyText()">📋 텍스트 복사</button>
+    </div>
+
+    <div class="ag-card" id="ag-card">
+      <!-- 헤더 -->
+      <div class="ag-card-header">
+        <div class="ag-card-header-left">
+          <div class="brand-name">THE FIN</div>
+          <div class="brand-sub">더핀중개법인 · 경매·공매 전문</div>
+        </div>
+        <div class="ag-card-header-right">
+          <div class="card-title">경매 입찰 안내문</div>
+        </div>
+      </div>
+
+      <div class="ag-card-body">
+
+        <!-- ① 핵심 정보 — 크게 강조 -->
+        <div class="ag-card-section" style="text-align:center;padding:16px 0 12px;border-bottom:1px solid #f0ede8;margin-bottom:16px;">
+          <div style="font-size:11px;color:#888;letter-spacing:.08em;margin-bottom:6px;">경매기일</div>
+          <div style="font-size:24px;font-weight:900;color:#142040;line-height:1.2;" id="ag-out-datetime"></div>
+          <div style="margin-top:10px;display:inline-flex;gap:10px;align-items:center;background:#f0f4ff;border-radius:8px;padding:7px 18px;">
+            <span style="font-size:12px;color:#555;">입찰시작</span>
+            <span style="font-size:16px;font-weight:800;color:#142040;" id="ag-out-starttime"></span>
+            <span style="color:#bbb;">→</span>
+            <span style="font-size:12px;color:#c00;font-weight:700;">마감</span>
+            <span style="font-size:16px;font-weight:800;color:#c00;" id="ag-out-closetime"></span>
+          </div>
+          <div style="font-size:13px;color:#555;margin-top:6px;" id="ag-out-court-big"></div>
+          <div style="font-size:12px;color:#888;margin-top:2px;" id="ag-out-addr-big"></div>
+          <div style="font-size:12px;color:#888;margin-top:2px;" id="ag-out-room-big"></div>
+        </div>
+
+        <!-- ② 사건·보증금 -->
+        <div class="ag-card-section">
+          <div class="ag-info-row" id="ag-out-caseno-row">
+            <div class="ag-info-key">사건번호</div>
+            <div class="ag-info-val bold" id="ag-out-caseno"></div>
+          </div>
+          <div class="ag-info-row" id="ag-out-propaddr-row">
+            <div class="ag-info-key">물건 소재지</div>
+            <div class="ag-info-val" id="ag-out-propaddr"></div>
+          </div>
+          <div class="ag-info-row">
+            <div class="ag-info-key">최저매각가격</div>
+            <div class="ag-info-val bold" id="ag-out-minprice"></div>
+          </div>
+          <div class="ag-info-row" style="background:#fffbf0;border:1px solid #f0d080;border-radius:8px;">
+            <div class="ag-info-key" style="background:transparent;border-right:1px solid #f0d080;color:#7a5a00;font-weight:800;">입찰보증금</div>
+            <div class="ag-info-val gold" style="font-size:17px;" id="ag-out-deposit"></div>
+          </div>
+          <div style="font-size:11px;color:#888;margin-top:6px;padding-left:2px;">※ 보증금은 법원 지정 자기앞수표(현금)로 준비</div>
+        </div>
+
+        <!-- ③ 준비서류 -->
+        <div class="ag-card-section">
+          <div class="ag-section-title">준비 서류 <span id="ag-out-type-label" style="font-size:11px;color:#888;margin-left:6px;font-weight:400;"></span></div>
+          <ul class="ag-doc-list" id="ag-out-docs"></ul>
+        </div>
+
+        <!-- ④ 주의사항 (간소화) -->
+        <div class="ag-card-section">
+          <div class="ag-section-title">당일 체크리스트</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div style="background:#f8f6f1;border-radius:6px;padding:9px 12px;font-size:12px;color:#374151;display:flex;align-items:center;gap:7px;"><span style="color:#142040;font-size:14px;">⏰</span>경매 시간 1시간 전 도착</div>
+            <div style="background:#f8f6f1;border-radius:6px;padding:9px 12px;font-size:12px;color:#374151;display:flex;align-items:center;gap:7px;"><span style="color:#142040;font-size:14px;">✍️</span>입찰표 정정 불가 (새 용지)</div>
+            <div style="background:#f8f6f1;border-radius:6px;padding:9px 12px;font-size:12px;color:#374151;display:flex;align-items:center;gap:7px;"><span style="color:#142040;font-size:14px;">💴</span>자기앞수표로 보증금 준비</div>
+            <div style="background:#f8f6f1;border-radius:6px;padding:9px 12px;font-size:12px;color:#374151;display:flex;align-items:center;gap:7px;"><span style="color:#142040;font-size:14px;">📨</span>봉투 봉인 후 제출</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ag-card-footer">
+        <div class="ag-card-footer-staff">담당: <strong id="ag-out-staff"></strong></div>
+        <div class="ag-card-footer-contact" style="font-size:11px;color:#888;">THE FIN 더핀중개법인</div>
+      </div>
+    </div>
+
+  </div>
+
+<!-- 캡처 전용 모바일 카드 (화면에 보이지 않음) -->
+<div id="ag-mobile-card" style="position:fixed;left:-9999px;top:0;width:390px;background:#fff;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;">
+  <!-- 헤더 -->
+  <div style="background:#142040;padding:20px 22px 16px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:20px;font-weight:900;color:#fff;letter-spacing:.12em;">THE FIN</div>
+        <div style="font-size:10px;color:#c8a44a;letter-spacing:.08em;margin-top:2px;">더핀중개법인 · 경매·공매 전문</div>
+      </div>
+      <div style="background:rgba(200,164,74,.15);border:1px solid #c8a44a;border-radius:6px;padding:5px 12px;text-align:center;">
+        <div style="font-size:10px;color:#c8a44a;font-weight:700;">경매 입찰 안내문</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 날짜·시간 강조 -->
+  <div style="background:#f5f3ef;padding:20px 22px;text-align:center;border-bottom:1px solid #e8e4dc;">
+    <div style="font-size:11px;color:#888;letter-spacing:.08em;margin-bottom:6px;">경 매 기 일</div>
+    <div id="mob-datetime" style="font-size:22px;font-weight:900;color:#142040;line-height:1.2;"></div>
+    <div style="margin-top:12px;display:inline-flex;gap:0;border-radius:10px;overflow:hidden;border:1px solid #ddd;">
+      <div style="background:#fff;padding:10px 20px;text-align:center;">
+        <div style="font-size:10px;color:#888;margin-bottom:3px;">입찰 시작</div>
+        <div id="mob-starttime" style="font-size:18px;font-weight:900;color:#142040;"></div>
+      </div>
+      <div style="background:#142040;padding:10px 16px;display:flex;align-items:center;">
+        <span style="color:#c8a44a;font-size:16px;font-weight:700;">→</span>
+      </div>
+      <div style="background:#fff3f3;padding:10px 20px;text-align:center;">
+        <div style="font-size:10px;color:#c00;font-weight:700;margin-bottom:3px;">입찰 마감</div>
+        <div id="mob-closetime" style="font-size:18px;font-weight:900;color:#c00;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 법원·사건 정보 -->
+  <div style="padding:16px 22px;border-bottom:1px solid #f0ede8;">
+    <div style="font-size:10px;font-weight:700;color:#142040;letter-spacing:.08em;border-left:3px solid #c8a44a;padding-left:7px;margin-bottom:10px;">경매 법원</div>
+    <div id="mob-court" style="font-size:16px;font-weight:800;color:#142040;margin-bottom:3px;"></div>
+    <div id="mob-addr" style="font-size:12px;color:#666;margin-bottom:2px;"></div>
+    <div id="mob-room" style="font-size:12px;color:#888;"></div>
+    <div id="mob-caseno-wrap" style="margin-top:8px;background:#f8f6f1;border-radius:6px;padding:7px 10px;font-size:12px;color:#555;display:none;">
+      사건번호: <strong id="mob-caseno" style="color:#142040;"></strong>
+    </div>
+    <div id="mob-propaddr-wrap" style="margin-top:6px;font-size:12px;color:#666;display:none;">
+      📍 <span id="mob-propaddr"></span>
+    </div>
+  </div>
+
+  <!-- 입찰보증금 -->
+  <div style="padding:16px 22px;border-bottom:1px solid #f0ede8;">
+    <div style="font-size:10px;font-weight:700;color:#142040;letter-spacing:.08em;border-left:3px solid #c8a44a;padding-left:7px;margin-bottom:10px;">입찰 금액</div>
+    <div style="display:flex;gap:10px;margin-bottom:8px;">
+      <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:10px 14px;">
+        <div style="font-size:10px;color:#888;margin-bottom:3px;">최저매각가격</div>
+        <div id="mob-minprice" style="font-size:14px;font-weight:800;color:#142040;"></div>
+      </div>
+    </div>
+    <div style="background:#fffbf0;border:1.5px solid #f0d080;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:12px;font-weight:700;color:#7a5a00;">입찰보증금 (최저가 10%)</div>
+      <div id="mob-deposit" style="font-size:20px;font-weight:900;color:#b8860b;"></div>
+    </div>
+    <div style="font-size:10px;color:#aaa;margin-top:6px;">※ 법원 지정 자기앞수표 지참</div>
+  </div>
+
+  <!-- 준비서류 -->
+  <div style="padding:16px 22px;border-bottom:1px solid #f0ede8;">
+    <div style="font-size:10px;font-weight:700;color:#142040;letter-spacing:.08em;border-left:3px solid #c8a44a;padding-left:7px;margin-bottom:10px;">준비 서류 <span id="mob-type-label" style="font-weight:400;color:#888;"></span></div>
+    <ul id="mob-docs" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;"></ul>
+  </div>
+
+  <!-- 체크리스트 -->
+  <div style="padding:16px 22px;border-bottom:1px solid #f0ede8;">
+    <div style="font-size:10px;font-weight:700;color:#142040;letter-spacing:.08em;border-left:3px solid #c8a44a;padding-left:7px;margin-bottom:10px;">당일 체크리스트</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+      <div style="background:#f8f6f1;border-radius:6px;padding:9px 10px;font-size:11px;color:#374151;display:flex;align-items:center;gap:6px;"><span style="font-size:14px;">⏰</span>1시간 전 도착</div>
+      <div style="background:#f8f6f1;border-radius:6px;padding:9px 10px;font-size:11px;color:#374151;display:flex;align-items:center;gap:6px;"><span style="font-size:14px;">✍️</span>입찰표 정정 불가</div>
+      <div style="background:#f8f6f1;border-radius:6px;padding:9px 10px;font-size:11px;color:#374151;display:flex;align-items:center;gap:6px;"><span style="font-size:14px;">💴</span>자기앞수표 준비</div>
+      <div style="background:#f8f6f1;border-radius:6px;padding:9px 10px;font-size:11px;color:#374151;display:flex;align-items:center;gap:6px;"><span style="font-size:14px;">📨</span>봉투 봉인 후 제출</div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div style="background:#142040;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="color:#fff;font-size:12px;">담당: <strong id="mob-staff" style="color:#c8a44a;"></strong></div>
+    <div style="font-size:10px;color:#6b7a99;">THE FIN 더핀중개법인</div>
+  </div>
+</div>
+
+</div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════════
 //  ★ 통합 GAS 배포 후 아래 URL 하나만 교체하면 됩니다
@@ -1242,6 +1691,9 @@ function switchMainTab(t) {
   document.querySelectorAll('.tab-panel').forEach(el=>el.classList.remove('active'));
   document.getElementById('mainTab-'+t).classList.add('active');
   document.getElementById('panel-'+t).classList.add('active');
+  // paste zone이 있는 탭이면 포커스 이동 → Ctrl+V 바로 동작
+  const zoneMap={photo:'C_pasteZone2',guide:'ag-pasteZone'};
+  if(zoneMap[t]){setTimeout(()=>{const z=document.getElementById(zoneMap[t]);if(z)z.focus({preventScroll:true});},50);}
 }
 
 const _dd=new Date(),_days=['일','월','화','수','목','금','토'];
@@ -1569,24 +2021,28 @@ function C_startEditDate(span,id,field,cur){const inp=document.createElement('in
 
 // AI 분석 — Ctrl+V 라우팅: 사진 분석 탭에서 photoMode에 따라, 다른 탭에서는 해당 탭으로
 let photoMode='cases';
-document.addEventListener('paste',e=>{
+function _handlePasteImg(e){
   const items=e.clipboardData&&e.clipboardData.items;if(!items)return;
-  const activeTab=document.querySelector('.tab-panel.active');
-  if(!activeTab)return;
   for(let i=0;i<items.length;i++){
     if(items[i].type.startsWith('image/')){
+      e.preventDefault();
       const file=items[i].getAsFile();
+      const activeTab=document.querySelector('.tab-panel.active');
+      if(!activeTab)return;
       if(activeTab.id==='panel-photo'){
         if(photoMode==='blog')B_handleImageFile(file);else C_handleImageFile(file);
       }else if(activeTab.id==='panel-blog'){
         B_handleImageFile(file);
+      }else if(activeTab.id==='panel-guide'){
+        AG_handleImageFile(file);
       }else{
         C_handleImageFile(file);
       }
       break;
     }
   }
-});
+}
+window.addEventListener('paste',_handlePasteImg);
 function C_handleImageFile(file){if(!file)return;const r=new FileReader();r.onload=e=>C_analyzeImage(e.target.result.split(',')[1],file.type||'image/png');r.readAsDataURL(file);}
 function C_showAI(show,msg){const el=document.getElementById('C_aiOverlay');el.style.display=show?'flex':'none';if(msg)document.getElementById('C_aiStatus').textContent=msg;}
 async function C_analyzeImage(base64,mediaType){
@@ -2864,6 +3320,424 @@ document.addEventListener('keydown',e=>{
     e.preventDefault();C_undoLast();
   }
 });
+
+// ══════════════════════════════════════════════════════════════════
+//  탭 7: 입찰안내문 (AG_ 네임스페이스)
+// ══════════════════════════════════════════════════════════════════
+function AG_showAI(show, msg) {
+  const el = document.getElementById('ag-aiOverlay');
+  el.style.display = show ? 'flex' : 'none';
+  if (msg) document.getElementById('ag-aiStatus').textContent = msg;
+}
+
+function AG_handleImageFile(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = e => AG_analyzeImage(e.target.result.split(',')[1], file.type || 'image/png');
+  r.readAsDataURL(file);
+}
+
+async function AG_analyzeImage(base64, mediaType) {
+  AG_showAI(true, '경매 정보를 추출하고 있습니다...');
+  try {
+    const res = await (await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'analyzeImageGuide', data: { base64, mediaType } })
+    })).json();
+    if (res.error) throw new Error(res.error);
+    if (!res.ok || !res.data) throw new Error('분석 결과 없음');
+    AG_showAI(true, '폼에 자동 입력 중...');
+    const info = res.data;
+
+    // 법원명 — 드롭다운 매칭 or 직접입력 처리
+    if (info.court) {
+      const sel = document.getElementById('ag-court');
+      const opt = [...sel.options].find(o => o.value === info.court);
+      if (opt) {
+        sel.value = info.court;
+        document.getElementById('ag-court-custom-wrap').style.display = 'none';
+      } else {
+        sel.value = '직접입력';
+        document.getElementById('ag-court-custom-wrap').style.display = 'flex';
+        document.getElementById('ag-court-custom').value = info.court;
+      }
+      AG_applyCourtData(info.court); // 주소 + 시작/마감시간 일괄 세팅
+    }
+    if (info.auctionDate) document.getElementById('ag-date').value = info.auctionDate;
+    if (info.auctionTime) document.getElementById('ag-time').value = info.auctionTime;
+    if (info.room)        document.getElementById('ag-room').value = info.room;
+    if (info.caseNo)      document.getElementById('ag-caseno').value = info.caseNo;
+    if (info.address)     document.getElementById('ag-addr').value = info.address;
+    if (info.minPrice) {
+      const num = parseInt(String(info.minPrice).replace(/[^0-9]/g,''), 10);
+      if (!isNaN(num)) {
+        document.getElementById('ag-min-price').value = num.toLocaleString('ko-KR');
+        document.getElementById('ag-deposit').value = Math.floor(num * 0.1).toLocaleString('ko-KR');
+      }
+    }
+    AG_showAI(false);
+
+    // 붙여넣기 영역에 성공 표시
+    const zone = document.getElementById('ag-pasteZone');
+    zone.style.borderColor = '#16a34a';
+    zone.querySelector('div').textContent = '✅ 자동 입력 완료 — 내용을 확인 후 카드 생성';
+    setTimeout(() => {
+      zone.style.borderColor = '';
+      zone.querySelector('div').textContent = '경매 화면 붙여넣기 / 드래그 / 클릭';
+    }, 3000);
+  } catch(err) {
+    AG_showAI(false);
+    alert('AI 분석 실패: ' + err.message);
+  }
+}
+
+const AG_COURT_ADDR = {
+  // 서울
+  '서울중앙지방법원': '서울 서초구 서초중앙로 157',
+  '서울동부지방법원': '서울 송파구 법원로 101',
+  '서울서부지방법원': '서울 마포구 마포대로 174',
+  '서울남부지방법원': '서울 양천구 신월로 386',
+  '서울북부지방법원': '서울 도봉구 마들로 749',
+  // 경기·인천
+  '수원지방법원': '경기 수원시 영통구 법조로 105',
+  '수원지방법원 성남지원': '경기 성남시 수정구 법조로 145',
+  '수원지방법원 여주지원': '경기 여주시 세종로 60',
+  '수원지방법원 평택지원': '경기 평택시 평남로 1036',
+  '수원지방법원 안산지원': '경기 안산시 단원구 화랑로 387',
+  '수원지방법원 안양지원': '경기 안양시 만안구 박달로 543',
+  '의정부지방법원': '경기 의정부시 녹양로34번길 23',
+  '의정부지방법원 고양지원': '경기 고양시 일산동구 장항동 865',
+  '의정부지방법원 남양주지원': '경기 남양주시 다산지금로 136',
+  '인천지방법원': '인천 남동구 법원로 30',
+  '인천지방법원 부천지원': '경기 부천시 길주로 210',
+  // 강원
+  '춘천지방법원': '강원 춘천시 공지로 284',
+  '춘천지방법원 강릉지원': '강원 강릉시 강릉대로 33',
+  '춘천지방법원 원주지원': '강원 원주시 서원대로 199',
+  '춘천지방법원 속초지원': '강원 속초시 법대로 10',
+  // 충청
+  '대전지방법원': '대전 서구 둔산중로 78',
+  '대전지방법원 천안지원': '충남 천안시 서북구 법조로 222',
+  '대전지방법원 홍성지원': '충남 홍성군 홍성읍 법원길 8',
+  '대전지방법원 공주지원': '충남 공주시 금벽로 424',
+  '대전지방법원 논산지원': '충남 논산시 시민로 210',
+  '청주지방법원': '충북 청주시 서원구 산남로 24',
+  '청주지방법원 충주지원': '충북 충주시 국원대로 122',
+  '청주지방법원 제천지원': '충북 제천시 의림대로 224',
+  '청주지방법원 영동지원': '충북 영동군 영동읍 계산로 47',
+  // 전라
+  '광주지방법원': '광주 북구 용봉로 11',
+  '광주지방법원 목포지원': '전남 목포시 양을로 137',
+  '광주지방법원 순천지원': '전남 순천시 왕궁로 60',
+  '광주지방법원 해남지원': '전남 해남군 해남읍 중앙1로 35',
+  '전주지방법원': '전북 전주시 완산구 홍산로 111',
+  '전주지방법원 군산지원': '전북 군산시 법원로 114',
+  '전주지방법원 정읍지원': '전북 정읍시 수성로 97',
+  // 경상
+  '대구지방법원': '대구 수성구 동대구로 364',
+  '대구지방법원 서부지원': '대구 달서구 장기로 44',
+  '대구지방법원 안동지원': '경북 안동시 경동로 574',
+  '대구지방법원 경주지원': '경북 경주시 원화로 377',
+  '대구지방법원 포항지원': '경북 포항시 북구 법원로 100',
+  '대구지방법원 김천지원': '경북 김천시 혁신대로 2330',
+  '대구지방법원 상주지원': '경북 상주시 북천로 34',
+  '부산지방법원': '부산 연제구 법원로 31',
+  '부산지방법원 동부지원': '부산 해운대구 재반로 166',
+  '부산지방법원 서부지원': '부산 사상구 새벽로 64',
+  '울산지방법원': '울산 남구 법대로 55',
+  '창원지방법원': '경남 창원시 성산구 창이대로 681',
+  '창원지방법원 마산지원': '경남 창원시 마산합포구 3.15대로 724',
+  '창원지방법원 진주지원': '경남 진주시 진주대로 1219',
+  '창원지방법원 통영지원': '경남 통영시 광도면 죽림해안로 36',
+  '창원지방법원 밀양지원': '경남 밀양시 가곡로 97',
+  // 제주
+  '제주지방법원': '제주 제주시 광양9길 10',
+};
+
+// 법원별 입찰 시간 (시작/마감) — 없으면 기본값 10:00/11:00
+const AG_COURT_TIMES = {
+  '서울중앙지방법원':       { start:'10:00', end:'11:10' },
+  '서울동부지방법원':       { start:'10:00', end:'11:10' },
+  '서울서부지방법원':       { start:'10:00', end:'11:10' },
+  '서울남부지방법원':       { start:'10:00', end:'11:10' },
+  '서울북부지방법원':       { start:'10:00', end:'11:10' },
+  '수원지방법원':           { start:'10:00', end:'11:00' },
+  '수원지방법원 성남지원':  { start:'10:00', end:'11:20' },
+  '수원지방법원 여주지원':  { start:'10:00', end:'11:10' },
+  '수원지방법원 평택지원':  { start:'10:00', end:'11:20' },
+  '수원지방법원 안산지원':  { start:'10:30', end:'11:40' },
+  '수원지방법원 안양지원':  { start:'10:00', end:'11:10' },
+  '의정부지방법원':         { start:'10:30', end:'11:50' },
+  '의정부지방법원 고양지원':{ start:'10:00', end:'11:20' },
+  '의정부지방법원 남양주지원':{ start:'10:30', end:'11:50' },
+  '인천지방법원':           { start:'10:00', end:'11:20' },
+  '인천지방법원 부천지원':  { start:'10:00', end:'11:10' },
+};
+
+// 법원명으로 주소·시간 일괄 세팅 (선택 및 AI 분석 공용)
+function AG_applyCourtData(courtName) {
+  const addrEl = document.getElementById('ag-court-addr');
+  const closeEl = document.getElementById('ag-close-time');
+  const timeEl  = document.getElementById('ag-time');
+
+  addrEl.value = AG_COURT_ADDR[courtName] || '';
+  AG_COURT_ADDR[courtName] ? addrEl.setAttribute('readonly','') : addrEl.removeAttribute('readonly');
+
+  const times = AG_COURT_TIMES[courtName];
+  if (times) {
+    timeEl.value  = times.start;
+    closeEl.value = times.end;
+    closeEl.setAttribute('readonly','');
+  } else {
+    closeEl.value = '';
+    closeEl.removeAttribute('readonly');
+  }
+}
+
+// 법원 선택 시 주소·시간 자동 입력
+document.getElementById('ag-court').addEventListener('change', function() {
+  const v = this.value;
+  const customWrap = document.getElementById('ag-court-custom-wrap');
+  if (v === '직접입력') {
+    customWrap.style.display = 'flex';
+    document.getElementById('ag-court-addr').value = '';
+    document.getElementById('ag-court-addr').removeAttribute('readonly');
+    document.getElementById('ag-close-time').value = '';
+    document.getElementById('ag-close-time').removeAttribute('readonly');
+  } else {
+    customWrap.style.display = 'none';
+    AG_applyCourtData(v);
+  }
+});
+
+// 최저가 입력 시 보증금 자동 계산
+function AG_autoDeposit() {
+  const raw = document.getElementById('ag-min-price').value.replace(/,/g, '').replace(/[^0-9]/g,'');
+  if (!raw) { document.getElementById('ag-deposit').value = ''; return; }
+  const num = parseInt(raw, 10);
+  document.getElementById('ag-min-price').value = num.toLocaleString('ko-KR');
+  const dep = Math.floor(num * 0.1);
+  document.getElementById('ag-deposit').value = dep.toLocaleString('ko-KR');
+}
+
+// 준비서류 데이터
+const AG_DOCS = {
+  '개인_직접': [
+    '신분증 (주민등록증 또는 운전면허증)',
+    '도장 (인감도장 또는 막도장)',
+    '입찰보증금 (자기앞수표)',
+    '주민등록초본 (주소 변경 이력 포함)',
+  ],
+  '개인_대리': [
+    '위임장 (본인 인감 날인)',
+    '본인 인감증명서 (3개월 이내)',
+    '대리인 신분증',
+    '대리인 도장',
+    '입찰보증금 (자기앞수표)',
+    '본인 주민등록초본',
+  ],
+  '법인_직접': [
+    '법인 인감도장',
+    '법인 인감증명서 (3개월 이내)',
+    '법인등기사항전부증명서 (3개월 이내)',
+    '대표자 신분증',
+    '입찰보증금 (자기앞수표)',
+  ],
+  '법인_대리': [
+    '위임장 (법인 인감 날인)',
+    '법인 인감증명서 (3개월 이내)',
+    '법인등기사항전부증명서 (3개월 이내)',
+    '대리인 신분증',
+    '대리인 도장',
+    '입찰보증금 (자기앞수표)',
+  ],
+};
+
+function AG_updateDocs() {
+  const type = document.querySelector('input[name="ag-type"]:checked')?.value || '개인';
+  const proxy = document.querySelector('input[name="ag-proxy"]:checked')?.value || '직접';
+  const key = `${type}_${proxy}`;
+  const docs = AG_DOCS[key] || [];
+  const ul = document.getElementById('ag-out-docs');
+  if (ul) {
+    ul.innerHTML = docs.map(d => `<li>${d}</li>`).join('');
+  }
+  const lbl = document.getElementById('ag-out-type-label');
+  if (lbl) lbl.textContent = `(${type} · ${proxy} 입찰)`;
+}
+
+function AG_fmtDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const days = ['일','월','화','수','목','금','토'];
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+}
+
+function AG_fmtTime(timeStr) {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':');
+  const hour = parseInt(h, 10);
+  const ampm = hour < 12 ? '오전' : '오후';
+  const h12 = hour % 12 || 12;
+  return `${ampm} ${h12}시 ${m}분`;
+}
+
+function AG_generate() {
+  const courtSel = document.getElementById('ag-court').value;
+  const court = courtSel === '직접입력'
+    ? document.getElementById('ag-court-custom').value.trim()
+    : courtSel;
+  const addr = document.getElementById('ag-court-addr').value.trim();
+  const date = document.getElementById('ag-date').value;
+  const time = document.getElementById('ag-time').value;
+  const closeTime = document.getElementById('ag-close-time').value;
+  const room = document.getElementById('ag-room').value.trim();
+  const caseno = document.getElementById('ag-caseno').value.trim();
+  const propaddr = document.getElementById('ag-addr').value.trim();
+  const minprice = document.getElementById('ag-min-price').value.trim();
+  const deposit = document.getElementById('ag-deposit').value.trim();
+  const staff = document.getElementById('ag-staff').value;
+  const type = document.querySelector('input[name="ag-type"]:checked')?.value || '개인';
+  const proxy = document.querySelector('input[name="ag-proxy"]:checked')?.value || '직접';
+
+  if (!court) { alert('법원명을 선택하거나 입력해주세요.'); return; }
+  if (!date)  { alert('경매기일을 입력해주세요.'); return; }
+  if (!minprice) { alert('최저매각가격을 입력해주세요.'); return; }
+
+  // 상단 강조 영역
+  document.getElementById('ag-out-datetime').textContent = AG_fmtDate(date);
+  document.getElementById('ag-out-starttime').textContent = time ? AG_fmtTime(time) : '—';
+  document.getElementById('ag-out-closetime').textContent = closeTime ? AG_fmtTime(closeTime) : '—';
+  document.getElementById('ag-out-court-big').textContent = court;
+  document.getElementById('ag-out-addr-big').textContent = addr || '';
+  document.getElementById('ag-out-room-big').textContent = room || '';
+
+  const caseRow = document.getElementById('ag-out-caseno-row');
+  if (caseno) { document.getElementById('ag-out-caseno').textContent = caseno; caseRow.style.display=''; }
+  else { caseRow.style.display='none'; }
+
+  const propRow = document.getElementById('ag-out-propaddr-row');
+  if (propaddr) { document.getElementById('ag-out-propaddr').textContent = propaddr; propRow.style.display=''; }
+  else { propRow.style.display='none'; }
+
+  document.getElementById('ag-out-minprice').textContent = minprice ? minprice + '원' : '—';
+  document.getElementById('ag-out-deposit').textContent = deposit ? deposit + '원' : '—';
+  document.getElementById('ag-out-staff').textContent = staff;
+
+  AG_updateDocs();
+
+  // 모바일 카드 동기화
+  document.getElementById('mob-datetime').textContent   = AG_fmtDate(date);
+  document.getElementById('mob-starttime').textContent  = time ? AG_fmtTime(time) : '—';
+  document.getElementById('mob-closetime').textContent  = closeTime ? AG_fmtTime(closeTime) : '—';
+  document.getElementById('mob-court').textContent      = court;
+  document.getElementById('mob-addr').textContent       = addr || '';
+  document.getElementById('mob-room').textContent       = room || '';
+  document.getElementById('mob-minprice').textContent   = minprice ? minprice + '원' : '—';
+  document.getElementById('mob-deposit').textContent    = deposit ? deposit + '원' : '—';
+  document.getElementById('mob-staff').textContent      = staff;
+  document.getElementById('mob-type-label').textContent = `(${type} · ${proxy} 입찰)`;
+
+  const mobCaseWrap = document.getElementById('mob-caseno-wrap');
+  if (caseno) { document.getElementById('mob-caseno').textContent = caseno; mobCaseWrap.style.display=''; }
+  else { mobCaseWrap.style.display='none'; }
+
+  const mobPropWrap = document.getElementById('mob-propaddr-wrap');
+  if (propaddr) { document.getElementById('mob-propaddr').textContent = propaddr; mobPropWrap.style.display=''; }
+  else { mobPropWrap.style.display='none'; }
+
+  // 준비서류 모바일 카드 동기화
+  const mobDocs = document.getElementById('mob-docs');
+  const srcDocs = [...document.querySelectorAll('#ag-out-docs li')].map(li => li.textContent);
+  mobDocs.innerHTML = srcDocs.map(d =>
+    `<li style="background:#f8f6f1;border:1px solid #e8e4dc;border-radius:6px;padding:8px 12px;font-size:12px;color:#374151;display:flex;align-items:center;gap:8px;"><span style="color:#142040;font-weight:700;flex-shrink:0;">✓</span>${d}</li>`
+  ).join('');
+
+  const wrap = document.getElementById('ag-card-wrap');
+  wrap.classList.add('show');
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function AG_clear() {
+  document.getElementById('ag-court').value = '';
+  document.getElementById('ag-court-addr').value = '';
+  document.getElementById('ag-court-custom').value = '';
+  document.getElementById('ag-court-custom-wrap').style.display = 'none';
+  document.getElementById('ag-date').value = '';
+  document.getElementById('ag-time').value = '10:00';
+  document.getElementById('ag-close-time').value = '';
+  document.getElementById('ag-room').value = '';
+  document.getElementById('ag-caseno').value = '';
+  document.getElementById('ag-addr').value = '';
+  document.getElementById('ag-min-price').value = '';
+  document.getElementById('ag-deposit').value = '';
+  document.getElementById('ag-card-wrap').classList.remove('show');
+}
+
+async function AG_capture(btn) {
+  const card = document.getElementById('ag-mobile-card');
+  const orig = btn.textContent;
+  btn.textContent = '캡처 중...';
+  btn.disabled = true;
+  try {
+    const canvas = await html2canvas(card, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+
+    // 클립보드 복사 시도 → 성공하면 카톡에 바로 붙여넣기 가능
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      btn.textContent = '✅ 복사됨! 카톡에서 Ctrl+V';
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 3000);
+      return;
+    } catch(_) {
+      // 클립보드 권한 없으면 파일 다운로드로 폴백
+      const court = (document.getElementById('ag-out-court-big').textContent || '입찰안내').replace(/\s/g,'');
+      const date = document.getElementById('ag-date').value || '';
+      const link = document.createElement('a');
+      link.download = `더핀_입찰안내_${court}_${date}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      alert('클립보드 복사가 지원되지 않아 파일로 저장했습니다.\n저장된 파일을 카톡에 첨부해 주세요.');
+    }
+  } catch(e) {
+    alert('캡처 실패: ' + e.message);
+  } finally {
+    btn.textContent = orig;
+    btn.disabled = false;
+  }
+}
+
+function AG_copyText() {
+  const court = document.getElementById('ag-out-court-big').textContent;
+  const addr = document.getElementById('ag-out-addr-big').textContent;
+  const dt = document.getElementById('ag-out-datetime').textContent;
+  const room = document.getElementById('ag-out-room-big').textContent;
+  const caseno = document.getElementById('ag-out-caseno').textContent;
+  const minp = document.getElementById('ag-out-minprice').textContent;
+  const dep = document.getElementById('ag-out-deposit').textContent;
+  const staff = document.getElementById('ag-out-staff').textContent;
+  const docs = [...document.querySelectorAll('#ag-out-docs li')].map(li=>'  ✓ '+li.textContent).join('\n');
+
+  const txt = `【THE FIN 경매 입찰 안내】\n\n`
+    + `▶ 법원: ${court}\n`
+    + `▶ 주소: ${addr}\n`
+    + `▶ 경매기일: ${dt}\n`
+    + (room && room!=='—' ? `▶ 법정: ${room}\n` : '')
+    + (caseno && caseno!=='—' ? `▶ 사건번호: ${caseno}\n` : '')
+    + `\n▶ 최저매각가격: ${minp}\n`
+    + `▶ 입찰보증금: ${dep}\n`
+    + `\n▶ 준비서류\n${docs}\n`
+    + `\n담당: ${staff} | THE FIN 더핀중개법인`;
+
+  navigator.clipboard.writeText(txt).then(()=>alert('클립보드에 복사되었습니다.')).catch(()=>alert('복사 실패 — 직접 선택 후 복사해주세요.'));
+}
 </script>
 </body>
 </html>
