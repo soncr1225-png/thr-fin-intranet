@@ -1273,7 +1273,7 @@ function C_scheduleSync(){
     try{
       const[c,a]=await Promise.all([C_api('getCases'),C_api('getArchive')]);
       if(Array.isArray(c)&&Array.isArray(a)){
-        C_cases=[...c,...a];C_cacheSave(C_CACHE_CASES,C_cases);C_render();setSync('ok');
+        C_cases=[...c,...a];C_cacheSave(C_CACHE_CASES,C_cases);C_render();A_allCases=C_cases;A_render();setSync('ok');
       }
     }catch(e){}
   },3000);
@@ -1408,8 +1408,8 @@ function C_switchTab(t){
 function C_setFilter(f,b){C_filt=f;document.querySelectorAll('#C_filterRow .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');C_render();}
 function C_setFilterArc(f,b){C_filtArc=f;document.querySelectorAll('#C_filterRowArchive .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');C_render();}
 
-const C_AH=`<tr><th style="width:88px;">상태</th><th style="width:110px;">사건번호</th><th style="width:130px;">주소지</th><th style="width:78px;">경매기일</th><th style="width:88px;">마감요청일</th><th style="width:260px;">조사유형 (담당자)</th><th>기타요청</th><th style="width:55px;"></th></tr>`;
-const C_ZH=`<tr><th style="width:88px;">종료사유</th><th style="width:118px;">사건번호</th><th style="width:140px;">주소지</th><th style="width:85px;">경매기일</th><th style="width:65px;">담당자</th><th style="width:180px;">조사유형</th><th>비고</th><th style="width:75px;">종료일</th><th style="width:60px;"></th></tr>`;
+const C_AH=`<tr><th style="width:88px;">상태</th><th style="width:110px;">사건번호</th><th style="width:130px;">주소지</th><th style="width:75px;">법원</th><th style="width:78px;">경매기일</th><th style="width:88px;">마감요청일</th><th style="width:260px;">조사유형 (담당자)</th><th>기타요청</th><th style="width:55px;"></th></tr>`;
+const C_ZH=`<tr><th style="width:88px;">종료사유</th><th style="width:118px;">사건번호</th><th style="width:140px;">주소지</th><th style="width:75px;">법원</th><th style="width:85px;">경매기일</th><th style="width:65px;">담당자</th><th style="width:180px;">조사유형</th><th>비고</th><th style="width:75px;">종료일</th><th style="width:60px;"></th></tr>`;
 
 function C_archiveTags(typeMap){
   if(!typeMap)return '—';
@@ -1431,13 +1431,13 @@ function C_render(){
     else if(C_filt==='urgent')list=list.filter(C_isUrgent);
     else if(C_filt==='done')list=list.filter(c=>c.status==='done');
     else if(C_filt==='changed')list=list.filter(c=>c.status==='changed');
-    tbody.innerHTML=list.length?list.map(C_activeRow).join(''):`<tr class="empty-row"><td colspan="8">진행중인 사건이 없습니다</td></tr>`;
+    tbody.innerHTML=list.length?list.map(C_activeRow).join(''):`<tr class="empty-row"><td colspan="9">진행중인 사건이 없습니다</td></tr>`;
   }else if(C_tab==='archive'){
     list=C_cases.filter(c=>C_ARCHIVE.includes(c.status));
     if(C_filtArc==='closed')list=list.filter(c=>c.status==='closed');
     else if(C_filtArc==='cancel')list=list.filter(c=>c.status==='cancel');
     else if(C_filtArc==='drop')list=list.filter(c=>c.status==='drop');
-    tbody.innerHTML=list.length?list.map(C_archiveRow).join(''):`<tr class="empty-row"><td colspan="9">종료된 사건이 없습니다</td></tr>`;
+    tbody.innerHTML=list.length?list.map(C_archiveRow).join(''):`<tr class="empty-row"><td colspan="10">종료된 사건이 없습니다</td></tr>`;
   }
   C_updateStats();
 }
@@ -1478,6 +1478,7 @@ function C_activeRow(c){
 </div></div></td>
 <td style="font-family:monospace;font-size:12px;"><span class="editable" onclick="C_startEdit(this,'${c.id}','caseNo','${(c.caseNo||'').replace(/'/g,"&#39;")}')">${c.caseNo||''}</span></td>
 <td style="max-width:150px;"><span class="editable" title="${c.address||''}" onclick="C_startEdit(this,'${c.id}','address','${(c.address||'').replace(/'/g,"&#39;")}')" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${C_shortAddr(c.address)}</span></td>
+<td style="font-size:12px;"><span class="editable" onclick="C_startEdit(this,'${c.id}','court','${(c.court||'').replace(/'/g,"&#39;")}')">${c.court||'—'}</span></td>
 <td style="font-size:12px;color:#888;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','auctionDate','${c.auctionDate||''}')">${C_fmt(c.auctionDate)}</span>${db}</td>
 <td class="${C_dlCls(c.deadline)}"><span class="editable" onclick="C_startEditDate(this,'${c.id}','deadline','${c.deadline||''}')">${C_fmt(c.deadline)}</span></td>
 <td style="overflow:visible;position:relative;"><div style="min-width:240px;">${typeCells}</div></td>
@@ -1499,6 +1500,7 @@ function C_archiveRow(c){
 </div></div></td>
 <td style="font-family:monospace;font-size:12px;">${c.caseNo||''}</td>
 <td>${c.address||''}</td>
+<td style="font-size:12px;color:#aaa;">${c.court||'—'}</td>
 <td style="font-size:12px;color:#aaa;">${C_fmt(c.auctionDate)}</td>
 <td><span class="mgr-badge mgr-${c.manager||''}">${c.manager||'—'}</span></td>
 <td>${C_archiveTags(c.typeMap)}</td>
@@ -1523,9 +1525,11 @@ function C_chStatus(id,ns){
   C_cacheSave(C_CACHE_CASES,C_cases);
   if(C_ARCHIVE.includes(ns)){
     c.closedAt=C_today();C_render();C_switchTab('archive');
+    A_render();
     C_api('archiveCase',{id,status:ns}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
   }else{
     C_render();
+    A_render();
     C_api('updateCase',{id,status:ns}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
   }
 }
@@ -1538,6 +1542,7 @@ function C_restoreToActive(id){
   C_closeMenus();const c=C_cases.find(x=>x.id===id);if(!c)return;
   C_saveUndo('복원');c.status='ongoing';c.closedAt='';
   C_cacheSave(C_CACHE_CASES,C_cases);C_render();C_switchTab('active');
+  A_render();
   C_api('restoreCase',{id}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
 }
 
@@ -1545,8 +1550,9 @@ function C_editField(id,field,value){
   const c=C_cases.find(x=>x.id===id);if(!c)return;
   c[field]=value;
   if(field==='auctionDate'){const newDL=C_calcDL(value);c.deadline=newDL;C_apiBg('updateCase',{id,status:c.status,auctionDate:value,deadline:newDL});}
-  else{C_apiBg('updateCase',{id,status:c.status,caseNo:c.caseNo,address:c.address,auctionDate:c.auctionDate,deadline:c.deadline,note:c.note});}
+  else{C_apiBg('updateCase',{id,status:c.status,caseNo:c.caseNo,address:c.address,court:c.court,auctionDate:c.auctionDate,deadline:c.deadline,note:c.note});}
   C_cacheSave(C_CACHE_CASES,C_cases);C_updateStats();
+  A_render();
 }
 function C_cycleTypeMgr(id,type){const c=C_cases.find(x=>x.id===id);if(!c)return;c.typeMap=c.typeMap||{};if(!c.typeMap[type])c.typeMap[type]='손청락';else{const idx=C_MANAGERS.indexOf(c.typeMap[type]);c.typeMap[type]=idx>=C_MANAGERS.length-1?'':C_MANAGERS[idx+1];}C_render();C_saveTypeMapBg(id,c);C_cacheSave(C_CACHE_CASES,C_cases);}
 function C_setTypeMgr(id,type,mgr){const c=C_cases.find(x=>x.id===id);if(!c)return;c.typeMap=c.typeMap||{};c.typeMap[type]=mgr;C_render();C_saveTypeMapBg(id,c);C_cacheSave(C_CACHE_CASES,C_cases);}
@@ -1915,41 +1921,19 @@ async function B_analyzeImage(base64,mimeType){
 //  - A_items    : 입찰 고객 항목 (caseNo FK로 A_allCases와 조인)
 //  - 같은 사건에 여러 고객 허용 → 케이스별로 묶어 표시
 // ══════════════════════════════════════════════════════════════════
-const A_STATUS = {
-  ongoing:     { label:'진행중',   cls:'a-ongoing' },
-  won:         { label:'낙찰',     cls:'a-won' },
-  gaveup:      { label:'유찰',     cls:'a-gaveup' },
-  changed:     { label:'기일변경', cls:'a-changed' },
-  customerQuit:{ label:'고객변심', cls:'a-quit' }
-};
 const A_CASE_SM = { ongoing:'진행', done:'조사완료', report:'보고서', confirmed:'입찰확정',
                     changed:'기일변경', closed:'낙찰종료', cancel:'고객변심', drop:'기타종료' };
 let A_items = [], A_allCases = [], A_curMonth = '', A_filtStatus = 'all', A_clientFilterVal = '';
 
 async function A_gasPost(action, data) {
+  const map = { add:'addAuction', update:'updateAuction', delete:'deleteAuction' };
   try {
     const r = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
-      body: JSON.stringify({ module:'auction', action, data }) });
+      body: JSON.stringify({ action: map[action]||action, data }) });
     return await r.json();
   } catch(e) { return { error: e.message }; }
 }
 
-async function A_loadAll() {
-  setSync('loading');
-  try {
-    const [r1, r2] = await Promise.all([
-      fetch(`${GAS_URL}?module=auction&action=list`).then(r=>r.json()),
-      fetch(`${GAS_URL}?action=getCasesAll`).then(r=>r.json())
-    ]);
-    A_items    = (r1 && r1.ok)     ? r1.data : [];
-    A_allCases = Array.isArray(r2) ? r2      : [];
-    A_buildMonthSelector();
-    A_render();
-    const activeCnt = A_allCases.filter(c=>['ongoing','done','report','confirmed'].includes(c.status)).length;
-    document.getElementById('mainBadge-auction').textContent = activeCnt;
-    setSync('ok');
-  } catch(e) { setSync('err'); }
-}
 
 function A_buildMonthSelector() {
   const months = {};
@@ -1981,11 +1965,12 @@ function A_setFilter(f, btn) {
 }
 
 function A_render() {
+  if (C_cases && C_cases.length > 0) A_allCases = C_cases;
   const thead = document.getElementById('A_tHead');
   const tbody = document.getElementById('A_tBody');
   thead.innerHTML = `<tr>
-    <th>사건번호</th><th>물건(주소)</th><th>법원</th><th>경매기일</th>
-    <th>입찰상태</th><th>고객명</th><th>진행내용</th>
+    <th>고객명</th><th>사건번호</th><th>물건(주소)</th><th>법원</th><th>경매기일</th>
+    <th>진행내용</th>
     <th>매각결정기일</th><th>항고기간</th><th>잔금납부기일</th><th>비고</th><th></th>
   </tr>`;
 
@@ -2005,8 +1990,11 @@ function A_render() {
     cases = cases.filter(c => matchCaseNos.has(c.caseNo));
   }
 
-  // 2. 경매기일 기준 정렬 (미정은 뒤로)
+  // 2. 정렬: 낙찰종료 최상단 고정, 이후 경매기일 오름차순 (미정은 뒤로)
   cases = [...cases].sort((a,b) => {
+    const aC = a.status === 'closed', bC = b.status === 'closed';
+    if (aC && !bC) return -1;
+    if (!aC && bC) return 1;
     if (!a.auctionDate && !b.auctionDate) return 0;
     if (!a.auctionDate) return 1;
     if (!b.auctionDate) return -1;
@@ -2014,13 +2002,19 @@ function A_render() {
   });
 
   // 3. 통계 업데이트
-  const monthCases = A_curMonth ? cases : A_allCases.filter(c=>c.auctionDate&&c.auctionDate.startsWith((new Date().toISOString().substring(0,7))));
-  document.getElementById('A_st-total').textContent   = monthCases.length;
-  document.getElementById('A_st-won').textContent     = A_items.filter(i=>i.status==='won').length;
+  const curMonthStr = A_curMonth || new Date().toISOString().substring(0,7);
+  const monthCasesAll = A_allCases.filter(c => c.auctionDate && c.auctionDate.startsWith(curMonthStr));
+  document.getElementById('A_st-total').textContent = monthCasesAll.length;
+  const wonInMonth = A_items.filter(i => {
+    if (i.status !== 'won') return false;
+    const cas = A_allCases.find(c => c.caseNo === i.caseNo);
+    return cas && cas.auctionDate && cas.auctionDate.startsWith(curMonthStr);
+  });
+  document.getElementById('A_st-won').textContent = wonInMonth.length;
   document.getElementById('A_st-ongoing').textContent = A_allCases.filter(c=>['ongoing','done','report','confirmed'].includes(c.status)).length;
 
   if (!cases.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="12">해당 조건의 사건이 없습니다</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="11">해당 조건의 사건이 없습니다</td></tr>`;
     return;
   }
 
@@ -2043,6 +2037,39 @@ function A_addDays(dateStr, days) {
   const d = new Date(dateStr); d.setDate(d.getDate() + days);
   return d.toISOString().substring(0,10);
 }
+
+// 한국 공휴일 (2024~2027, 대체공휴일 포함)
+const A_KR_HOLIDAYS = new Set([
+  '2024-01-01','2024-02-09','2024-02-10','2024-02-11','2024-02-12',
+  '2024-03-01','2024-05-05','2024-05-15','2024-06-06','2024-08-15',
+  '2024-09-16','2024-09-17','2024-09-18','2024-10-03','2024-10-09','2024-12-25',
+  '2025-01-01','2025-01-28','2025-01-29','2025-01-30',
+  '2025-03-01','2025-03-03','2025-05-05','2025-05-06','2025-06-06','2025-08-15',
+  '2025-10-03','2025-10-05','2025-10-06','2025-10-07','2025-10-08','2025-10-09','2025-12-25',
+  '2026-01-01','2026-02-17','2026-02-18','2026-02-19',
+  '2026-03-01','2026-03-02','2026-05-05','2026-05-24','2026-05-25','2026-06-06','2026-08-15','2026-08-17',
+  '2026-09-24','2026-09-25','2026-09-26','2026-09-28','2026-10-03','2026-10-05','2026-10-09','2026-12-25',
+  '2027-01-01','2027-02-07','2027-02-08','2027-02-09',
+  '2027-03-01','2027-03-03','2027-05-05','2027-05-13','2027-06-06','2027-08-15','2027-08-16',
+  '2027-09-14','2027-09-15','2027-09-16','2027-10-03','2027-10-04','2027-10-09','2027-12-25','2027-12-27',
+]);
+function A_isHolidayOrWeekend(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.getDay() === 0 || d.getDay() === 6 || A_KR_HOLIDAYS.has(dateStr);
+}
+function A_nextWorkday(dateStr) {
+  let s = dateStr;
+  while (A_isHolidayOrWeekend(s)) s = A_addDays(s, 1);
+  return s;
+}
+// 낙찰일 기준 3개 날짜 자동계산
+function A_calcDates(auctionDate) {
+  if (!auctionDate) return { saleDecisionDate:'', appealDate:'', balanceDate:'' };
+  const saleDecisionDate = A_nextWorkday(A_addDays(auctionDate, 7)); // 낙찰+7일, 공휴일→다음평일
+  const appealDate       = A_addDays(saleDecisionDate, 7);           // 매각결정+7일
+  const balanceDate      = A_addDays(appealDate, 30);                // 항고기간+30일
+  return { saleDecisionDate, appealDate, balanceDate };
+}
 function A_caseBg(status) {
   const map = { ongoing:'#eff6ff', done:'#f0fdf4', report:'#fefce8', confirmed:'#f0fdf4',
                 changed:'#f9fafb', closed:'#fffbeb', cancel:'#f9fafb', drop:'#f9fafb' };
@@ -2058,12 +2085,7 @@ function A_caseRow(cas, cust, isFirst) {
 
   // ── 사건 공통 셀 (첫 번째 행만 표시)
   const caseCells = isFirst ? `
-    <td style="font-size:11px;font-weight:700;color:#1a1a2e;${caseOpacity}background:${caseBg};">
-      <div style="display:flex;flex-direction:column;gap:3px;">
-        <span class="sbadge ${isCaseActive?'s-ongoing':'s-closed'}" style="font-size:9px;cursor:default;">${caseLbl}</span>
-        <span>${cas.caseNo||'—'}</span>
-      </div>
-    </td>
+    <td style="font-size:11px;font-weight:700;color:#1a1a2e;${caseOpacity}background:${caseBg};">${cas.caseNo||'—'}</td>
     <td style="font-weight:600;${caseOpacity}background:${caseBg};">${C_shortAddr(cas.address)||'—'}</td>
     <td style="font-size:12px;${caseOpacity}background:${caseBg};">${cas.court||'—'}</td>
     <td style="white-space:nowrap;font-size:11px;${caseOpacity}background:${caseBg};">${A_fmt(cas.auctionDate)||'—'}</td>
@@ -2076,17 +2098,23 @@ function A_caseRow(cas, cust, isFirst) {
 
   // ── 고객 없음
   if (!cust) {
-    return `<tr style="border-bottom:2px solid #e8e4dc;">
+    return `<tr style="border-bottom:2px solid #e8e4dc;cursor:pointer;" onclick="A_openFormForCase('${A_escHtml(cas.caseNo)}')" title="클릭하여 고객 추가">
+      <td style="background:${caseBg};color:#1d4ed8;font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline dotted;">+ 고객명</td>
       ${caseCells}
-      <td colspan="7" style="color:#bbb;font-size:12px;font-style:italic;background:${caseBg};">고객 미등록</td>
       <td style="background:${caseBg};">
-        <button onclick="A_openFormForCase('${A_escHtml(cas.caseNo)}')" style="font-size:11px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 10px;cursor:pointer;color:#1d4ed8;">+ 고객 추가</button>
+        <div id="A_scell_${cas.id}">
+          <span class="sbadge ${(C_SM[cas.status]||C_SM.ongoing).cls}" style="font-size:10px;cursor:pointer;display:block;"
+            onclick="event.stopPropagation();A_showCaseStatusBtns('${cas.id}')">${(C_SM[cas.status]||C_SM.ongoing).label} ▾</span>
+        </div>
+      </td>
+      <td colspan="4" style="color:#bbb;font-size:12px;font-style:italic;background:${caseBg};">— 고객을 등록하면 자동 계산됩니다</td>
+      <td style="background:${caseBg};">
+        <button onclick="event.stopPropagation();A_openFormForCase('${A_escHtml(cas.caseNo)}')" style="font-size:11px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 10px;cursor:pointer;color:#1d4ed8;">+ 고객 추가</button>
       </td>
     </tr>`;
   }
 
-  const st = A_STATUS[cust.status] || A_STATUS.ongoing;
-  const isInactive = ['changed','customerQuit'].includes(cust.status);
+  const isInactive = !isCaseActive;
   const isLast = (() => {
     const custs = A_items.filter(i => i.caseNo === cas.caseNo);
     return custs[custs.length-1]?.id === cust.id;
@@ -2108,13 +2136,18 @@ function A_caseRow(cas, cust, isFirst) {
   const appealLbl = A_fmt(cust.appealDate) + (appealOk ? ' <span style="color:#16a34a;font-weight:700;">✓</span>' : '');
 
   return `<tr class="${inactiveCls}" style="${borderBot}">
-    ${caseCells}
-    <td style="${inactiveTdStyle}" id="A_scell_${cust.id}">
-      <span class="sbadge ${st.cls}" style="cursor:pointer;white-space:nowrap;"
-        onclick="A_showStatusBtns('${cust.id}')">${st.label} ▾</span>
+    <td class="a-editable" style="${inactiveTdStyle}font-weight:700;" data-item-id="${cust.id}" onclick="A_startEditClientName(this)">
+      ${A_escHtml(cust.clientName)||'<span style="color:#ccc;font-weight:400;font-size:11px;">고객명</span>'}
     </td>
-    <td style="${inactiveTdStyle}font-weight:700;">${A_escHtml(cust.clientName)||'—'}</td>
-    ${editTd('content', cust.content, false, 'max-width:160px;')}
+    ${caseCells}
+    <td style="font-size:11px;max-width:180px;${inactiveTdStyle}">
+      ${isFirst ? `<div id="A_scell_${cas.id}" style="margin-bottom:4px;">
+        <span class="sbadge ${(C_SM[cas.status]||C_SM.ongoing).cls}" style="cursor:pointer;white-space:nowrap;font-size:10px;"
+          onclick="A_showCaseStatusBtns('${cas.id}')">${(C_SM[cas.status]||C_SM.ongoing).label} ▾</span>
+      </div>` : ''}
+      <div id="A_ic_${cust.id}_content" class="a-editable" style="font-size:11px;min-height:14px;"
+        onclick="A_inlineEdit('${cust.id}','content','${A_escHtml(cust.content||'')}',false)">${A_escHtml(cust.content||'')}</div>
+    </td>
     <td id="A_ic_${cust.id}_saleDecisionDate" class="a-editable" style="white-space:nowrap;${inactiveTdStyle}"
       onclick="A_inlineEditDate('${cust.id}','saleDecisionDate','${cust.saleDecisionDate||''}','appealDate','appealOk')">${saleLbl}</td>
     <td id="A_ic_${cust.id}_appealDate" class="a-editable" style="white-space:nowrap;${inactiveTdStyle}"
@@ -2129,28 +2162,60 @@ function A_caseRow(cas, cust, isFirst) {
   </tr>`;
 }
 
-// ── 상태 버튼 팝업 (셀 내부에 인라인으로 표시)
-function A_showStatusBtns(id) {
-  const cell = document.getElementById('A_scell_' + id);
+// ── 사건 상태 버튼 팝업 (C_ 탭과 동일한 상태 체계, 쌍방향 연동)
+function A_showCaseStatusBtns(casId) {
+  const cell = document.getElementById('A_scell_' + casId);
   if (!cell) return;
+  const cas = A_allCases.find(c => c.id === casId); if (!cas) return;
   const opts = [
-    { k:'ongoing',      l:'진행중',   bg:'#dbeafe', fg:'#1d4ed8' },
-    { k:'won',          l:'낙찰',     bg:'#dcfce7', fg:'#15803d' },
-    { k:'gaveup',       l:'유찰',     bg:'#fef9c3', fg:'#854d0e' },
-    { k:'changed',      l:'기일변경', bg:'#f3f4f6', fg:'#6b7280' },
-    { k:'customerQuit', l:'고객변심', bg:'#f3f4f6', fg:'#6b7280' }
+    { k:'ongoing',   l:'● 진행',       col:'#1d4ed8' },
+    { k:'done',      l:'● 조사완료',   col:'#15803d' },
+    { k:'report',    l:'● 보고서작성', col:'#7e22ce' },
+    { k:'confirmed', l:'● 입찰확정',   col:'#065f46' },
+    { k:'closed',    l:'🔒 낙찰종료',  col:'#b45309' },
+    { k:'cancel',    l:'🔒 고객변심',  col:'#4b5563' },
+    { k:'drop',      l:'🔒 기타종료',  col:'#9f1239' },
+    { k:'changed',   l:'🔒 기일변경',  col:'#d97706' },
   ];
-  cell.innerHTML = `<div class="a-spop">` +
-    opts.map(o => `<button onclick="A_setStatus('${id}','${o.k}')"
-      style="background:${o.bg};color:${o.fg};border:1px solid ${o.fg}55;">${o.l}</button>`).join('') +
-    `<button class="sp-cancel" onclick="A_render()">✕</button></div>`;
+  cell.innerHTML = `<div class="a-spop" style="flex-direction:column;min-width:110px;">` +
+    opts.map(o => `<button class="smenu-item" onclick="C_chStatus('${casId}','${o.k}')"
+      style="color:${o.col};font-weight:700;text-align:left;">${o.l}</button>`).join('') +
+    `<button class="smenu-item sp-cancel" onclick="A_render()">✕ 취소</button></div>`;
 }
 
-async function A_setStatus(id, newStatus) {
-  const item = A_items.find(i=>i.id===id); if (!item) return;
-  item.status = newStatus; A_render(); setSync('loading');
-  const r = await A_gasPost('update', { id, status: newStatus });
-  setSync(r && r.ok ? 'ok' : 'err');
+function A_startEditClientName(td) {
+  if (td.querySelector('input')) return; // 이미 편집 중
+  const itemId = td.dataset.itemId;
+  const item = A_items.find(i => i.id === itemId);
+  if (!item) return;
+  const curVal = item.clientName || '';
+  const prevHTML = td.innerHTML;
+
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.className = 'inline-edit';
+  inp.value = curVal;
+  inp.style.cssText = 'width:100%;min-width:80px;box-sizing:border-box;font-weight:700;';
+  td.innerHTML = '';
+  td.appendChild(inp);
+  inp.focus();
+  inp.select();
+
+  const save = async () => {
+    const nv = inp.value.trim();
+    if (nv === curVal) { td.innerHTML = prevHTML; return; }
+    td.innerHTML = A_escHtml(nv) || '<span style="color:#ccc;font-weight:400;font-size:11px;">고객명</span>';
+    item.clientName = nv;
+    setSync('loading');
+    const r = await A_gasPost('update', { id: itemId, clientName: nv });
+    setSync(r && r.ok ? 'ok' : 'err');
+    A_render();
+  };
+  inp.onblur = save;
+  inp.onkeydown = e => {
+    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+    if (e.key === 'Escape') { td.innerHTML = prevHTML; }
+  };
 }
 
 // ── 텍스트/날짜 인라인 편집
@@ -2198,8 +2263,8 @@ function A_inlineEditDate(id, field, curVal) {
       const upd = { id, [field]: nv };
       // 매각결정기일 변경 시 항고기간·잔금납부기일 자동 제안
       if (field === 'saleDecisionDate' && nv) {
-        const aEnd = A_addDays(nv, 7);
-        const bal  = A_addDays(nv, 30);
+        const aEnd = A_addDays(nv, 7);          // 항고기간: 매각결정+7일
+        const bal  = A_addDays(aEnd, 30);        // 잔금납부: 항고기간+30일
         if (!item.appealDate)  { item.appealDate  = aEnd; upd.appealDate  = aEnd; }
         if (!item.balanceDate) { item.balanceDate = bal;  upd.balanceDate = bal;  }
       }
@@ -2242,13 +2307,11 @@ function A_onCaseChange(caseNo) {
     // 신규 등록 시 낙찰일 기준 날짜 자동 채우기
     const isNew = !document.getElementById('A_editId').value;
     if (isNew && cas.auctionDate) {
-      const saleDate   = A_addDays(cas.auctionDate, 7);
-      const appealEnd  = A_addDays(saleDate, 7);
-      const balDate    = A_addDays(saleDate, 30);
+      const { saleDecisionDate, appealDate, balanceDate } = A_calcDates(cas.auctionDate);
       const sdEl = document.getElementById('A_saleDecisionDate');
       const apEl = document.getElementById('A_appealDate');
       const blEl = document.getElementById('A_balanceDate');
-      if (!sdEl.value) { sdEl.value = saleDate; apEl.value = appealEnd; blEl.value = balDate; }
+      if (!sdEl.value) { sdEl.value = saleDecisionDate; apEl.value = appealDate; blEl.value = balanceDate; }
     }
   } else {
     info.innerHTML = '<span style="font-size:11px;color:#888;">사건을 선택하면 정보가 표시됩니다</span>';

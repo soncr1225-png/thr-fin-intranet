@@ -198,6 +198,9 @@ function casesPost(b) {
     case 'restoreCase':  return json(restoreCase(ss, d));
     case 'saveTodos':    return json(saveTodos(ss, b.data));
     case 'analyzeImage': return json(analyzeImage(d, 'case'));
+    case 'addAuction':    return json(addAuction(ss, d));
+    case 'updateAuction': return json(updateAuction(ss, d));
+    case 'deleteAuction': return json(deleteAuction(ss, d));
     default:             return json({ error: 'unknown action' });
   }
 }
