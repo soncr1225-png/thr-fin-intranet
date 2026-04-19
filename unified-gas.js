@@ -198,9 +198,13 @@ function casesPost(b) {
     case 'restoreCase':  return json(restoreCase(ss, d));
     case 'saveTodos':    return json(saveTodos(ss, b.data));
     case 'analyzeImage': return json(analyzeImage(d, 'case'));
-    case 'addAuction':    return json(addAuction(ss, d));
-    case 'updateAuction': return json(updateAuction(ss, d));
-    case 'deleteAuction': return json(deleteAuction(ss, d));
+    case 'addAuction':       return json(addAuction(ss, d));
+    case 'updateAuction':    return json(updateAuction(ss, d));
+    case 'deleteAuction':    return json(deleteAuction(ss, d));
+    case 'addMyeongdo':      return json(addMyeongdo(ss, d));
+    case 'updateMyeongdo':   return json(updateMyeongdo(ss, d));
+    case 'completeMyeongdo': return json(completeMyeongdo(ss, d));
+    case 'deleteMyeongdo':   return json(deleteMyeongdo(ss, d));
     default:             return json({ error: 'unknown action' });
   }
 }
@@ -1028,8 +1032,8 @@ function archiveAuctionByMonth(ss) { /* 입찰 항목은 적으므로 아카이�
 // ============================================================
 // MYEONGDO — GET
 // ============================================================
-// 명도 컬럼(15): id,clientName,auctionDate,court,caseNo,propertyName,content,
-//   commissionRatio,injunctionNo,respondent,warningDate,moveDate,note,status,createdAt
+// 명도 컬럼(15): id,clientName,auctionDate,court,caseNo,propertyName,
+//   injunctionNo,respondent,serviceDate,enforcementDate,warningDate,moveDate,note,status,createdAt
 
 function myeongdoGet(p) {
   var ss = casesSS();
@@ -1053,10 +1057,10 @@ function mapMyeongdoRow(r) {
     court:           String(r[3]  || ''),
     caseNo:          String(r[4]  || ''),
     propertyName:    String(r[5]  || ''),
-    content:         String(r[6]  || ''),
-    commissionRatio: String(r[7]  || ''),
-    injunctionNo:    String(r[8]  || ''),
-    respondent:      String(r[9]  || ''),
+    injunctionNo:    String(r[6]  || ''),
+    respondent:      String(r[7]  || ''),
+    serviceDate:     r[8]  ? kstDate(r[8])  : '',
+    enforcementDate: r[9]  ? kstDate(r[9])  : '',
     warningDate:     r[10] ? kstDate(r[10]) : '',
     moveDate:        r[11] ? kstDate(r[11]) : '',
     note:            String(r[12] || ''),
@@ -1086,10 +1090,12 @@ function addMyeongdo(ss, d) {
   var id = Utilities.getUuid();
   sheet.appendRow([
     id, d.clientName || '', d.auctionDate ? new Date(d.auctionDate) : '',
-    d.court || '', d.caseNo || '', d.propertyName || '', d.content || '',
-    d.commissionRatio || '', d.injunctionNo || '', d.respondent || '',
-    d.warningDate ? new Date(d.warningDate) : '',
-    d.moveDate    ? new Date(d.moveDate)    : '',
+    d.court || '', d.caseNo || '', d.propertyName || '',
+    d.injunctionNo || '', d.respondent || '',
+    d.serviceDate     ? new Date(d.serviceDate)     : '',
+    d.enforcementDate ? new Date(d.enforcementDate) : '',
+    d.warningDate     ? new Date(d.warningDate)     : '',
+    d.moveDate        ? new Date(d.moveDate)        : '',
     d.note || '', 'active', new Date()
   ]);
   return { ok: true, id: id };
@@ -1104,10 +1110,12 @@ function updateMyeongdo(ss, d) {
   var sv = function(col, val) { if (val !== undefined) sheet.getRange(r, col).setValue(val); };
   sv(2, d.clientName);
   if (d.auctionDate !== undefined) sv(3, d.auctionDate ? new Date(d.auctionDate) : '');
-  sv(4, d.court); sv(5, d.caseNo); sv(6, d.propertyName); sv(7, d.content);
-  sv(8, d.commissionRatio); sv(9, d.injunctionNo); sv(10, d.respondent);
-  if (d.warningDate !== undefined) sv(11, d.warningDate ? new Date(d.warningDate) : '');
-  if (d.moveDate    !== undefined) sv(12, d.moveDate    ? new Date(d.moveDate)    : '');
+  sv(4, d.court); sv(5, d.caseNo); sv(6, d.propertyName);
+  sv(7, d.injunctionNo); sv(8, d.respondent);
+  if (d.serviceDate     !== undefined) sv(9,  d.serviceDate     ? new Date(d.serviceDate)     : '');
+  if (d.enforcementDate !== undefined) sv(10, d.enforcementDate ? new Date(d.enforcementDate) : '');
+  if (d.warningDate     !== undefined) sv(11, d.warningDate     ? new Date(d.warningDate)     : '');
+  if (d.moveDate        !== undefined) sv(12, d.moveDate        ? new Date(d.moveDate)        : '');
   sv(13, d.note); sv(14, d.status);
   return { ok: true };
 }
@@ -1135,20 +1143,20 @@ function deleteMyeongdo(ss, d) {
 }
 
 function setupMyeongdoSheet(sheet, isDone) {
-  var h = ['ID','고객명','입찰기일','법원','사건번호','물건명','내용',
-           '수수료비율','인도명령번호','피신청인','계고일','이사날짜','특이사항','상태','등록일'];
+  var h = ['ID','고객명','입찰기일','법원','사건번호','물건명',
+           '인도번호','피신청인','송달일','강제집행신청','계고일','이사날짜','비고','상태','등록일'];
   var bg = isDone ? '#1a4731' : '#4a0e0e';
   sheet.getRange(1,1,1,15).setValues([h])
     .setBackground(bg).setFontColor('#ffffff').setFontWeight('bold').setFontSize(10)
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
   sheet.setRowHeight(1,36); sheet.setFrozenRows(1);
   sheet.setTabColor(isDone ? '#137333' : '#a61c00');
-  var widths=[[1,0],[2,90],[3,90],[4,90],[5,120],[6,160],[7,180],
-              [8,100],[9,110],[10,100],[11,90],[12,90],[13,200],[14,70],[15,90]];
+  var widths=[[1,0],[2,90],[3,90],[4,90],[5,120],[6,160],
+              [7,110],[8,100],[9,90],[10,110],[11,90],[12,90],[13,200],[14,70],[15,90]];
   widths.forEach(function(p){ sheet.setColumnWidth(p[0], p[1]); });
-  sheet.getRange('C:C').setNumberFormat('yy.M.d');
-  sheet.getRange('K:K').setNumberFormat('yy.M.d');
-  sheet.getRange('L:L').setNumberFormat('yy.M.d');
+  ['C:C','I:I','J:J','K:K','L:L'].forEach(function(col){
+    sheet.getRange(col).setNumberFormat('yy.M.d');
+  });
 }
 
 // ============================================================

@@ -1041,13 +1041,13 @@ tr:hover td { background: #fafaf8; }
       <div class="pf"><label>법원</label><input type="text" id="M_court" placeholder="서울중앙"></div>
       <div class="pf"><label>사건번호</label><input type="text" id="M_caseNo" placeholder="25-XXXXX"></div>
       <div class="pf"><label>물건명</label><input type="text" id="M_propertyName" placeholder="아파트명"></div>
-      <div class="pf"><label>내용(매각결정일 등)</label><input type="text" id="M_content" placeholder="매각결정일 : "></div>
-      <div class="pf"><label>수수료 비율</label><input type="text" id="M_commissionRatio" placeholder="손 60% / 이 40%"></div>
-      <div class="pf"><label>인도명령 번호</label><input type="text" id="M_injunctionNo" placeholder="2025타인400"></div>
+      <div class="pf"><label>인도번호</label><input type="text" id="M_injunctionNo" placeholder="2025타인400"></div>
       <div class="pf"><label>피신청인</label><input type="text" id="M_respondent" placeholder="홍길동"></div>
+      <div class="pf"><label>송달일</label><input type="date" id="M_serviceDate"></div>
+      <div class="pf"><label>강제집행신청</label><input type="date" id="M_enforcementDate"></div>
       <div class="pf"><label>계고일</label><input type="date" id="M_warningDate"></div>
       <div class="pf"><label>이사날짜</label><input type="date" id="M_moveDate"></div>
-      <div class="pf" style="grid-column:1/-1;"><label>특이사항</label><input type="text" id="M_note" placeholder="점유자 연락처, 협의 내용 등"></div>
+      <div class="pf" style="grid-column:1/-1;"><label>비고</label><input type="text" id="M_note" placeholder="점유자 연락처, 협의 내용 등"></div>
     </div>
     <div class="form-actions">
       <button class="btn-primary" onclick="M_saveForm()">저장</button>
@@ -2111,7 +2111,8 @@ function A_caseRow(cas, cust, isFirst) {
       </td>
       <td colspan="4" style="color:#bbb;font-size:12px;font-style:italic;background:${caseBg};">— 고객을 등록하면 자동 계산됩니다</td>
       <td style="background:${caseBg};">
-        <button onclick="event.stopPropagation();A_openFormForCase('${A_escHtml(cas.caseNo)}')" style="font-size:11px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 10px;cursor:pointer;color:#1d4ed8;">+ 고객 추가</button>
+        <button onclick="event.stopPropagation();A_openFormForCase('${A_escHtml(cas.caseNo)}')" style="font-size:11px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 10px;cursor:pointer;color:#1d4ed8;margin-right:4px;">+ 고객 추가</button>
+        ${cas.status==='closed'&&![...M_active,...M_done].some(m=>m.caseNo===cas.caseNo)?`<button onclick="event.stopPropagation();A_autoAddMyeongdo(A_allCases.find(c=>c.id==='${cas.id}'))" style="font-size:11px;background:#fff7ed;border:1px solid #fed7aa;border-radius:4px;padding:3px 10px;cursor:pointer;color:#c2410c;">명도 등록</button>`:''}
       </td>
     </tr>`;
   }
@@ -2168,6 +2169,7 @@ function A_caseRow(cas, cust, isFirst) {
     ${editTd('note', cust.note, false, 'max-width:140px;color:#555;')}
     <td style="white-space:nowrap;${inactiveTdStyle}">
       <button onclick="A_openFormForCase('${A_escHtml(cas.caseNo)}')" style="font-size:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:2px 6px;cursor:pointer;color:#15803d;margin-right:2px;">+고객</button>
+      ${cas.status==='closed'&&![...M_active,...M_done].some(m=>m.caseNo===cas.caseNo)?`<button onclick="A_autoAddMyeongdo(A_allCases.find(c=>c.id==='${cas.id}'))" style="font-size:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:4px;padding:2px 6px;cursor:pointer;color:#c2410c;margin-right:2px;">명도등록</button>`:''}
       <button onclick="A_editRow('${cust.id}')" style="font-size:11px;background:none;border:1px solid #ddd;border-radius:4px;padding:2px 6px;cursor:pointer;color:#555;margin-right:2px;">수정</button>
       <button onclick="A_deleteRow('${cust.id}')" style="font-size:11px;background:none;border:none;cursor:pointer;color:#dc2626;">✕</button>
     </td>
@@ -2201,7 +2203,7 @@ async function A_autoAddMyeongdo(cas) {
   M_active.unshift(tempItem);
   document.getElementById('mainBadge-myeongdo').textContent = M_active.length;
   M_render();
-  const r = await M_gasPost('add', { clientName, auctionDate: cas.auctionDate, court: cas.court, caseNo: cas.caseNo, propertyName: cas.address });
+  const r = await M_gasPost('add', { clientName, auctionDate: cas.auctionDate, court: cas.court, caseNo: cas.caseNo, propertyName: cas.address||'' });
   if (r && r.ok) { tempItem.id = r.id; setSync('ok'); }
   else { M_active = M_active.filter(m => m !== tempItem); document.getElementById('mainBadge-myeongdo').textContent = M_active.length; M_render(); setSync('err'); }
 }
@@ -2473,9 +2475,10 @@ async function M_gasGet(action) {
   catch(e) { return { error: e.message }; }
 }
 async function M_gasPost(action, data) {
+  const map = { add:'addMyeongdo', update:'updateMyeongdo', complete:'completeMyeongdo', delete:'deleteMyeongdo' };
   try {
     const r = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
-      body: JSON.stringify({ module:'myeongdo', action, data }) });
+      body: JSON.stringify({ action: map[action]||action, data }) });
     return await r.json();
   } catch(e) { return { error: e.message }; }
 }
@@ -2512,8 +2515,8 @@ function M_render() {
   const data  = M_tab === 'active' ? M_active : M_done;
   thead.innerHTML = `<tr>
     <th>고객명</th><th>입찰기일</th><th>법원</th><th>사건번호</th><th>물건명</th>
-    <th>내용</th><th>수수료비율</th><th>인도명령</th><th>피신청인</th>
-    <th>계고일</th><th>이사날짜</th><th>특이사항</th><th></th>
+    <th>인도번호</th><th>피신청인</th><th>송달일</th><th>강제집행신청</th>
+    <th>계고일</th><th>이사날짜</th><th>비고</th><th></th>
   </tr>`;
   document.getElementById('M_st-active').textContent = M_active.length;
   document.getElementById('M_st-done').textContent   = M_done.length;
@@ -2533,18 +2536,19 @@ function M_row(item) {
   const completeBtn = !isDone
     ? `<button onclick="M_complete('${item.id}')" style="font-size:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:2px 7px;cursor:pointer;color:#15803d;margin-right:2px;">명도완료</button>`
     : '';
+  const dateTd = (v) => `<td style="white-space:nowrap;font-size:11px;text-align:center;${v?'':'color:#ccc;'}">${M_fmt(v)||'—'}</td>`;
   return `<tr style="${isDone?'opacity:0.75;':''}">
     <td><strong>${item.clientName||'—'}</strong></td>
     <td style="white-space:nowrap;font-size:11px;">${M_fmt(item.auctionDate)||'—'}</td>
     <td style="font-size:12px;">${item.court||'—'}</td>
     <td style="font-size:11px;color:#555;">${item.caseNo||'—'}</td>
     <td style="font-weight:600;">${item.propertyName||'—'}</td>
-    <td style="font-size:11px;color:#374151;max-width:150px;">${item.content||''}</td>
-    <td style="font-size:11px;text-align:center;">${item.commissionRatio||''}</td>
     <td style="font-size:11px;">${item.injunctionNo||''}</td>
     <td style="font-size:11px;">${item.respondent||''}</td>
-    <td style="font-size:11px;text-align:center;">${M_fmt(item.warningDate)}</td>
-    <td style="font-size:11px;text-align:center;${item.moveDate?'color:#15803d;font-weight:700;':'color:#888;'}">${M_fmt(item.moveDate)||'—'}</td>
+    ${dateTd(item.serviceDate)}
+    ${dateTd(item.enforcementDate)}
+    ${dateTd(item.warningDate)}
+    <td style="white-space:nowrap;font-size:11px;text-align:center;${item.moveDate?'color:#15803d;font-weight:700;':'color:#888;'}">${M_fmt(item.moveDate)||'—'}</td>
     <td style="font-size:11px;color:#888;max-width:150px;">${item.note||''}</td>
     <td style="white-space:nowrap;">
       ${completeBtn}
@@ -2574,19 +2578,19 @@ async function M_deleteRow(id) {
 
 function M_editRow(id) {
   const item = [...M_active, ...M_done].find(i=>i.id===id); if (!item) return;
-  document.getElementById('M_editId').value          = id;
-  document.getElementById('M_clientName').value      = item.clientName||'';
-  document.getElementById('M_auctionDate').value     = item.auctionDate||'';
-  document.getElementById('M_court').value           = item.court||'';
-  document.getElementById('M_caseNo').value          = item.caseNo||'';
-  document.getElementById('M_propertyName').value    = item.propertyName||'';
-  document.getElementById('M_content').value         = item.content||'';
-  document.getElementById('M_commissionRatio').value = item.commissionRatio||'';
-  document.getElementById('M_injunctionNo').value    = item.injunctionNo||'';
-  document.getElementById('M_respondent').value      = item.respondent||'';
-  document.getElementById('M_warningDate').value     = item.warningDate||'';
-  document.getElementById('M_moveDate').value        = item.moveDate||'';
-  document.getElementById('M_note').value            = item.note||'';
+  document.getElementById('M_editId').value            = id;
+  document.getElementById('M_clientName').value        = item.clientName||'';
+  document.getElementById('M_auctionDate').value       = item.auctionDate||'';
+  document.getElementById('M_court').value             = item.court||'';
+  document.getElementById('M_caseNo').value            = item.caseNo||'';
+  document.getElementById('M_propertyName').value      = item.propertyName||'';
+  document.getElementById('M_injunctionNo').value      = item.injunctionNo||'';
+  document.getElementById('M_respondent').value        = item.respondent||'';
+  document.getElementById('M_serviceDate').value       = item.serviceDate||'';
+  document.getElementById('M_enforcementDate').value   = item.enforcementDate||'';
+  document.getElementById('M_warningDate').value       = item.warningDate||'';
+  document.getElementById('M_moveDate').value          = item.moveDate||'';
+  document.getElementById('M_note').value              = item.note||'';
   const form = document.getElementById('M_addForm');
   form.style.display = 'block'; form.scrollIntoView({ behavior:'smooth' });
 }
@@ -2595,8 +2599,8 @@ function M_toggleForm() {
   const form = document.getElementById('M_addForm');
   if (form.style.display === 'none' || !form.style.display) {
     document.getElementById('M_editId').value = '';
-    ['M_clientName','M_court','M_caseNo','M_propertyName','M_content','M_commissionRatio','M_injunctionNo','M_respondent','M_note'].forEach(id=>document.getElementById(id).value='');
-    ['M_auctionDate','M_warningDate','M_moveDate'].forEach(id=>document.getElementById(id).value='');
+    ['M_clientName','M_court','M_caseNo','M_propertyName','M_injunctionNo','M_respondent','M_note'].forEach(id=>document.getElementById(id).value='');
+    ['M_auctionDate','M_serviceDate','M_enforcementDate','M_warningDate','M_moveDate'].forEach(id=>document.getElementById(id).value='');
     form.style.display = 'block'; form.scrollIntoView({ behavior:'smooth' });
   } else { form.style.display = 'none'; }
 }
@@ -2609,10 +2613,10 @@ async function M_saveForm() {
     court:            document.getElementById('M_court').value.trim(),
     caseNo:           document.getElementById('M_caseNo').value.trim(),
     propertyName:     document.getElementById('M_propertyName').value.trim(),
-    content:          document.getElementById('M_content').value.trim(),
-    commissionRatio:  document.getElementById('M_commissionRatio').value.trim(),
     injunctionNo:     document.getElementById('M_injunctionNo').value.trim(),
     respondent:       document.getElementById('M_respondent').value.trim(),
+    serviceDate:      document.getElementById('M_serviceDate').value,
+    enforcementDate:  document.getElementById('M_enforcementDate').value,
     warningDate:      document.getElementById('M_warningDate').value,
     moveDate:         document.getElementById('M_moveDate').value,
     note:             document.getElementById('M_note').value.trim()
