@@ -2185,6 +2185,14 @@ table.data-table tbody tr:hover,
     <div class="main-tab" id="mainTab-forms" onclick="switchMainTab('forms')">
       <span class="tab-icon">📂</span>자료실
     </div>
+
+    <!-- 메시지 (로그인 후 표시) -->
+    <div class="main-tab" id="mainTab-msg" onclick="MSG_open()" style="display:none;position:relative;">
+      <span class="tab-icon">💬</span>메시지
+      <span id="MSG_navBadge" style="display:none;position:absolute;top:4px;right:4px;
+        background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:800;
+        padding:1px 5px;min-width:14px;text-align:center;line-height:1.4;"></span>
+    </div>
   </nav>
 
   <div class="header-right">
@@ -12104,7 +12112,10 @@ const MSG_MEMBERS = ['손청락','이제훈','장한빛','정은진'];
 function MSG_applyRole(name) {
   MSG_myName  = name;
   MSG_isAdmin = (name === '손청락');
-  // 헤더 버튼 — 모든 직원에게 표시
+  // 네비 메시지 탭 표시
+  const navTab = document.getElementById('mainTab-msg');
+  if (navTab) navTab.style.display = '';
+  // 헤더 버튼도 유지 (백업 접근)
   const btn = document.getElementById('MSG_headerBtn');
   const lbl = document.getElementById('MSG_label');
   if (btn) btn.style.display = 'flex';
@@ -12132,6 +12143,9 @@ async function MSG_fetchInbox() {
       // MBR 배지
       const mBadge = document.getElementById('MBR_msgBadge');
       if (mBadge) { mBadge.textContent = unread; mBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
+      // 네비 탭 배지
+      const nBadge = document.getElementById('MSG_navBadge');
+      if (nBadge) { nBadge.textContent = unread; nBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
     }
   } catch(e) {}
 }
@@ -12287,8 +12301,10 @@ async function MSG_showDetail(idx) {
     const unread = MSG_messages.filter(x => !x.read).length;
     const hBadge = document.getElementById('MSG_unreadBadge');
     const mBadge = document.getElementById('MBR_msgBadge');
+    const nBadge = document.getElementById('MSG_navBadge');
     if (hBadge) { hBadge.textContent = unread; hBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
     if (mBadge) { mBadge.textContent = unread; mBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
+    if (nBadge) { nBadge.textContent = unread; nBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
     fetch(GAS_URL, { method:'POST', body: JSON.stringify({ module:'msg', action:'markRead', id: m.id }) }).catch(()=>{});
   }
   document.getElementById('MSG_modalTitle').textContent = '메시지 상세';
