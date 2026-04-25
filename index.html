@@ -5249,7 +5249,7 @@ function C_setFilter(f,b){C_filt=f;document.querySelectorAll('#C_filterRow .filt
 function C_setFilterArc(f,b){C_filtArc=f;document.querySelectorAll('#C_filterRowArchive .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');C_render();}
 
 const C_AH=`<tr><th style="width:104px;">상태</th><th style="width:118px;">사건번호</th><th style="width:130px;">주소지</th><th style="width:130px;">법원</th><th style="width:86px;">경매기일</th><th style="width:88px;">마감요청일</th><th style="width:248px;">조사유형 (담당자)</th><th style="min-width:220px;">기타요청</th><th style="width:62px;"></th></tr>`;
-const C_ZH=`<tr><th style="width:88px;">종료사유</th><th style="width:118px;">사건번호</th><th style="width:140px;">주소지</th><th style="width:75px;">법원</th><th style="width:85px;">경매기일</th><th style="width:65px;">담당자</th><th style="width:180px;">조사유형</th><th>비고</th><th style="width:75px;">종료일</th><th style="width:140px;"></th></tr>`;
+const C_ZH=`<tr><th style="width:88px;">종료사유</th><th style="width:118px;">사건번호</th><th style="width:140px;">주소지</th><th style="width:75px;">법원</th><th style="width:85px;">경매기일</th><th style="width:245px;">조사유형 (담당자)</th><th>비고</th><th style="width:75px;">종료일</th><th style="width:140px;"></th></tr>`;
 
 function C_archiveTags(typeMap){
   if(!typeMap)return '—';
@@ -5324,37 +5324,49 @@ function C_render(){
   C_updateStats();
 }
 
+function C_buildTypeCell(c){
+  const TC={'시세조사':'#2563eb','현장조사':'#16a34a','보고서작성':'#7c3aed'};
+  const rows=['시세조사','현장조사','보고서작성'].map(t=>{
+    const col=TC[t];
+    const mgrs=C_getMgrs(c,t);
+    const isOn=mgrs.length>0;
+    const sid=`${c.id}_${t.replace(/\s/g,'_')}`;
+    const names=mgrs.map(m=>
+      `<span style="font-size:11px;font-weight:600;color:#374151;white-space:nowrap;">${m}<button onclick="event.stopPropagation();C_removeTypeMgr('${c.id}','${t}','${m}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:#bbb;padding:0 0 0 1px;line-height:1;">×</button></span>`
+    ).join('<span style="color:#e5e7eb;margin:0 2px;font-size:9px;">|</span>');
+    const addable=C_MANAGERS.filter(m=>!mgrs.includes(m));
+    const plusBtn=addable.length>0
+      ?`<button onclick="event.stopPropagation();C_showAddMgrSel('${sid}')" style="flex-shrink:0;width:16px;height:16px;border-radius:50%;border:1.5px solid ${isOn?col+'88':'#d1d5db'};background:transparent;cursor:pointer;font-size:12px;font-weight:700;color:${isOn?col:'#d1d5db'};padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;">+</button>
+        <select id="C_addsel_${sid}" onchange="C_addTypeMgr('${c.id}','${t}',this.value);this.style.display='none';this.value='';" style="display:none;font-size:10px;border:1px solid #d1d5db;border-radius:4px;padding:1px 3px;max-width:72px;"><option value="">선택</option>${addable.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>`
+      :'';
+    return`<div style="display:flex;align-items:center;gap:7px;height:24px;">
+      <button onclick="event.stopPropagation();C_toggleType('${c.id}','${t}')" style="flex-shrink:0;width:10px;height:10px;border-radius:50%;border:2px solid ${isOn?col:'#d1d5db'};background:${isOn?col:'transparent'};cursor:pointer;padding:0;transition:all .12s;"></button>
+      <span onclick="event.stopPropagation();C_toggleType('${c.id}','${t}')" style="flex-shrink:0;font-size:11px;font-weight:700;color:${isOn?col:'#cbd5e1'};cursor:pointer;white-space:nowrap;width:52px;">${t}</span>
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">${names}${plusBtn}</div>
+    </div>`;
+  }).join('');
+  const mgrTxt=c.manager
+    ?`<span style="font-size:12px;font-weight:700;color:#1e3a5f;">${c.manager} <span style="font-size:9px;color:#94a3b8;">▾</span></span>`
+    :`<span style="font-size:11px;color:#d1d5db;">미지정 <span style="font-size:9px;">▾</span></span>`;
+  return`<div style="min-width:220px;padding:2px 0;">
+    <div style="display:flex;align-items:center;gap:8px;height:24px;padding-bottom:5px;margin-bottom:3px;border-bottom:1px solid #f3f4f6;">
+      <span style="flex-shrink:0;font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:.3px;width:52px;">총괄담당자</span>
+      <div style="position:relative;display:inline-flex;align-items:center;cursor:pointer;">
+        ${mgrTxt}
+        <select onchange="event.stopPropagation();C_setManager('${c.id}',this.value)" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+          <option value="">미지정</option>${C_MANAGERS.map(m=>`<option value="${m}"${c.manager===m?' selected':''}>${m}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    ${rows}
+  </div>`;
+}
+
 function C_activeRow(c){
   const urg=C_isUrgent(c)&&c.status==='ongoing';
   const sl=urg?{label:'긴급',cls:'s-urgent'}:C_SM[c.status]||C_SM.ongoing;
   const dl=C_daysLeft(c.auctionDate);
   const db=urg?`<span class="blink" style="font-size:10px;background:#fef2f2;color:var(--red);padding:1px 5px;border-radius:3px;font-weight:700;margin-left:3px;">D-${dl}</span>`:'';
-  const tm=c.typeMap||{};
-  const typeColors={'시세조사':'#2563eb','현장조사':'#16a34a','보고서작성':'#7c3aed'};
-  const typeCells=['시세조사','현장조사','보고서작성'].map(t=>{
-    const col=typeColors[t];
-    const mgrs=C_getMgrs(c,t);
-    const isOn=mgrs.length>0;
-    const safeId=`${c.id}_${t.replace(/\s/g,'_')}`;
-    const names=mgrs.map(m=>
-      `<span style="font-size:11px;font-weight:600;color:#374151;">${m}<button onclick="event.stopPropagation();C_removeTypeMgr('${c.id}','${t}','${m}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:#9ca3af;padding:0 0 0 1px;line-height:1;">×</button></span>`
-    ).join('<span style="color:#d1d5db;font-size:10px;margin:0 1px;">·</span>');
-    const addable=C_MANAGERS.filter(m=>!mgrs.includes(m));
-    const plusBtn=addable.length>0
-      ?`<button onclick="event.stopPropagation();C_showAddMgrSel('${safeId}')" style="background:none;border:none;cursor:pointer;font-size:13px;color:#9ca3af;padding:0;line-height:1;margin-left:1px;" title="추가">+</button>
-        <select id="C_addsel_${safeId}" onchange="C_addTypeMgr('${c.id}','${t}',this.value);this.style.display='none';this.value='';" style="display:none;font-size:10px;border:1px solid #d1d5db;border-radius:4px;padding:1px 3px;max-width:70px;">
-          <option value="">선택</option>${addable.map(m=>`<option value="${m}">${m}</option>`).join('')}
-        </select>`
-      :'';
-    return`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;">
-      <button onclick="event.stopPropagation();C_toggleType('${c.id}','${t}')" style="width:10px;height:10px;border-radius:50%;border:2px solid ${isOn?col:'#d1d5db'};background:${isOn?col:'transparent'};flex-shrink:0;cursor:pointer;padding:0;transition:all .12s;"></button>
-      <span onclick="event.stopPropagation();C_toggleType('${c.id}','${t}')" style="font-size:11px;font-weight:700;color:${isOn?col:'#9ca3af'};cursor:pointer;white-space:nowrap;min-width:46px;">${t}</span>
-      <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;">
-        ${isOn?names:''}
-        ${plusBtn}
-      </div>
-    </div>`;
-  }).join('');
   return`<tr id="C_row-${c.id}">
 <td><div class="status-wrap"><span class="sbadge ${sl.cls}" onclick="C_openMenu(event,'${c.id}')">${sl.label} ▾</span>
 <div class="status-menu" id="C_m${c.id}">
@@ -5378,19 +5390,7 @@ function C_activeRow(c){
 <td style="font-size:12px;white-space:nowrap;"><span class="editable" onclick="C_startEdit(this,'${c.id}','court','${(c.court||'').replace(/'/g,"&#39;")}')">${c.court||'—'}</span></td>
 <td style="font-size:12px;color:#888;white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','auctionDate','${c.auctionDate||''}')">${C_fmt(c.auctionDate)}</span>${db}</td>
 <td class="${C_dlCls(c.deadline)}" style="white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','deadline','${c.deadline||''}')">${C_fmt(c.deadline)}</span></td>
-<td style="overflow:visible;position:relative;">
-  <div style="min-width:215px;padding:2px 0;">
-    <div style="display:flex;align-items:center;gap:5px;padding-bottom:6px;margin-bottom:5px;border-bottom:1px solid #f0f0f0;">
-      <span style="font-size:10px;font-weight:700;color:#6b7280;letter-spacing:.3px;white-space:nowrap;">총괄담당자</span>
-      <select onchange="event.stopPropagation();C_setManager('${c.id}',this.value)"
-        style="flex:1;min-width:0;border:none;border-bottom:1.5px solid ${c.manager?'#1e3a5f':'#e5e7eb'};background:transparent;font-size:12px;font-weight:${c.manager?'700':'400'};color:${c.manager?'#1e3a5f':'#9ca3af'};cursor:pointer;outline:none;padding:0 2px;">
-        <option value="">미지정</option>
-        ${C_MANAGERS.map(m=>`<option value="${m}"${c.manager===m?' selected':''}>${m}</option>`).join('')}
-      </select>
-    </div>
-    ${typeCells}
-  </div>
-</td>
+<td style="overflow:visible;position:relative;">${C_buildTypeCell(c)}</td>
 <td><span class="editable note-cell" title="${c.note||''}" onclick="C_startEdit(this,'${c.id}','note','${(c.note||'').replace(/'/g,"&#39;")}')">${c.note||'—'}</span></td>
 <td style="white-space:nowrap;"><button class="row-btn" onclick="CD_open('${c.id}')" style="background:#fff8e1;color:#8a5a00;border-color:#f2d67a;margin-right:3px;" title="수수료·낙찰·7단계 관리">💰</button><button class="row-btn del" onclick="C_delCase('${c.id}')">삭제</button></td></tr>`;
 }
@@ -5414,8 +5414,7 @@ function C_archiveRow(c, compact=false){
 <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${c.address||''}">${c.address||'—'}</td>
 <td style="font-size:12px;color:#aaa;white-space:nowrap;"><span class="editable" onclick="C_startEdit(this,'${c.id}','court','${(c.court||'').replace(/'/g,"&#39;")}')">${c.court||'—'}</span></td>
 <td style="font-size:12px;color:#aaa;white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','auctionDate','${c.auctionDate||''}')">${C_fmt(c.auctionDate)||'—'}</span></td>
-<td><span class="mgr-badge mgr-${c.manager||''}">${c.manager||'—'}</span></td>
-<td>${C_archiveTags(c.typeMap)}</td>
+<td style="overflow:visible;position:relative;">${C_buildTypeCell(c)}</td>
 <td><div class="note-cell" title="${c.note||''}">${c.note||'—'}</div></td>
 ${closedAtTd}
 <td style="white-space:nowrap;"><button class="row-btn" onclick="CD_open('${c.id}')" style="background:#fff8e1;color:#8a5a00;border-color:#f2d67a;margin-right:3px;" title="수수료·낙찰·7단계 관리">💰</button><button class="row-btn restore" onclick="C_restoreToActive('${c.id}')" style="white-space:nowrap;">↩ 복원</button><button class="row-btn del" onclick="C_delCase('${c.id}')">삭제</button></td></tr>`;
