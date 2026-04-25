@@ -238,7 +238,7 @@ body {
   letter-spacing: 0;
 }
 /* ══ 자료실 v3 ══ */
-#panel-forms { background:#fff;flex-direction:column;overflow:hidden; }
+#panel-forms { background:#fff;flex-direction:column;overflow:hidden;height:calc(100vh - 60px); }
 #panel-forms.active { display:flex; }
 
 /* 헤더 */
@@ -251,8 +251,8 @@ body {
 
 /* 바디 */
 .lib2-body { display:flex;flex:1;overflow:hidden;min-height:0; }
-.lib2-cat-section { display:none;width:100%; }
-.lib2-cat-section.active { display:flex; }
+.lib2-cat-section { display:none;flex:1;min-width:0;min-height:0; }
+.lib2-cat-section.active { display:flex;align-items:stretch; }
 
 /* 좌측 세로 카테고리 네비게이션 */
 .lib2-catnav {
