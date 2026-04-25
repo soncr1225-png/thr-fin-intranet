@@ -14,6 +14,7 @@ var BLOG_SS_ID  = '1I2qlzU9JprcwEgc1P0ip8R-yajHHol5vSlMU2tRX-lA';
 var SH_CASES_ACTIVE  = '사건목록';
 var SH_CASES_ARCHIVE = '종료사건';
 var SH_TODOS         = 'ToDo';
+var SH_MEMBERS       = '회원관리';  // 신규 — 회원 데이터 영구 저장
 
 // ── 입찰/명도 시트명 ─────────────────────────────────────────
 var SH_AUCTION    = '입찰진행';
@@ -44,8 +45,11 @@ function sh(ss, name) {
 }
 function kstDate(val) {
   if (!val) return '';
-  try { return Utilities.formatDate(new Date(val), 'Asia/Seoul', 'yyyy-MM-dd'); }
-  catch(e) { return ''; }
+  try {
+    var d = (val instanceof Date) ? val : new Date(val);
+    if (isNaN(d.getTime())) return '';
+    return Utilities.formatDate(d, 'Asia/Seoul', 'yyyy-MM-dd');
+  } catch(e) { return ''; }
 }
 function todayStr() {
   return Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd');
@@ -64,6 +68,8 @@ function doGet(e) {
   if (p.module === 'auction')   return auctionGet(p);
   if (p.module === 'myeongdo')  return myeongdoGet(p);
   if (p.module === 'stats')     return statsGet(p);
+  if (p.module === 'drive')     return driveGet(p);
+  if (p.module === 'msg')       return msgGet(p);
   return casesGet(p);
 }
 
@@ -79,6 +85,9 @@ function doPost(e) {
   if (b.module === 'blog' || b.action === 'analyze') return blogPost(b);
   if (b.module === 'auction')   return auctionPost(b);
   if (b.module === 'myeongdo')  return myeongdoPost(b);
+  if (b.module === 'drive')     return drivePost(b);
+  if (b.module === 'beta')      return betaPost(b);
+  if (b.module === 'msg')       return msgPost(b);
   return casesPost(b);
 }
 
@@ -94,6 +103,7 @@ function casesGet(p) {
     return json(loadCases(ss, SH_CASES_ACTIVE).concat(loadCases(ss, SH_CASES_ARCHIVE)));
   }
   if (p.action === 'getBulk')     return getBulk(ss);
+  if (p.action === 'getMembers')  return json({ data: loadMembers(ss) });
   return json({ error: 'unknown action' });
 }
 
@@ -128,9 +138,12 @@ var STATUS_NORM = {
   '조사완료': 'done', '완료': 'done',
   '보고서작성': 'report', '보고서': 'report',
   '입찰확정': 'confirmed', '확정': 'confirmed',
+  '잔금납부대기': 'balance_wait', '잔금납부대기중': 'balance_wait',
+  '소송': 'lawsuit',
   '기일변경': 'changed', '변경': 'changed',
   '낙찰종료': 'closed', '낙찰': 'closed', '종료': 'closed',
   '고객변심': 'cancel', '취소': 'cancel',
+  '패찰': 'lost',
   '기타종료': 'drop', '기타': 'drop'
 };
 function normalizeStatus(raw) {
@@ -197,8 +210,11 @@ function casesPost(b) {
     case 'deleteCase':   return json(deleteCase(ss, d));
     case 'restoreCase':  return json(restoreCase(ss, d));
     case 'saveTodos':    return json(saveTodos(ss, b.data));
-    case 'analyzeImage':      return json(analyzeImage(d, 'case'));
-    case 'analyzeImageGuide': return json(analyzeImage(d, 'guide'));
+    case 'analyzeImage':        return json(analyzeImage(d, 'case'));
+    case 'analyzeImageGuide':   return json(analyzeImage(d, 'guide'));
+    case 'analyzeImageDraft':   return json(analyzeImage(d, 'draft'));
+    case 'analyzeImageMember':  return json(analyzeImage(d, 'member'));
+    case 'generateLocation':  return json(generateLocationAnalysis(d));
     case 'addAuction':       return json(addAuction(ss, d));
     case 'updateAuction':    return json(updateAuction(ss, d));
     case 'deleteAuction':    return json(deleteAuction(ss, d));
@@ -206,8 +222,119 @@ function casesPost(b) {
     case 'updateMyeongdo':   return json(updateMyeongdo(ss, d));
     case 'completeMyeongdo': return json(completeMyeongdo(ss, d));
     case 'deleteMyeongdo':   return json(deleteMyeongdo(ss, d));
+    case 'saveMembers':      return json(saveMembersBulk(ss, b.data));
+    case 'addMember':        return json(addMember(ss, d));
+    case 'updateMember':     return json(updateMember(ss, d));
+    case 'deleteMember':     return json(deleteMember(ss, d));
     default:             return json({ error: 'unknown action' });
   }
+}
+
+// ============================================================
+// MEMBERS — 회원관리 시트 (신규 · 20 컬럼)
+// ============================================================
+// 컬럼:  1:이름  2:연락처  3:이메일  4:생년월일  5:주소
+//        6:담당자  7:유형  8:유입경로  9:주택보유  10:생애최초
+//        11:관심물건  12:희망지역  13:목적  14:예산  15:시점
+//        16:진행상황  17:응답률  18:수수료율  19:메모  20:가입일
+var MEMBER_FIELDS = [
+  'name','phone','email','birthdate','address',
+  'staff','type','source','housing','firsthome',
+  'proptype','region','purpose','budget','timeline',
+  'status','responseRate','feeRate','memo','joindate'
+];
+
+function ensureMemberHeader(sheet) {
+  if (sheet.getLastRow() === 0) {
+    var header = ['이름','연락처','이메일','생년월일','주소',
+                  '담당자','유형','유입경로','주택보유','생애최초',
+                  '관심물건','희망지역','목적','예산','시점',
+                  '진행상황','응답률','수수료율','메모','가입일'];
+    sheet.getRange(1, 1, 1, header.length).setValues([header]).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+}
+
+function loadMembers(ss) {
+  var sheet = sh(ss, SH_MEMBERS);
+  ensureMemberHeader(sheet);
+  var last = sheet.getLastRow();
+  if (last < 2) return [];
+  var vals = sheet.getRange(2, 1, last - 1, MEMBER_FIELDS.length).getValues();
+  return vals
+    .filter(function(r) { return r[0]; })  // 이름 없는 행 제외
+    .map(function(r) {
+      var obj = { id: 'gas_' + String(r[0]) };
+      MEMBER_FIELDS.forEach(function(f, i) {
+        var v = r[i];
+        if (f === 'birthdate' || f === 'joindate') obj[f] = v ? kstDate(v) : '';
+        else obj[f] = String(v || '');
+      });
+      return obj;
+    });
+}
+
+// 전체 덮어쓰기 (기존 MBR_syncToSheets 호환)
+function saveMembersBulk(ss, members) {
+  if (!Array.isArray(members)) return { error: 'data must be array' };
+  var sheet = sh(ss, SH_MEMBERS);
+  ensureMemberHeader(sheet);
+  var last = sheet.getLastRow();
+  if (members.length === 0) {
+    if (last > 1) sheet.getRange(2, 1, last - 1, MEMBER_FIELDS.length).clearContent();
+    return { ok: true, result: 'ok', count: 0 };
+  }
+  var rows = members.map(function(m) {
+    return MEMBER_FIELDS.map(function(f) { return m[f] || ''; });
+  });
+  // 새 데이터 먼저 쓴 뒤, 초과 행만 지움 (clearContent → setValues 순서 뒤집음 → 데이터 손실 방지)
+  sheet.getRange(2, 1, rows.length, MEMBER_FIELDS.length).setValues(rows);
+  var newLast = sheet.getLastRow();  // setValues 후 실제 상태로 재조회
+  var excess = newLast - 1 - rows.length;
+  if (excess > 0) sheet.getRange(rows.length + 2, 1, excess, MEMBER_FIELDS.length).clearContent();
+  return { ok: true, result: 'ok', count: rows.length };
+}
+
+function addMember(ss, m) {
+  if (!m || !m.name) return { error: 'name required' };
+  var sheet = sh(ss, SH_MEMBERS);
+  ensureMemberHeader(sheet);
+  if (!m.joindate) m.joindate = todayStr();
+  var row = MEMBER_FIELDS.map(function(f) { return m[f] || ''; });
+  sheet.appendRow(row);
+  return { ok: true, result: 'ok', name: m.name };
+}
+
+function updateMember(ss, m) {
+  if (!m || !m.name) return { error: 'name required' };
+  var sheet = sh(ss, SH_MEMBERS);
+  ensureMemberHeader(sheet);
+  var last = sheet.getLastRow();
+  if (last < 2) return addMember(ss, m);
+  var names = sheet.getRange(2, 1, last - 1, 1).getValues();
+  for (var i = 0; i < names.length; i++) {
+    if (String(names[i][0]) === String(m.name)) {
+      var row = MEMBER_FIELDS.map(function(f) { return m[f] != null ? m[f] : ''; });
+      sheet.getRange(i + 2, 1, 1, MEMBER_FIELDS.length).setValues([row]);
+      return { ok: true, result: 'ok', name: m.name, updated: true };
+    }
+  }
+  return addMember(ss, m);  // 없으면 추가
+}
+
+function deleteMember(ss, m) {
+  if (!m || !m.name) return { error: 'name required' };
+  var sheet = sh(ss, SH_MEMBERS);
+  var last = sheet.getLastRow();
+  if (last < 2) return { error: 'no members' };
+  var names = sheet.getRange(2, 1, last - 1, 1).getValues();
+  for (var i = 0; i < names.length; i++) {
+    if (String(names[i][0]) === String(m.name)) {
+      sheet.deleteRow(i + 2);
+      return { ok: true, result: 'ok', name: m.name, deleted: true };
+    }
+  }
+  return { error: 'not found' };
 }
 
 function addCase(ss, d) {
@@ -235,8 +362,16 @@ function addCase(ss, d) {
 }
 
 function updateCase(ss, d) {
-  var sheet   = sh(ss, SH_CASES_ACTIVE);
-  var rowInfo = findRowById(sheet, d.id, 12);
+  var activeSheet  = sh(ss, SH_CASES_ACTIVE);
+  var archiveSheet = sh(ss, SH_CASES_ARCHIVE);
+  var rowInfo = findRowById(activeSheet, d.id, 12);
+  var sheet;
+  if (rowInfo) {
+    sheet = activeSheet;
+  } else {
+    rowInfo = findRowById(archiveSheet, d.id, 13);
+    sheet   = archiveSheet;
+  }
   if (!rowInfo) return { ok: false, error: '사건을 찾을 수 없습니다.' };
 
   var types = d.types || [];
@@ -244,12 +379,12 @@ function updateCase(ss, d) {
   types.forEach(function(t) { if (t.manager) tm[t.type] = t.manager; });
 
   var r = rowInfo.row;
-  if (d.status)      sheet.getRange(r, 2).setValue(d.status);
-  if (d.caseNo)      sheet.getRange(r, 3).setValue(d.caseNo);
-  if (d.address)     sheet.getRange(r, 4).setValue(d.address);
-  if (d.court)       sheet.getRange(r, 5).setValue(d.court);
-  if (d.auctionDate) sheet.getRange(r, 6).setValue(new Date(d.auctionDate));
-  if (d.deadline)    sheet.getRange(r, 7).setValue(new Date(d.deadline));
+  if (d.status)                sheet.getRange(r, 2).setValue(d.status);
+  if (d.caseNo)                sheet.getRange(r, 3).setValue(d.caseNo);
+  if (d.address)               sheet.getRange(r, 4).setValue(d.address);
+  if (d.court)                 sheet.getRange(r, 5).setValue(d.court);
+  if (d.auctionDate !== undefined) sheet.getRange(r, 6).setValue(d.auctionDate ? new Date(d.auctionDate) : '');
+  if (d.deadline    !== undefined) sheet.getRange(r, 7).setValue(d.deadline    ? new Date(d.deadline)    : '');
   if (types.length) {
     sheet.getRange(r, 8).setValue(tm['시세조사']   || '');
     sheet.getRange(r, 9).setValue(tm['현장조사']   || '');
@@ -321,28 +456,28 @@ function analyzeImage(d, mode) {
   var key = prop('ANTHROPIC_KEY');
   if (!key) return { error: 'ANTHROPIC_KEY가 스크립트 속성에 설정되지 않았습니다.' };
 
-  var prompt = (mode === 'blog')
-    ? '경매 공고 이미지를 분석해서 아래 JSON 형식으로만 응답해. 코드블록 없이 순수 JSON만.\n{"caseNum":"사건번호","name":"아파트명+동+층+호수(띄어쓰기없이)","date":"YYYY-MM-DD","round":"차수숫자만","minPrice":"최저가(원단위포함)","title1":"블로그추천제목1","title2":"블로그추천제목2","title3":"블로그추천제목3"}'
+  var prompt = (mode === 'member')
+    ? '고객 상담 질문지 또는 고객 정보 이미지를 분석해서 아래 JSON 형식으로만 응답해. 코드블록 없이 순수 JSON만. 없는 항목은 빈 문자열.\n{"name":"성함(한글 2~5자)","phone":"연락처(010-XXXX-XXXX 형식)","email":"이메일주소","birthdate":"생년월일 YYYY-MM-DD(6자리면 앞2자리 00~24는 20xx, 나머지 19xx)","address":"주소(도로명 기준 전체)","housing":"주택보유현황(무주택/1주택/2주택 이상 중 하나만)","firsthome":"생애최초주택구입해당여부(해당/미해당 중 하나만)","proptype":"관심물건종류(아파트/빌라/오피스텔/상가/토지/빌딩/다가구/공장 중 하나)","region":"관심지역(서울/경기/인천 중 해당하는 것, 여러 개면 \' / \'로 구분)","purpose":"투자목적(실거주/투자/임대 중 해당, 여러 개면 \' / \'로 구분)","budget":"예산(예:5억, 10억 2000만)","timeline":"투자시기(1개월 내/3개월 내/6개월 내/미정 중 하나)","source":"유입경로(블로그/지인소개/SNS/재상담 중 하나)"}'
+    : (mode === 'blog')
+    ? '경매 공고 이미지를 분석해서 아래 JSON 형식으로만 응답해. 코드블록 없이 순수 JSON만. 없는 항목은 빈 문자열.\n{"caseNum":"사건번호(예:2025타경12908)","court":"법원 단축명(예:서울남부, 지방법원·지원 제외)","date":"매각기일YYYY-MM-DD","round":"차수숫자만(예:1)","name":"단지명만(동·층·호 제외, 예:영등포아트자이아파트)","gu":"구이름(예:영등포구)","dong":"동번호+호수(예:106동2403호)","floor":"층수숫자만(예:24)","size":"건물면적표기(예:143.59㎡(43.44평))","type":"물건종별(아파트/빌라/오피스텔/다가구/토지/공장/근린시설 중 하나)","appraisal":"감정가 억단위숫자만(예:18.8)","minbid":"최저입찰가 억단위숫자만(예:18.8)","title1":"블로그추천제목1","title2":"블로그추천제목2","title3":"블로그추천제목3"}'
     : (mode === 'guide')
     ? '경매 입찰 관련 이미지를 분석해서 아래 JSON 형식으로만 응답해. 코드블록 없이 순수 JSON만. 없는 항목은 빈 문자열로.\n{"court":"법원명(예:서울중앙지방법원)","auctionDate":"YYYY-MM-DD","auctionTime":"HH:MM(24시간제,없으면빈값)","room":"법정호수(예:207호 법정,없으면빈값)","caseNo":"사건번호","address":"물건소재지(간략히)","minPrice":"최저매각가격숫자만(콤마없이,없으면빈값)"}'
+    : (mode === 'draft')
+    ? '이 법원 경매 화면을 분석해서 아래 JSON 형식으로만 응답해. 코드블록 없이 순수 JSON만. 없는 항목은 빈 문자열.\n{"caseNum":"사건번호(예:2025타경5151)","court":"법원 지원명만(예:고양)","auctionDate":"매각기일 YYYY-MM-DD","buildingName":"단지명만(동·층·호 제외, 예:디엠씨자이더리버)","gu":"구이름(예:덕양구)","dong":"동번호(예:104동)","floor":"층수(예:18층)","area":"건물면적(예:84.996㎡(25.71평))","propertyType":"물건종별(아파트/빌라/오피스텔/다가구/토지/공장/근린시설 중 하나)","appraisal":"감정가 억단위 숫자만(예:12.5)","minBid":"최저입찰가 억단위 숫자만(예:8.75)","round":"현재진행차수 숫자만(예:2)"}'
     : '경매 공고 이미지를 분석해서 아래 JSON 형식으로만 응답해. 코드블록 없이 순수 JSON만.\n{"caseNo":"사건번호","address":"주소 또는 아파트명+동호수","auctionDate":"YYYY-MM-DD","court":"법원명"}';
+
+  var mType = (d.mediaType || d.mimeType || 'image/jpeg').toLowerCase();
+  var isPdf = mType.indexOf('pdf') !== -1;
+  var fileBlock = isPdf
+    ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: d.base64 || d.imageBase64 } }
+    : { type: 'image',    source: { type: 'base64', media_type: mType,              data: d.base64 || d.imageBase64 } };
 
   var payload = {
     model: 'claude-opus-4-5',
     max_tokens: 800,
     messages: [{
       role: 'user',
-      content: [
-        {
-          type: 'image',
-          source: {
-            type: 'base64',
-            media_type: d.mediaType || d.mimeType || 'image/jpeg',
-            data: d.base64 || d.imageBase64
-          }
-        },
-        { type: 'text', text: prompt }
-      ]
+      content: [ fileBlock, { type: 'text', text: prompt } ]
     }]
   };
 
@@ -368,6 +503,55 @@ function analyzeImage(d, mode) {
     return { ok: true, data: JSON.parse(match[0]) };
   } catch(e) {
     return { error: '분석 오류: ' + e.message };
+  }
+}
+
+// ============================================================
+// 입지 분석 AI 생성
+// ============================================================
+function generateLocationAnalysis(d) {
+  var key = prop('ANTHROPIC_KEY');
+  if (!key) return { error: 'ANTHROPIC_KEY가 스크립트 속성에 설정되지 않았습니다.' };
+
+  var locationStr = [d.city || '서울', d.gu || '', d.buildingName || d.name || ''].filter(Boolean).join(' ');
+  var propType    = d.propertyType || d.type || '아파트';
+
+  var buildingName = d.buildingName || d.name || '';
+  var prompt =
+    '한국 부동산 블로그에 올릴 입지 소개 글을 써줘. 읽는 사람이 실제로 유용하다고 느끼게.\n\n' +
+    '물건: ' + locationStr + '\n' +
+    '유형: ' + propType + '\n\n' +
+    '아래 4가지를 자연스러운 말투로 350~450자 안에 담아줘. 각 항목을 별도 제목으로 나누지 말고 이어서 써줘.\n' +
+    '- 교통: 실제 지하철역명·노선·도보거리, 수도권 주요 거점 이동 시간\n' +
+    '- 학군: 배정 학교명, 학원가 분위기\n' +
+    '- 주변 시설: 마트·병원·공원·상권 중 실제 시설명 포함\n' +
+    '- 투자 포인트: 개발 호재, 재개발·재건축, 교통 호재 등 실질적인 내용\n\n' +
+    (buildingName ? '단지명 "' + buildingName + '"을 한두 번 자연스럽게 넣어줘.\n' : '') +
+    '확실하지 않은 정보는 쓰지 마. "~로 알려져 있습니다" "~가 우수합니다" 같은 AI 투 표현도 피해줘.';
+
+  var payload = {
+    model: 'claude-opus-4-5',
+    max_tokens: 1000,
+    messages: [{ role: 'user', content: prompt }]
+  };
+
+  try {
+    var res  = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+      method: 'post',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json'
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    var code = res.getResponseCode();
+    var api  = JSON.parse(res.getContentText());
+    if (code !== 200) return { error: 'Claude API 오류: ' + (api.error && api.error.message || code) };
+    return { ok: true, data: { location: api.content[0].text.trim() } };
+  } catch(e) {
+    return { error: '입지분석 오류: ' + e.message };
   }
 }
 
@@ -653,6 +837,71 @@ function sendTelegram(chatId, text) {
   });
 }
 
+// ============================================================
+// D-7 / D-3 / D-1 경매기일 알림 스케줄러
+// ★ 설정 방법:
+//   Apps Script 편집기 → 트리거(⏰) → 트리거 추가
+//   함수: checkAuctionReminders / 이벤트 소스: 시간 기반 / 매일 오전 9시
+// ============================================================
+function checkAuctionReminders() {
+  var chatId = prop('ADMIN_CHAT_ID');
+  if (!chatId) { Logger.log('ADMIN_CHAT_ID not set — skipping reminders'); return; }
+
+  var ss = casesSS();
+  var todayMs = new Date(todayStr()).getTime();
+  var REMIND_DAYS = [7, 3, 1];
+  var ACTIVE_STATUS = ['ongoing','done','report','confirmed','balance_wait','lawsuit'];
+
+  var cases = loadCases(ss, SH_CASES_ACTIVE);
+  var msgs = [];
+
+  cases.forEach(function(c) {
+    if (!ACTIVE_STATUS.includes(c.status)) return;
+    if (!c.auctionDate) return;
+    var aMs = new Date(c.auctionDate).getTime();
+    var diff = Math.round((aMs - todayMs) / 86400000);
+    if (REMIND_DAYS.indexOf(diff) === -1) return;
+
+    var typeInfo = Object.entries(c.typeMap || {})
+      .filter(function(e) { return e[1]; })
+      .map(function(e) { return e[0] + ':' + e[1]; })
+      .join(' / ');
+
+    msgs.push(
+      '📅 D-' + diff + ' 경매기일 알림\n' +
+      '사건번호: ' + (c.caseNo || '—') + '\n' +
+      '법원: ' + (c.court || '—') + '\n' +
+      '주소: ' + (c.address || '—') + '\n' +
+      '경매기일: ' + c.auctionDate + '\n' +
+      (typeInfo ? '담당: ' + typeInfo : '') +
+      (c.note ? '\n메모: ' + c.note : '')
+    );
+  });
+
+  // 마감요청일 D-1 알림
+  cases.forEach(function(c) {
+    if (!ACTIVE_STATUS.includes(c.status)) return;
+    if (!c.deadline) return;
+    var dMs = new Date(c.deadline).getTime();
+    var diff = Math.round((dMs - todayMs) / 86400000);
+    if (diff !== 1) return;
+    msgs.push(
+      '⚠️ 마감 D-1 알림\n' +
+      '사건번호: ' + (c.caseNo || '—') + '\n' +
+      '주소: ' + (c.address || '—') + '\n' +
+      '마감요청일: ' + c.deadline
+    );
+  });
+
+  if (msgs.length === 0) {
+    Logger.log('오늘 알림 없음 (' + todayStr() + ')');
+    return;
+  }
+
+  msgs.forEach(function(m) { sendTelegram(chatId, m); });
+  Logger.log('알림 발송 완료: ' + msgs.length + '건');
+}
+
 // 배포 후 웹훅 URL을 이 함수에 실행 (1회)
 function setWebhook() {
   var token      = prop('TELEGRAM_TOKEN');
@@ -922,9 +1171,9 @@ function migrateAddCaseIds() {
 // ============================================================
 // AUCTION — GET
 // ============================================================
-// 입찰진행 컬럼(12): id, caseNo(FK), clientName, content,
+// 입찰진행 컬럼(13): id, caseNo(FK), clientName, content,
 //   saleDecisionDate, saleDecisionOk, appealDate, appealOk,
-//   balanceDate, note, status, createdAt
+//   balanceDate, note, status, createdAt, balanceOk
 // → caseNo로 사건목록/종료사건과 조인. 중복 필드 없음.
 
 function auctionGet(p) {
@@ -936,7 +1185,14 @@ function auctionGet(p) {
 function loadAuction(ss, shName) {
   var sheet = sh(ss, shName);
   if (sheet.getLastRow() < 2) return { ok: true, data: [] };
-  var vals = sheet.getRange(2, 1, sheet.getLastRow() - 1, 12).getValues();
+  // 기존 12열 시트에 13열(잔금납부확정) 헤더가 없으면 추가
+  if (sheet.getLastColumn() < 13) {
+    sheet.getRange(1, 13).setValue('잔금납부확정')
+         .setBackground('#1a1a2e').setFontColor('#ffffff').setFontWeight('bold').setFontSize(10)
+         .setHorizontalAlignment('center').setVerticalAlignment('middle');
+    sheet.setColumnWidth(13, 70);
+  }
+  var vals = sheet.getRange(2, 1, sheet.getLastRow() - 1, 13).getValues();
   return { ok: true, data: vals.map(mapAuctionRow) };
 }
 
@@ -953,7 +1209,8 @@ function mapAuctionRow(r) {
     balanceDate:      r[8]  ? kstDate(r[8])  : '',
     note:             String(r[9]  || ''),
     status:           String(r[10] || 'ongoing'),
-    createdAt:        r[11] ? kstDate(r[11]) : ''
+    createdAt:        r[11] ? kstDate(r[11]) : '',
+    balanceOk:        String(r[12] || '')
   };
 }
 
@@ -987,14 +1244,15 @@ function addAuction(ss, d) {
     d.balanceDate      ? new Date(d.balanceDate)      : '',
     d.note             || '',
     d.status           || 'ongoing',
-    new Date()
+    new Date(),
+    d.balanceOk        || ''
   ]);
   return { ok: true, id: id };
 }
 
 function updateAuction(ss, d) {
   var sheet   = sh(ss, SH_AUCTION);
-  var rowInfo = findRowById(sheet, d.id, 12);
+  var rowInfo = findRowById(sheet, d.id, 13);
   if (!rowInfo) return { ok: false, error: '항목을 찾을 수 없습니다.' };
   var r = rowInfo.row;
   var sv = function(col, val) { if (val !== undefined) sheet.getRange(r, col).setValue(val); };
@@ -1005,6 +1263,7 @@ function updateAuction(ss, d) {
   sv(8, d.appealOk);
   if (d.balanceDate !== undefined) sv(9, d.balanceDate ? new Date(d.balanceDate) : '');
   sv(10, d.note); sv(11, d.status);
+  sv(13, d.balanceOk);
   return { ok: true };
 }
 
@@ -1019,12 +1278,12 @@ function deleteAuction(ss, d) {
 function setupAuctionSheet(sheet) {
   var h = ['ID','사건번호(FK)','고객명','진행내용',
            '매각결정기일','매각결정확정','항고기간','항고확정',
-           '잔금납부기일','비고','상태','등록일'];
-  sheet.getRange(1,1,1,12).setValues([h])
+           '잔금납부기일','비고','상태','등록일','잔금납부확정'];
+  sheet.getRange(1,1,1,13).setValues([h])
     .setBackground('#1a1a2e').setFontColor('#ffffff').setFontWeight('bold').setFontSize(10)
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
   sheet.setRowHeight(1,36); sheet.setFrozenRows(1); sheet.setTabColor('#8B6914');
-  var widths=[[1,0],[2,130],[3,90],[4,200],[5,100],[6,70],[7,100],[8,70],[9,100],[10,200],[11,80],[12,90]];
+  var widths=[[1,0],[2,130],[3,90],[4,200],[5,100],[6,70],[7,100],[8,70],[9,100],[10,200],[11,80],[12,90],[13,70]];
   widths.forEach(function(p){ sheet.setColumnWidth(p[0], p[1]); });
   ['E:E','G:G','I:I','L:L'].forEach(function(col){ sheet.getRange(col).setNumberFormat('yy.M.d'); });
 }
@@ -1181,7 +1440,7 @@ function statsGet(p) {
   var aData = [];
   var aSheet = sh(ss, SH_AUCTION);
   if (aSheet.getLastRow() > 1)
-    aData = aSheet.getRange(2,1,aSheet.getLastRow()-1,12).getValues().map(mapAuctionRow);
+    aData = aSheet.getRange(2,1,aSheet.getLastRow()-1,Math.min(aSheet.getLastColumn(),13)).getValues().map(mapAuctionRow);
 
   // 사건목록(active+archived)에서 해당 월 auctionDate 사건번호 수집
   var allCases = loadCases(ss, SH_CASES_ACTIVE).concat(loadCases(ss, SH_CASES_ARCHIVE));
@@ -1250,4 +1509,245 @@ function migrateAddStatusColumn() {
     if (!sheet.getRange(i,17).getValue()) sheet.getRange(i,17).setValue('정상');
   }
   Logger.log('✅ 상태 컬럼 추가 완료! (' + (last-1) + '행 처리됨)');
+}
+
+// ============================================================
+// DRIVE — 구글 드라이브 연동
+// ============================================================
+var DRIVE_ROOT_NAME = 'THE FIN 인트라넷';
+
+function driveRoot() {
+  var it = DriveApp.getFoldersByName(DRIVE_ROOT_NAME);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(DRIVE_ROOT_NAME);
+}
+
+function driveCaseFolder(caseNo) {
+  var root = driveRoot();
+  var it   = root.getFoldersByName('사건');
+  var caseParent = it.hasNext() ? it.next() : root.createFolder('사건');
+  var it2  = caseParent.getFoldersByName(caseNo);
+  return it2.hasNext() ? it2.next() : caseParent.createFolder(caseNo);
+}
+
+function driveBackupFolder() {
+  var root = driveRoot();
+  var it   = root.getFoldersByName('백업');
+  return it.hasNext() ? it.next() : root.createFolder('백업');
+}
+
+function driveGet(p) {
+  // 사건 파일 목록
+  if (p.action === 'listFiles') {
+    try {
+      var folder = driveCaseFolder(p.caseNo);
+      var it = folder.getFiles();
+      var files = [];
+      while (it.hasNext()) {
+        var f = it.next();
+        files.push({
+          id:        f.getId(),
+          name:      f.getName(),
+          size:      f.getSize(),
+          url:       f.getUrl(),
+          mimeType:  f.getMimeType(),
+          createdAt: Utilities.formatDate(f.getDateCreated(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm')
+        });
+      }
+      files.sort(function(a,b){ return b.createdAt.localeCompare(a.createdAt); });
+      return json({ ok: true, files: files, folderId: folder.getId(), folderUrl: folder.getUrl() });
+    } catch(e) { return json({ ok: false, error: e.message }); }
+  }
+  // 최신 백업 내용 반환
+  if (p.action === 'getBackup') {
+    try {
+      var folder = driveBackupFolder();
+      var it = folder.getFiles();
+      var latest = null, latestDate = null;
+      while (it.hasNext()) {
+        var f = it.next();
+        var d = f.getDateCreated();
+        if (!latestDate || d > latestDate) { latest = f; latestDate = d; }
+      }
+      if (!latest) return json({ ok: false, error: '백업 파일 없음' });
+      return json({
+        ok: true,
+        data: JSON.parse(latest.getBlob().getDataAsString()),
+        fileName: latest.getName(),
+        createdAt: Utilities.formatDate(latestDate, 'Asia/Seoul', 'yyyy-MM-dd HH:mm')
+      });
+    } catch(e) { return json({ ok: false, error: e.message }); }
+  }
+  // 백업 목록
+  if (p.action === 'listBackups') {
+    try {
+      var folder = driveBackupFolder();
+      var it = folder.getFiles();
+      var list = [];
+      while (it.hasNext()) {
+        var f = it.next();
+        list.push({ id: f.getId(), name: f.getName(), size: f.getSize(),
+          createdAt: Utilities.formatDate(f.getDateCreated(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm') });
+      }
+      list.sort(function(a,b){ return b.createdAt.localeCompare(a.createdAt); });
+      return json({ ok: true, backups: list });
+    } catch(e) { return json({ ok: false, error: e.message }); }
+  }
+  return json({ error: 'unknown drive action' });
+}
+
+function drivePost(b) {
+  // 파일 업로드
+  if (b.action === 'uploadFile') {
+    try {
+      var folder = driveCaseFolder(b.caseNo);
+      var blob   = Utilities.newBlob(Utilities.base64Decode(b.base64), b.mimeType, b.fileName);
+      var file   = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      return json({ ok: true, id: file.getId(), name: file.getName(), url: file.getUrl() });
+    } catch(e) { return json({ ok: false, error: e.message }); }
+  }
+  // 파일 삭제 (휴지통으로)
+  if (b.action === 'deleteFile') {
+    try {
+      DriveApp.getFileById(b.fileId).setTrashed(true);
+      return json({ ok: true });
+    } catch(e) { return json({ ok: false, error: e.message }); }
+  }
+  // 전체 데이터 백업
+  if (b.action === 'backupData') {
+    try {
+      var folder = driveBackupFolder();
+      var ts     = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd_HH-mm');
+      var name   = 'thefin_backup_' + ts + '.json';
+      var file   = folder.createFile(Utilities.newBlob(b.jsonData, 'application/json', name));
+      // 백업 10개 초과 시 오래된 것 자동 삭제
+      var it2  = folder.getFiles();
+      var all  = [];
+      while (it2.hasNext()) all.push(it2.next());
+      if (all.length > 10) {
+        all.sort(function(a,b){ return a.getDateCreated() - b.getDateCreated(); });
+        for (var i = 0; i < all.length - 10; i++) all[i].setTrashed(true);
+      }
+      return json({ ok: true, id: file.getId(), name: name });
+    } catch(e) { return json({ ok: false, error: e.message }); }
+  }
+  return json({ error: 'unknown drive action' });
+}
+
+// ============================================================
+// BETA — 오류 리포팅 (버그 신고 → 시트 저장 + 텔레그램)
+// ============================================================
+// ★ 텔레그램 전송을 원하면 스크립트 속성에 ADMIN_CHAT_ID 추가:
+//   스크립트 편집기 → 프로젝트 설정 → 스크립트 속성
+//   키: ADMIN_CHAT_ID  값: 대표님 텔레그램 chat_id
+//   (텔레그램 봇에게 먼저 메시지를 보낸 후 @userinfobot 에서 확인 가능)
+// ============================================================
+var BETA_LOG_SHEET = '오류 로그';
+
+function betaPost(b) {
+  if (b.action === 'report') {
+    try {
+      var ss    = casesSS();
+      var sheet = sh(ss, BETA_LOG_SHEET);
+      // 헤더가 없으면 생성
+      if (sheet.getLastRow() === 0) {
+        sheet.appendRow(['시각', '사용자', '역할', '유형', '설명', '오류 메시지', '위치', '스택(요약)', '브라우저', 'URL']);
+        sheet.getRange(1, 1, 1, 10).setBackground('#142040').setFontColor('#ffffff').setFontWeight('bold');
+        sheet.setFrozenRows(1);
+      }
+      // 오류 행 저장
+      sheet.appendRow([
+        b.ts      || todayStr(),
+        b.user    || '—',
+        b.role    || '—',
+        b.type    || '—',
+        b.desc    || '',
+        b.message || '',
+        b.source  || '',
+        b.stack   ? b.stack.substring(0, 300) : '',
+        b.ua      || '',
+        b.url     || ''
+      ]);
+      // 텔레그램 전송 (ADMIN_CHAT_ID 설정 시)
+      var adminChatId = prop('ADMIN_CHAT_ID');
+      if (adminChatId) {
+        var emoji = b.type === '수동신고' ? '📋' : '🐛';
+        var msg   = emoji + ' [베타 오류] ' + (b.type || '') + '\n' +
+          '───────────────\n' +
+          '👤 ' + (b.user || '?') + ' (' + (b.role || '?') + ')\n' +
+          '🕐 ' + (b.ts || '') + '\n\n';
+        if (b.desc)    msg += '📝 설명:\n' + b.desc + '\n\n';
+        if (b.message) msg += '⚠️ 오류:\n' + b.message.substring(0, 200) + '\n\n';
+        if (b.source)  msg += '📍 위치: ' + b.source;
+        sendTelegram(adminChatId, msg.trim());
+      }
+      return json({ ok: true });
+    } catch(e) {
+      return json({ ok: false, error: e.message });
+    }
+  }
+  return json({ error: 'unknown beta action' });
+}
+
+// ============================================================
+// MSG — 메시지 / 수정 요청
+// ============================================================
+var SH_MSG = '메시지';
+
+function msgGet(p) {
+  var ss = casesSS();
+  if (p.action === 'getMessages') return getMsgs(ss);
+  return json({ error: 'unknown msg action' });
+}
+
+function msgPost(b) {
+  var ss = casesSS();
+  if (b.action === 'sendMessage') return sendMsg(ss, b);
+  if (b.action === 'markRead')    return markMsgRead(ss, b.id);
+  return json({ error: 'unknown msg action' });
+}
+
+function getMsgs(ss) {
+  var sheet = ss.getSheetByName(SH_MSG);
+  if (!sheet || sheet.getLastRow() < 2) return json({ ok: true, messages: [] });
+  var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 6).getValues();
+  var msgs = data.map(function(r) {
+    return { id: r[0], from: r[1], body: r[2], type: r[3], time: r[4], read: r[5] === true };
+  }).reverse();
+  return json({ ok: true, messages: msgs });
+}
+
+function sendMsg(ss, b) {
+  var sheet = ss.getSheetByName(SH_MSG);
+  if (!sheet) {
+    sheet = ss.insertSheet(SH_MSG);
+    sheet.appendRow(['ID', '보낸사람', '내용', '유형', '전송시각', '읽음']);
+    sheet.setFrozenRows(1);
+  }
+  var id  = Utilities.getUuid();
+  var now = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm');
+  sheet.appendRow([id, b.from || '알수없음', b.body || '', b.type || '기타', now, false]);
+
+  // 텔레그램 알림 (ADMIN_CHAT_ID 설정 시)
+  var chatId = prop('ADMIN_CHAT_ID');
+  if (chatId) {
+    var txt = '💬 [수정 요청]\n' +
+      '───────────────\n' +
+      '👤 보낸사람: ' + (b.from || '?') + '\n' +
+      '🏷 유형: ' + (b.type || '기타') + '\n' +
+      '🕐 시각: ' + now + '\n\n' +
+      '📝 내용:\n' + (b.body || '');
+    sendTelegram(chatId, txt);
+  }
+  return json({ ok: true });
+}
+
+function markMsgRead(ss, id) {
+  var sheet = ss.getSheetByName(SH_MSG);
+  if (!sheet) return json({ ok: false });
+  var data = sheet.getRange(2, 1, Math.max(sheet.getLastRow() - 1, 1), 1).getValues();
+  for (var i = 0; i < data.length; i++) {
+    if (data[i][0] === id) { sheet.getRange(i + 2, 6).setValue(true); return json({ ok: true }); }
+  }
+  return json({ ok: false, error: 'not found' });
 }
