@@ -7398,12 +7398,28 @@ function _bulkAge() {
   try { const v = localStorage.getItem(BULK_CACHE_AGE); return v ? Date.now() - Number(v) : Infinity; } catch(e) { return Infinity; }
 }
 
+// FEE_ consts declared here (before applyBulkData) to avoid TDZ when FEE_migrate is called on cached data load
+const FEE_SHADOW_KEY = 'thefin_fee_shadow_v1';
+const FEE_RATES = { '아파트':1, '다가구':2, '빌딩':2, '공장':2, '토지':2, '특수물건':3 };
+const FEE_SHADOW_FIELDS = ['currentStage','stageNote','propertyType','feeRate','bidPrice','bidDate','fee1Received','fee1Date','fee2Received','fee2Date','staffShares','feeNote','clientName','manager','driveFiles'];
+const STAGES = [
+  { n:1, name:'블로그 홍보', color:'#0891b2' },
+  { n:2, name:'상담',        color:'#2563eb' },
+  { n:3, name:'조사 요청',    color:'#1e40af' },
+  { n:4, name:'보고서',      color:'#7c3aed' },
+  { n:5, name:'입찰 동행',    color:'#c8a44a' },
+  { n:6, name:'대출 연결',    color:'#d97706' },
+  { n:7, name:'명도',        color:'#dc2626' },
+  { n:8, name:'포기',        color:'#6b7280' },
+  { n:9, name:'기타',        color:'#9ca3af' },
+];
+
 function applyBulkData(d) {
   const allCases = [...(d.cases||[]), ...(d.archive||[])];
 
   // 사건 관리 (C_CACHE_CASES/TODOS는 BULK_CACHE에 이미 포함 — 중복 저장 하지 않음)
   C_cases = allCases;
-  if (typeof FEE_migrate === 'function') FEE_migrate();
+  try { if (typeof FEE_migrate === 'function') FEE_migrate(); } catch(e) {}
   C_todos = d.todos || [];
   C_renderTodos(); C_render();
 
@@ -12533,11 +12549,9 @@ function CAL_init() {
 //  (기존 코드 건드리지 않음 · 모든 함수 DASH_/CD_/ICS_/FEE_ 네임스페이스)
 // ══════════════════════════════════════════════════════════════════
 
-// ─── 상수 · 그림자 저장소 ───
+// ─── 그림자 저장소 ───
 // (GAS 백엔드는 신규 필드를 모르므로 sync 시 덮어쓰기 방지용)
-const FEE_SHADOW_KEY = 'thefin_fee_shadow_v1';
-const FEE_RATES = { '아파트':1, '다가구':2, '빌딩':2, '공장':2, '토지':2, '특수물건':3 };
-const FEE_SHADOW_FIELDS = ['currentStage','stageNote','propertyType','feeRate','bidPrice','bidDate','fee1Received','fee1Date','fee2Received','fee2Date','staffShares','feeNote','clientName','manager','driveFiles'];
+// (FEE_SHADOW_KEY, FEE_RATES, FEE_SHADOW_FIELDS, STAGES const는 applyBulkData 앞에 선언됨 — TDZ 방지)
 
 function FEE_loadShadow() {
   try { return JSON.parse(localStorage.getItem(FEE_SHADOW_KEY) || '{}'); }
@@ -12556,17 +12570,7 @@ function FEE_saveShadow() {
   });
   try { localStorage.setItem(FEE_SHADOW_KEY, JSON.stringify(shadow)); } catch(e) {}
 }
-const STAGES = [
-  { n:1, name:'블로그 홍보', color:'#0891b2' },
-  { n:2, name:'상담',        color:'#2563eb' },
-  { n:3, name:'조사 요청',    color:'#1e40af' },
-  { n:4, name:'보고서',      color:'#7c3aed' },
-  { n:5, name:'입찰 동행',    color:'#c8a44a' },
-  { n:6, name:'대출 연결',    color:'#d97706' },
-  { n:7, name:'명도',        color:'#dc2626' },
-  { n:8, name:'포기',        color:'#6b7280' },
-  { n:9, name:'기타',        color:'#9ca3af' },
-];
+// STAGES는 applyBulkData 앞에 선언됨
 const OVERDUE_DAYS = 30;
 
 // 7단계 진행 표시 셀 (도트 스텝 + 진행 숫자)
