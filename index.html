@@ -12226,7 +12226,7 @@ function CAL_render() {
       const inner = e.struck
         ? `<s>${e.label}${e.name ? ' · ' + e.name : ''}</s><span style="margin-left:3px;font-size:9px;background:#e5e7eb;color:#6b7280;border-radius:2px;padding:0 3px;font-style:normal;">${e.reason}</span>`
         : `${e.label}${e.name ? ' · ' + e.name : ''}`;
-      return `<div class="cal-ev" style="background:${e.bg};color:${e.color};border-left-color:${e.color};cursor:pointer;" data-cal-label="${e.label}" ${e.tooltip ? `data-cal-tip="${e.tooltip.replace(/"/g,'&quot;')}"` : ''} ${e.onclick ? `data-cal-goto="${e.onclick.replace(/"/g,'&quot;')}"` : ''} onclick="CAL_chipClick(event)">${inner}</div>`;
+      return `<div class="cal-ev" style="background:${e.bg};color:${e.color};border-left-color:${e.color};cursor:pointer;" data-cal-label="${e.label}" ${e.tooltip ? `data-cal-tip="${e.tooltip.replace(/"/g,'&quot;')}" onmouseenter="CAL_tipShow(event,this)" onmouseleave="CAL_tipHide()"` : ''} ${e.onclick ? `data-cal-goto="${e.onclick.replace(/"/g,'&quot;')}"` : ''} onclick="CAL_chipClick(event)">${inner}</div>`;
     }).join('');
     const more = evs.length > 3 ? `<div class="cal-ev-more">+${evs.length - 3}건 더</div>` : '';
 
@@ -12279,7 +12279,7 @@ function CAL_renderSidebar() {
       const subHtml = e.reason
         ? `<span style="display:inline-block;font-size:9px;background:#e5e7eb;color:#6b7280;border-radius:3px;padding:1px 5px;margin-top:2px;">${e.reason}</span>`
         : (e.sub ? `<span class="cal-sb-sub">${e.sub}</span>` : '');
-      return `<div class="cal-sb-ev" style="border-left-color:${e.color};cursor:pointer;${strikeOpacity}" data-cal-label="${e.label}" ${tip ? `data-cal-tip="${tip}"` : ''} ${e.onclick ? `data-cal-goto="${e.onclick.replace(/"/g,'&quot;')}"` : ''} onclick="CAL_chipClick(event)">
+      return `<div class="cal-sb-ev" style="border-left-color:${e.color};cursor:pointer;${strikeOpacity}" data-cal-label="${e.label}" ${tip ? `data-cal-tip="${tip}" onmouseenter="CAL_tipShow(event,this)" onmouseleave="CAL_tipHide()"` : ''} ${e.onclick ? `data-cal-goto="${e.onclick.replace(/"/g,'&quot;')}"` : ''} onclick="CAL_chipClick(event)">
         <span class="cal-sb-type" style="color:${e.color};${typeStyle}">${e.label}</span>
         <div class="cal-sb-info">
           <span class="cal-sb-name" style="${nameStyle}">${e.name || '—'}</span>
@@ -12345,45 +12345,12 @@ function CAL_init() {
     tip.style.top  = y + 'px';
   }
 
-  document.addEventListener('mouseover', e => {
-    // 핀드 팝업 위에서는 hover 무시 (팝업 자체 위에 커서가 있을 때)
-    if (e.target.closest('#CAL_tooltip')) return;
-    const el = e.target.closest('[data-cal-tip]');
-    if (!el) return;
-    const raw = el.dataset.calTip;
-    if (!raw) return;
-    // 칩 위로 마우스가 오면 핀드 상태 해제 → hover 툴팁 활성화
-    tip.classList.remove('pinned');
-    const parts  = raw.split(' | ').filter(Boolean);
-    const evType = el.dataset.calLabel || '';
-    const labels = LABELS[evType] || DEFAULT_LABELS;
-
-    const rows = parts.map((p, i) => {
-      const k = labels[i] || '';
-      return k
-        ? `<div class="cal-tip-row"><span class="cal-tip-key">${k}</span><span class="cal-tip-val">${p}</span></div>`
-        : `<div class="cal-tip-row"><span class="cal-tip-val" style="color:#94a3b8">${p}</span></div>`;
-    }).join('');
-
-    const noteRow = (evType === '경매기일' && parts[3])
-      ? `<div class="cal-tip-note">⚠ ${parts[3]}</div>` : '';
-
-    tip.innerHTML = `<div class="cal-tip-type">${evType}</div>${rows}${noteRow}`;
-    place(e);
-    tip.classList.add('visible');
-  });
-
+  // 마우스 이동 시 hover 툴팁 따라다니기 (pinned 아닐 때만)
   document.addEventListener('mousemove', e => {
-    if (tip.classList.contains('visible')) place(e);
+    if (tip.classList.contains('visible') && !tip.classList.contains('pinned')) place(e);
   });
 
-  document.addEventListener('mouseout', e => {
-    if (tip.classList.contains('pinned')) return;
-    if (!e.target.closest('[data-cal-tip]')) return;
-    if (e.relatedTarget && e.relatedTarget.closest('[data-cal-tip]')) return;
-    tip.classList.remove('visible');
-  });
-
+  // 스크롤 시 hover 툴팁 숨기기
   document.addEventListener('scroll', () => {
     if (!tip.classList.contains('pinned')) tip.classList.remove('visible');
   }, true);
@@ -12391,9 +12358,35 @@ function CAL_init() {
   // 외부 클릭 시 핀드 팝업 닫기
   document.addEventListener('click', e => {
     if (!tip.classList.contains('pinned')) return;
-    if (e.target.closest('#CAL_tooltip') || e.target.closest('[data-cal-goto],[data-cal-tip]')) return;
+    if (e.target.closest('#CAL_tooltip')) return;
     tip.classList.remove('visible', 'pinned');
   });
+
+  // hover 툴팁 표시 (칩에 직접 onmouseenter 연결)
+  window.CAL_tipShow = function(ev, el) {
+    tip.classList.remove('pinned');
+    const raw    = el.dataset.calTip;
+    if (!raw) return;
+    const parts  = raw.split(' | ').filter(Boolean);
+    const evType = el.dataset.calLabel || '';
+    const labels = LABELS[evType] || DEFAULT_LABELS;
+    const rows = parts.map((p, i) => {
+      const k = labels[i] || '';
+      return k
+        ? `<div class="cal-tip-row"><span class="cal-tip-key">${k}</span><span class="cal-tip-val">${p}</span></div>`
+        : `<div class="cal-tip-row"><span class="cal-tip-val" style="color:#94a3b8">${p}</span></div>`;
+    }).join('');
+    const noteRow = (evType === '경매기일' && parts[3])
+      ? `<div class="cal-tip-note">⚠ ${parts[3]}</div>` : '';
+    tip.innerHTML = `<div class="cal-tip-type">${evType}</div>${rows}${noteRow}`;
+    place(ev);
+    tip.classList.add('visible');
+  };
+
+  // hover 툴팁 숨기기
+  window.CAL_tipHide = function() {
+    if (!tip.classList.contains('pinned')) tip.classList.remove('visible');
+  };
 
   // 캘린더 칩 클릭 → 상세 팝업
   window.CAL_chipClick = function(ev) {
