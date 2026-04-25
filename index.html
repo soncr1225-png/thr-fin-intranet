@@ -7425,8 +7425,9 @@ function applyBulkData(d) {
 
   M_render();
 
-  // 캘린더 탭이 열려있으면 새 데이터로 재렌더링
+  // 열려있는 탭에 따라 재렌더링
   if (document.getElementById('panel-cal')?.classList.contains('active')) CAL_render();
+  if (document.getElementById('panel-dashboard')?.classList.contains('active') && typeof DASH_render === 'function') DASH_render();
 }
 
 async function loadBulk() {
