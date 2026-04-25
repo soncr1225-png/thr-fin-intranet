@@ -6479,7 +6479,7 @@ function A_caseRow(cas, cust, isFirst) {
         <div id="A_ic_${cust.id}_content" class="a-editable" style="font-size:12px;color:#555;min-height:14px;flex:1;"
           onclick="A_inlineEdit('${cust.id}','content','${A_escHtml(cust.content||'')}',false)">${A_escHtml(cust.content||'')}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:4px;margin-top:4px;flex-wrap:nowrap;">
+      <div style="display:flex;align-items:center;gap:4px;margin-top:4px;flex-wrap:wrap;">
         <button onclick="event.stopPropagation();A_toggleSub('${cust.id}')"
           style="background:${isSub?'#1e3a5f':'#f3f4f6'};border:1px solid ${isSub?'#c8a44a':'#d1d5db'};border-radius:10px;padding:2px 7px;cursor:pointer;font-size:11px;color:${isSub?'#c8a44a':'#9ca3af'};font-weight:700;white-space:nowrap;transition:all .15s;"
           title="서브 입찰 여부">서브${isSub?' ✓':' ☐'}</button>
@@ -6488,6 +6488,10 @@ function A_caseRow(cas, cust, isFirst) {
           <option value="">담당자</option>
           ${C_MANAGERS.map(m=>`<option value="${m}"${cust.subStaff===m?' selected':''}>${m}</option>`).join('')}
         </select>` : ''}
+        ${isSub && isClosed ? `<span style="display:inline-block;background:#fff7ed;color:#d97706;border:1px solid #fed7aa;border-radius:8px;padding:1px 6px;font-size:10px;font-weight:700;white-space:nowrap;">수수료 10만</span>` : ''}
+        <button onclick="event.stopPropagation();A_toggleReportSent('${cust.id}')"
+          style="background:${cust.reportSent?'#16a34a':'#f3f4f6'};border:1px solid ${cust.reportSent?'#16a34a':'#d1d5db'};border-radius:10px;padding:2px 7px;cursor:pointer;font-size:11px;color:${cust.reportSent?'#fff':'#9ca3af'};font-weight:700;white-space:nowrap;transition:all .15s;"
+          title="보고서 카톡 전달 여부">카톡${cust.reportSent?' ✓':' ☐'}</button>
       </div>
     </td>
     ${isArchived
@@ -6522,11 +6526,13 @@ function A_caseRow(cas, cust, isFirst) {
         </td>`}
     ${isArchived
       ? `<td style="text-align:center;${inactiveTdStyle}"></td>`
-      : `<td id="A_ic_${cust.id}_loanOk" style="text-align:center;${inactiveTdStyle}">
-          <button onclick="event.stopPropagation();A_toggleLoanOk('${cust.id}')"
-            style="background:${loanOk?'#d97706':'#f3f4f6'};border:1px solid ${loanOk?'#d97706':'#d1d5db'};border-radius:12px;padding:2px 8px;cursor:pointer;font-size:11px;color:${loanOk?'#fff':'#9ca3af'};font-weight:700;white-space:nowrap;transition:all .15s;"
-            title="${loanOk?'대출연결 완료 취소':'대출연결 완료 확인'}">${loanOk?'대출 ✓':'대출연결'}</button>
-        </td>`}
+      : isClosed
+        ? `<td id="A_ic_${cust.id}_loanOk" style="text-align:center;${inactiveTdStyle}">
+            <button onclick="event.stopPropagation();A_toggleLoanOk('${cust.id}')"
+              style="background:${loanOk?'#d97706':'#f3f4f6'};border:1px solid ${loanOk?'#d97706':'#d1d5db'};border-radius:12px;padding:2px 8px;cursor:pointer;font-size:11px;color:${loanOk?'#fff':'#9ca3af'};font-weight:700;white-space:nowrap;transition:all .15s;"
+              title="${loanOk?'대출연결 완료 취소':'대출연결 완료 확인'}">${loanOk?'대출 ✓':'대출연결'}</button>
+          </td>`
+        : `<td style="text-align:center;${inactiveTdStyle}"><span style="font-size:10px;color:#d1d5db;">낙찰 후</span></td>`}
     ${editTd('note', cust.note, false, 'min-width:180px;color:#555;')}
     <td style="white-space:nowrap;${inactiveTdStyle}">
       <button onclick="A_openFormForCase('${A_escHtml(cas.caseNo)}')" style="font-size:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:2px 6px;cursor:pointer;color:#15803d;margin-right:2px;">+고객</button>
@@ -6608,6 +6614,16 @@ async function A_toggleLoanOk(id) {
   A_render();
   setSync('loading');
   const r = await A_gasPost('update', { id, loanOk: newVal });
+  setSync(r && r.ok ? 'ok' : 'err');
+}
+
+async function A_toggleReportSent(id) {
+  const item = A_items.find(i => i.id === id); if (!item) return;
+  const newVal = !(item.reportSent === true || item.reportSent === 'true');
+  item.reportSent = newVal;
+  A_render();
+  setSync('loading');
+  const r = await A_gasPost('update', { id, reportSent: newVal });
   setSync(r && r.ok ? 'ok' : 'err');
 }
 
