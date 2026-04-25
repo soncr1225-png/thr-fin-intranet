@@ -1,6 +1,241 @@
 # THE FIN 인트라넷 — 인수인계 메모
 
-> 최종 업데이트: 2026-04-22 (세션 7)
+> 최종 업데이트: 2026-04-23 (세션 9)
+
+---
+
+## 세션 9 작업 내역 (2026-04-23)
+
+### 🗓 캘린더 — 취소선 표시 (비활성 사건)
+
+기일변경·고객변심·취하·종료 상태 사건이 캘린더에 계속 표시되던 문제 개선.
+- `CAL_STRIKE_MAP = { changed: '기일변경', cancel: '고객변심', drop: '취하·종료' }` 추가
+- `CAL_HIDDEN = ['closed', 'lost']` — 이 두 상태는 완전히 숨김 (이전 `CAL_SKIP`에 `lost` 누락 버그도 수정)
+- `struck` 속성이 `true`인 이벤트는 그리드 칩에 `<s>` 태그 + 회색 사유 뱃지 표시
+- 사이드바에서도 동일하게 취소선 + 사유 라벨 표시
+
+### 🗓 캘린더 — 잔금납부대기중일 때만 일정 표시
+
+매각결정기일·항고마감·잔금납부기일은 `balance_wait` 상태 사건에서만 캘린더에 표시.
+- `A_items` 순회 시 `cas.status !== 'balance_wait'` 조건으로 필터링
+- 잔금납부 완료(`balanceOk === 'O'`) 건도 제외
+
+### 🐛 캘린더 — 상태 변경 시 즉시 갱신 안 됨 버그
+
+기일변경으로 상태를 바꿔도 캘린더에 고객변심으로 표시되는 문제.
+- **원인**: `C_chStatus()`가 상태 변경 후 `CAL_render()`를 호출하지 않아 이전 렌더 캐시 유지
+- **수정**: `C_chStatus` 끝에 `if(typeof CAL_render==='function') CAL_render();` 추가
+- `C_restoreToActive`에도 동일 처리
+
+### 🐛 마감요청일 삭제 후 재등장 버그 수정
+
+마감요청일을 지웠는데 새로고침하면 다시 나타나는 문제.
+- **원인**: GAS `updateCase`에서 `if (d.deadline)` 조건이 빈 문자열 `''`을 falsy 처리 → 빈 값 저장 안 함
+- **수정** (`unified-gas.js`):
+  ```javascript
+  // 이전 (버그):
+  if (d.auctionDate) sheet.getRange(r, 6).setValue(new Date(d.auctionDate));
+  if (d.deadline)    sheet.getRange(r, 7).setValue(new Date(d.deadline));
+
+  // 수정 후:
+  if (d.auctionDate !== undefined) sheet.getRange(r, 6).setValue(d.auctionDate ? new Date(d.auctionDate) : '');
+  if (d.deadline    !== undefined) sheet.getRange(r, 7).setValue(d.deadline    ? new Date(d.deadline)    : '');
+  ```
+- **⚠ GAS 재배포 필수** — 재배포 전까지 마감요청일 삭제가 시트에 반영되지 않음
+
+### 📊 applyBulkData 로딩 순서 버그 수정
+
+명도 데이터(`M_active`, `M_done`)가 `A_render()` 이후에 세팅되어 명도 이벤트 fallback이 작동 안 하던 문제.
+- `M_active = d.myeongdoActive` / `M_done = d.myeongdoDone` 세팅을 `A_render()` 호출 **앞으로** 이동
+- 캘린더 탭이 열려있을 때도 `applyBulkData` 완료 후 `CAL_render()` 재실행
+
+### 📈 진행 단계 8·9 추가 (포기·기타)
+
+기존 7단계 → 9단계로 확장.
+
+| 단계 | 이름 | 색상 |
+|---|---|---|
+| 8 | 포기 | `#6b7280` (회색) |
+| 9 | 기타 | `#9ca3af` (연회색) |
+
+- `STAGES` 배열에 8·9 추가
+- `FEE_inferStage`: `c.currentStage >= 1 && c.currentStage <= 9`로 범위 확장
+- `FEE_SHADOW_FIELDS`에 `'stageNote'` 추가 (수기 내용 shadow 보존)
+- `FEE_migrate`에 `stageNote` 복원 로직 추가
+- 9단계(기타) 선택 시 `CD_renderPipeline`에서 textarea 수기란 표시
+  ```javascript
+  const noteHtml = (cur === 9)
+    ? `<textarea id="CD_stageNote" rows="2" oninput="CD_saveStageNote(this.value)" ...></textarea>`
+    : '';
+  ```
+- `CD_saveStageNote(val)` 함수 추가 (실시간 저장)
+- `CD_save`에서 `CD_stageNote` 값 반영
+
+### 👥 회원 탭 — 사건 히스토리 뷰 개편
+
+"📋 N건" 셀 클릭 시 수수료·수령 정보 대신 **사건 타임라인 히스토리** 표시.
+
+**히스토리 카드 구조 (1사건 = 1카드):**
+- 1행: 사건번호 + 법원 + 단계뱃지 + 결과뱃지 | `수정` 버튼
+- 2행: 주소
+- 3행: 이벤트 가로 칩 (사건접수 › 보고서 › 입찰동행 2025.06.24 › 🏆 낙찰)
+- 4행: 메모 (stageNote / note 있을 때만)
+
+**이벤트 추론 로직 (변경이력 없이 현재 상태 기반):**
+- 사건접수 (항상)
+- 보고서 (stage ≥ 4)
+- 입찰동행 + 날짜 (stage ≥ 5 또는 confirmed)
+- 대출연결 (stage ≥ 6)
+- 잔금납부완료 (A_items balanceOk === 'O')
+- 명도 (stage ≥ 7 또는 M_active/M_done에 존재)
+- 포기 (stage === 8)
+- OUTCOME_MAP 결과 (closed/lost/cancel/changed/drop/lawsuit)
+
+**단계 뱃지 제거**: 이전에 사건 셀에 표시되던 "3. 조사 요청" 등 단계 표기 제거 → "📋 N건"만 표시.
+
+**수정 버튼**: 히스토리 카드에서 `수정` 클릭 시 팝업 닫고 해당 사건 `CD_open()` 호출.
+
+---
+
+## 세션 8 작업 내역 (2026-04-22)
+
+### 이름 정정 — 이이훈 → 이제훈
+
+CLAUDE.md · index.html 전역에서 `이이훈` → `이제훈`으로 치환 (총 9곳).
+- `AUTH_BASE_USERS` 키 · 담당자 드롭다운 (7곳) · 파싱 정규식 · 필터 · 명도 담당 설명
+- **주의**: 기존에 `thefin_pw_이이훈` localStorage 해시가 있으면 새 이름으로 다시 로그인 시 초기 비밀번호 (`thefin2024!`) 사용 필요
+
+### 모바일 카드 시간 박스 캡처 버그 수정 (AG_ 입찰안내문)
+
+html2canvas 1.4.1이 `display:inline-block` + `display:flex` + `<span margin-right>` 조합을 렌더링 실패하는 문제.
+- `display:flex` 제거 → `text-align:center`
+- `display:inline-block` → `margin:auto` + `max-width:320px`
+- 시간 텍스트 각각에 `white-space:nowrap` (중간 줄바꿈 방지)
+- 박스 폭 320px로 확장 + 폰트 크기 미세조정 (16→15px, 14→13px)
+
+### 📊 대시보드 탭 신설 (신규 · panel-dashboard)
+
+상단 네비게이션 캘린더 다음에 **📊 대시보드** 탭 추가.
+- **담당자 4명 워크로드 카드**: 담당 사건 · 임박(7일↓) · 이번달 수령 · 미수 지연
+- **이번달 수수료 현황**: 사건 수 · 예상 총 수수료 · 수령 완료 · 미수 금액
+- **수수료 지연 리스트**: 낙찰 후 30일+ 1차 미수 건
+- **사건 목록 테이블**: 7단계 배지 + 1차/2차 수령 상태 + 💰 관리 버튼
+
+### 💰 사건 상세 모달 신설 (CD_modal)
+
+사건 행 · 대시보드 · 회원 팝업에서 `💰` 버튼 클릭 시 열림.
+- **7단계 파이프라인 시각화**: 블로그홍보→상담→조사→보고서→입찰동행→대출연결→명도 (클릭하여 단계 변경)
+- **물건 유형 → 수수료율 자동**: 아파트 1% / 다가구·빌딩·공장·토지 2% / 특수 3%
+- **낙찰가 입력 → 수수료 자동 계산** (50/50 분할)
+- **1차(잔금납부일) / 2차(명도 완료) 수령 체크** + 날짜
+- **직원 4명 배분율 (%)** — 합계 100% 자동 검증 (색상 피드백)
+- **연결 고객 드롭다운** — MBR_members 자동완성
+
+### 🔗 고객(회원) ↔ 업무(사건) 양방향 연동
+
+- 회원 테이블에 **"사건" 열 추가** — 📋 N건 + 7단계 배지 요약
+- 회원 행 클릭 → **MBR_caseModal** (해당 고객의 모든 사건 팝업)
+- 사건 모달의 `👥 회원 페이지` 버튼 → 회원 탭 이동 + 자동 검색
+- 연결 매커니즘:
+  - 1순위: `C_case.clientName === m.name`
+  - 2순위: `A_items` 경유 (`clientName` → `caseNo` 역조회)
+
+### 📥 ICS 내보내기 (캘린더 탭)
+
+`📥 .ics 내보내기` 버튼 추가 — 구글/애플 캘린더 가져오기용.
+- 경매기일 · 마감요청일 · 명도(낙찰일·경고장·강제집행·이사일) 전체 export
+- 파일명: `thefin-calendar-YYYY-MM-DD.ics`
+
+### 💾 전체 백업/복원 JSON (A안)
+
+더핀 회원 탭에 **💾 전체 백업(JSON)** / **📂 백업 복원** 버튼 추가.
+- `BACKUP_KEYS` 9개 — 회원·사건·수수료·할일·계정·블로그·**약정서 2종** 모두 포함
+- 복원 전 현재 상태 자동 safety-backup (`thefin_backup_before_import`)
+
+### ☁️ Google Sheets 양방향 동기화 (B안)
+
+더핀 회원 탭에 **☁️ 구글시트 저장** · **⬇️ 구글시트 불러오기** 버튼 추가.
+- 회원 수정 시 3초 debounce로 백그라운드 자동 동기화
+- **서버 `회원관리` 시트** 자동 생성 (20컬럼)
+- 로컬 delta 우선 병합 (사용자 최신 수정 보호)
+
+### unified-gas.js — 회원 CRUD 핸들러 추가 (신규)
+
+```
+var SH_MEMBERS = '회원관리';
+var MEMBER_FIELDS = [name, phone, email, ..., joindate];  // 20개
+
+casesGet:  getMembers       → loadMembers(ss)
+casesPost: saveMembers      → saveMembersBulk(ss, arr)   // 전체 덮어쓰기
+           addMember        → addMember(ss, m)
+           updateMember     → updateMember(ss, m)
+           deleteMember     → deleteMember(ss, m)
+```
+`ensureMemberHeader()`로 시트 첫 행 자동 생성 + 프리즈.
+
+### AUTH 자가 복구 로직
+
+`AUTH_loadUsers()` 앞에 preview 체크 추가 — localStorage 데이터가 **계정 0명 초래 시 자동 초기화**.
+`AUTH_rebuildSelect()`도 방어적 처리 — AUTH_USERS가 비었으면 `AUTH_BASE_USERS`로 강제 복구 + localStorage 삭제.
+로그인 화면 하단에 **🔧 계정 목록 초기화** 링크 추가.
+
+### 🐛 TDZ 버그 수정 (치명적 · 로그인 실패 원인)
+
+`MBR_casesCell`이 `FEE_RATES` const(스크립트 후반부 선언)에 접근하려다 Temporal Dead Zone 에러 발생 → 전체 스크립트 중단 → `AUTH_init` 미실행 → 드롭다운 비어있음.
+- **수정**: `MBR_load(); MBR_render();` 호출을 `setTimeout(..., 0)`으로 감싸 스크립트 파싱 완료 후 실행
+- `MBR_casesCell` 내부도 try/catch 방어 추가
+
+### 회원 탭 헤더 레이아웃 수정
+
+버튼 7개 추가로 제목 영역이 쭈그러져 한국어가 **글자당 세로로 쌓이는 버그**:
+- `.mbr-header-left { flex:0 0 auto; min-width:260px; word-break:keep-all; }`
+- `.mbr-title { white-space:nowrap; }`
+
+### FEE shadow 저장소 (GAS 필드 보존용)
+
+GAS 백엔드는 신규 필드(`bidPrice`, `currentStage`, `staffShares`, `clientName` 등)를 모르므로 sync 시 덮어쓰기 방지:
+- `thefin_fee_shadow_v1` 별도 localStorage 키에 shadow 저장
+- `FEE_migrate()` 시 shadow에서 우선 복원
+
+---
+
+## ⚠️ 다음 세션 필수
+
+### 0. GAS 재배포 (최우선 — 마감요청일 삭제 기능 작동 조건)
+
+`unified-gas.js` 두 가지 변경사항을 Google Apps Script에 반영 후 **새 버전으로 배포**:
+
+1. `updateCase` deadline/auctionDate 빈값 저장 수정 (세션 9)
+2. `balanceOk` 컬럼 13 저장 (세션 8)
+
+재배포 전까지 마감요청일·경매기일 삭제가 시트에 저장되지 않음.
+
+### 1. 약정서 구글시트 동기화 (우선순위 높음)
+현재 약정서(`ctr_archives` · `ctr_esign_archives`)는 **구글시트 동기화 없음**.
+- 회원과 동일한 방식으로 `약정서` · `약정서_전자서명` 시트 추가
+- GAS 핸들러: `getContracts`, `saveContracts`, `addContract`, `deleteContract`
+- 약정서-회원-사건 3자 링크 강화 (약정서 열면 관련 사건·고객 자동 표시)
+
+### 2. 구글 캘린더 자동 푸시 (OAuth)
+지금은 `.ics` 수동 export만. GAS에서 Calendar API 이용한 자동 sync 추가 예정.
+
+### 3. 비밀번호 보안 강화
+`AUTH_DEFAULT_PW = 'thefin2024!'` 하드코딩 → GAS Script Properties로 이동.
+
+### 4. KPI 대시보드 · CRM 퍼널
+월별 정산 리포트 · 블로그→상담 전환율 추적.
+
+---
+
+## 🆘 데이터 유실 사고 (세션 8)
+
+- 사장님이 회사 PC에서 **신용재** 회원 추가 → 집 PC에서는 안 보임
+- **원인**: 회원 데이터가 브라우저 localStorage에만 저장 (기기별 격리)
+- **해결**:
+  1. 회사 PC에서 인트라넷 열기
+  2. **☁️ 구글시트 저장** 클릭 → 전체 회원 시트로 업로드
+  3. 집 PC에서 **⬇️ 구글시트 불러오기** 클릭 → 복구
+- **약정서는 아직 구글시트 동기화 안 됨** → JSON 백업 파일로만 이동 가능 (다음 세션 최우선 과제)
 
 ---
 
@@ -301,6 +536,12 @@ the fin intranet/
 | `MBR_chipToggle(el, fieldId, val)` | 단일선택 칩 |
 | `MBR_chipMulti(el, fieldId)` | 다중선택 칩 (data-val 기반) |
 | `MBR_syncChips(fieldId, val)` | 폼 로드 시 칩 복원 (단일/다중 자동 감지) |
+| `MBR_casesCell(m)` | 회원 테이블 사건 셀 (📋 N건 버튼만 표시) |
+| `MBR_showCases(memberName)` | 회원 사건 히스토리 팝업 (타임라인 카드) |
+| `CAL_getEvents(dateStr)` | 날짜별 캘린더 이벤트 수집 (취소선/숨김 분리) |
+| `CD_renderPipeline(c)` | 9단계 파이프라인 + 기타 수기란 표시 |
+| `CD_saveStageNote(val)` | 기타(9단계) 수기 내용 실시간 저장 |
+| `CD_setStage(n)` | 파이프라인 단계 클릭 → 저장 |
 
 ---
 
