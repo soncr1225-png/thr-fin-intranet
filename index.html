@@ -12450,16 +12450,18 @@ function CAL_init() {
     if (!tip.classList.contains('pinned')) tip.classList.remove('visible');
   }, true);
 
-  // 외부 클릭 시 핀드 팝업 닫기
+  // 외부 클릭 시 핀드 팝업 닫기 (칩 클릭으로 열린 직후 200ms는 무시)
+  let _lastChipClick = 0;
   document.addEventListener('click', e => {
     if (!tip.classList.contains('pinned')) return;
+    if (Date.now() - _lastChipClick < 200) return;
     if (e.target.closest('#CAL_tooltip')) return;
     tip.classList.remove('visible', 'pinned');
   });
 
   // hover 툴팁 표시 (칩에 직접 onmouseenter 연결)
   window.CAL_tipShow = function(ev, el) {
-    tip.classList.remove('pinned');
+    if (tip.classList.contains('pinned')) return; // 클릭 팝업 열려있으면 hover 무시
     const raw    = el.dataset.calTip;
     if (!raw) return;
     const parts  = raw.split(' | ').filter(Boolean);
@@ -12486,7 +12488,9 @@ function CAL_init() {
   // 캘린더 칩 클릭 → 상세 팝업
   window.CAL_chipClick = function(ev) {
     ev.stopPropagation();
-    const el = ev.currentTarget;
+    _lastChipClick = Date.now();
+    const el = ev.currentTarget || ev.target.closest('.cal-ev,.cal-sb-ev');
+    if (!el) return;
     const raw  = el.dataset.calTip  || '';
     const goto = el.dataset.calGoto || '';
     const parts   = raw.split(' | ').filter(Boolean);
