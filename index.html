@@ -1198,16 +1198,22 @@ tr:hover td { background: #f8f6ff; }
 .mbr-filter-bar { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; align-items:center; }
 .mbr-filter-bar input { flex:1; min-width:180px; padding:6px 12px; border:1px solid #ddd; border-radius:7px; font-size:13px; background:#fff; }
 .mbr-filter-bar select { padding:6px 10px; border:1px solid #ddd; border-radius:7px; font-size:12px; background:#fff; min-width:100px; }
-.mbr-stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; margin-bottom:10px; }
+.mbr-stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:10px; }
 @media(max-width:900px){ .mbr-stats-row { grid-template-columns:repeat(3,1fr); } }
-.mbr-stat-card { background:#fff; border-radius:8px; padding:8px 14px; border:1px solid #e8e4dc; text-align:center; border-top:3px solid transparent; display:flex; align-items:center; gap:10px; }
+.mbr-stat-card {
+  background:#fff; border-radius:12px; padding:16px 20px;
+  border:1.5px solid #e8e4dc; border-top:4px solid transparent;
+  display:flex; flex-direction:column; align-items:flex-start; gap:4px;
+  box-shadow:0 2px 8px rgba(0,0,0,.05); transition:transform .15s,box-shadow .15s;
+}
+.mbr-stat-card:hover { transform:translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,.09); }
 .mbr-stat-card.s-navy { border-top-color:var(--navy); }
 .mbr-stat-card.s-gold { border-top-color:var(--gold); }
 .mbr-stat-card.s-blue { border-top-color:var(--blue); }
 .mbr-stat-card.s-green { border-top-color:var(--green); }
 .mbr-stat-card.s-amber { border-top-color:var(--amber); }
-.mbr-stat-num { font-size:20px; font-weight:900; color:var(--navy); line-height:1; }
-.mbr-stat-label { font-size:10px; color:#888; margin-top:1px; text-align:left; }
+.mbr-stat-num { font-size:36px; font-weight:900; color:var(--navy); line-height:1; letter-spacing:-.02em; }
+.mbr-stat-label { font-size:12px; font-weight:600; color:#888; }
 .mbr-my-label { font-size:10px; color:var(--gold-dim); font-weight:700; }
 .mbr-table-wrap { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border-lt); overflow:visible; box-shadow:var(--shadow-xs); }
 .mbr-table { width:100%; border-collapse:collapse; }
@@ -3375,7 +3381,6 @@ table.data-table tbody tr:hover,
     <div class="mbr-header">
       <div class="mbr-header-left">
         <div class="mbr-title">더핀 회원 관리</div>
-        <div class="mbr-subtitle">전체 고객 정보를 관리합니다 — 담당자별로 구분됩니다</div>
       </div>
       <div class="mbr-header-right">
         <div class="mbr-user-wrap">
@@ -3388,6 +3393,11 @@ table.data-table tbody tr:hover,
             <option value="정은진">정은진 매니저</option>
           </select>
         </div>
+        <!-- 직원 메시지 버튼 -->
+        <button class="mbr-smart-btn" id="MBR_msgBtn" onclick="MSG_open()" style="background:#f0f4ff;border-color:#c7d2fe;color:#3730a3;position:relative;">
+          💬 메시지
+          <span id="MBR_msgBadge" style="display:none;position:absolute;top:-5px;right:-5px;background:#ef4444;color:#fff;border-radius:99px;font-size:10px;font-weight:800;padding:1px 5px;min-width:16px;text-align:center;"></span>
+        </button>
         <div id="admin-data-btns" style="display:contents;">
           <!-- 통합 동기화 버튼 + 마지막 동기화 시간 -->
           <div style="display:flex;align-items:center;gap:6px;">
@@ -12080,146 +12090,226 @@ document.addEventListener('click', e => {
 });
 
 // ══════════════════════════════════════════════════════════════════
-//  메시지 / 수정 요청 (MSG_)
+//  메시지 / 직원간 소통 + 베타 수정요청 (MSG_ v2)
 // ══════════════════════════════════════════════════════════════════
-let MSG_messages = [];
-let MSG_isAdmin  = false;
+let MSG_messages  = [];   // 내 수신함 메시지 목록
+let MSG_sent      = [];   // 내 발신함 메시지 목록
+let MSG_isAdmin   = false;
+let MSG_myName    = '';
 let MSG_pollTimer = null;
+let MSG_view      = 'inbox'; // 'inbox' | 'compose' | 'sent'
+
+const MSG_MEMBERS = ['손청락','이제훈','장한빛','정은진'];
 
 function MSG_applyRole(name) {
-  // 손청락 대표만 수신함 — 이제훈·장한빛·정은진 모두 발신폼
+  MSG_myName  = name;
   MSG_isAdmin = (name === '손청락');
+  // 헤더 버튼 — 모든 직원에게 표시
   const btn = document.getElementById('MSG_headerBtn');
   const lbl = document.getElementById('MSG_label');
-  if (!btn) return;
-  btn.style.display = 'flex';
-  if (MSG_isAdmin) {
-    lbl.textContent = '받은 요청';
-    MSG_fetchInbox();
-    if (MSG_pollTimer) clearInterval(MSG_pollTimer);
-    MSG_pollTimer = setInterval(MSG_fetchInbox, 2 * 60 * 1000);
-  } else {
-    lbl.textContent = '요청 보내기';
-    if (MSG_pollTimer) { clearInterval(MSG_pollTimer); MSG_pollTimer = null; }
-  }
+  if (btn) btn.style.display = 'flex';
+  if (lbl) lbl.textContent = '메시지';
+  // MBR 패널 내 버튼도 표시
+  const mbrBtn = document.getElementById('MBR_msgBtn');
+  if (mbrBtn) mbrBtn.style.display = '';
+  // 수신함 폴링 (전원)
+  MSG_fetchInbox();
+  if (MSG_pollTimer) clearInterval(MSG_pollTimer);
+  MSG_pollTimer = setInterval(MSG_fetchInbox, 2 * 60 * 1000);
 }
 
 async function MSG_fetchInbox() {
   try {
-    const r = await fetch(`${GAS_URL}?module=msg&action=getMessages`);
+    const r = await fetch(`${GAS_URL}?module=msg&action=getMessages&user=${encodeURIComponent(MSG_myName)}&admin=${MSG_isAdmin?'1':'0'}`);
     const d = await r.json();
     if (d && d.ok) {
       MSG_messages = d.messages || [];
+      MSG_sent     = d.sent     || [];
       const unread = MSG_messages.filter(m => !m.read).length;
-      const badge  = document.getElementById('MSG_unreadBadge');
-      if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'inline-block' : 'none'; }
+      // 헤더 배지
+      const hBadge = document.getElementById('MSG_unreadBadge');
+      if (hBadge) { hBadge.textContent = unread; hBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
+      // MBR 배지
+      const mBadge = document.getElementById('MBR_msgBadge');
+      if (mBadge) { mBadge.textContent = unread; mBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
     }
   } catch(e) {}
 }
 
 function MSG_open() {
   document.getElementById('MSG_overlay').classList.remove('hidden');
-  if (MSG_isAdmin) { MSG_fetchInbox().then(MSG_renderInbox); }
-  else { MSG_renderCompose(); }
+  MSG_view = 'inbox';
+  MSG_fetchInbox().then(MSG_renderInbox);
 }
 
 function MSG_close() {
   document.getElementById('MSG_overlay').classList.add('hidden');
 }
 
+/* ── 탭 바 ── */
+function MSG_tabBar(active) {
+  const tabs = [
+    { id:'inbox',   icon:'📥', label:`수신함${MSG_messages.filter(m=>!m.read).length > 0 ? ' <span class="msg-unread-dot" style="display:inline-block;"></span>' : ''}` },
+    { id:'compose', icon:'✏️', label:'메시지 작성' },
+    { id:'sent',    icon:'📤', label:'보낸 메시지' },
+  ];
+  return `<div class="msg-tabs">${tabs.map(t =>
+    `<button class="msg-tab${active===t.id?' active':''}" onclick="MSG_view='${t.id}';MSG_switchView('${t.id}')">${t.icon} ${t.label}</button>`
+  ).join('')}</div>`;
+}
+
+function MSG_switchView(v) {
+  if (v === 'inbox')   MSG_renderInbox();
+  if (v === 'compose') MSG_renderCompose();
+  if (v === 'sent')    MSG_renderSent();
+}
+
+/* ── 수신함 ── */
+function MSG_renderInbox() {
+  const total  = MSG_messages.length;
+  const unread = MSG_messages.filter(m => !m.read).length;
+  const title  = MSG_isAdmin ? '전체 받은 메시지' : '내 수신함';
+  document.getElementById('MSG_modalTitle').textContent = title;
+  const body = document.getElementById('MSG_modalBody');
+  let html = MSG_tabBar('inbox');
+  if (total === 0) {
+    html += '<div class="msg-empty">📭 받은 메시지가 없습니다</div>';
+  } else {
+    html += MSG_messages.map((m, i) => `
+      <div class="msg-item ${m.read ? '' : 'unread'}" onclick="MSG_showDetail(${i})">
+        <div class="msg-item-meta">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="msg-item-from">${m.from}</span>
+            <span style="color:#bbb;font-size:11px;">→ ${m.to || '전체'}</span>
+            ${!m.read ? '<span class="msg-unread-dot"></span>' : ''}
+          </div>
+          <span class="msg-item-time">${m.time}</span>
+        </div>
+        <div><span class="msg-item-type">${m.type}</span></div>
+        <div class="msg-item-preview">${m.body.replace(/</g,'&lt;').replace(/>/g,'&gt;').slice(0,90)}${m.body.length>90?'…':''}</div>
+      </div>`).join('');
+  }
+  body.innerHTML = html;
+}
+
+/* ── 작성폼 ── */
 function MSG_renderCompose() {
-  document.getElementById('MSG_modalTitle').textContent = '수정 요청 보내기';
+  document.getElementById('MSG_modalTitle').textContent = '메시지 작성';
+  const recipientOptions = MSG_MEMBERS
+    .filter(m => m !== MSG_myName)
+    .map(m => `<option value="${m}">${m}</option>`).join('');
   document.getElementById('MSG_modalBody').innerHTML = `
+    ${MSG_tabBar('compose')}
     <div class="msg-field">
-      <label>요청 유형</label>
+      <label>받는 사람</label>
+      <select id="MSG_to">
+        ${recipientOptions}
+      </select>
+    </div>
+    <div class="msg-field">
+      <label>유형</label>
       <select id="MSG_type">
-        <option value="수정요청">🔧 수정 요청</option>
+        <option value="수정요청">🔧 수정 요청 (베타)</option>
         <option value="오류신고">🚨 오류 신고</option>
         <option value="기능추가">✨ 기능 추가 요청</option>
+        <option value="업무전달">📋 업무 전달</option>
         <option value="문의">💬 문의</option>
         <option value="기타">📌 기타</option>
       </select>
     </div>
     <div class="msg-field">
-      <label>내용 <span>(어느 화면에서 무엇을 어떻게 바꿔달라고 구체적으로 써주세요)</span></label>
-      <textarea id="MSG_body" placeholder="예) 블로그 물건추천 탭에서 사건번호 컬럼이 너무 좁아서 잘려 보여요. 더 넓게 해주세요."></textarea>
+      <label>내용 <span>(구체적으로 작성할수록 빠르게 처리됩니다)</span></label>
+      <textarea id="MSG_body" placeholder="예) 블로그 탭에서 사건번호가 잘려서 보여요. 컬럼을 더 넓게 해주세요.&#10;&#10;또는) 내일 오전까지 경매기일 확인 부탁드립니다."></textarea>
     </div>
     <button class="msg-send-btn" id="MSG_sendBtn" onclick="MSG_send()">전송하기</button>
     <div id="MSG_sendResult" style="text-align:center;margin-top:12px;font-size:13px;min-height:20px;"></div>
   `;
 }
 
+/* ── 보낸메시지 ── */
+function MSG_renderSent() {
+  document.getElementById('MSG_modalTitle').textContent = '보낸 메시지';
+  const body = document.getElementById('MSG_modalBody');
+  let html = MSG_tabBar('sent');
+  if (!MSG_sent.length) {
+    html += '<div class="msg-empty">📤 보낸 메시지가 없습니다</div>';
+  } else {
+    html += MSG_sent.map((m, i) => `
+      <div class="msg-item">
+        <div class="msg-item-meta">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;color:#555;">→ <strong>${m.to || '전체'}</strong></span>
+          </div>
+          <span class="msg-item-time">${m.time}</span>
+        </div>
+        <div><span class="msg-item-type">${m.type}</span></div>
+        <div class="msg-item-preview">${m.body.replace(/</g,'&lt;').replace(/>/g,'&gt;').slice(0,90)}${m.body.length>90?'…':''}</div>
+      </div>`).join('');
+  }
+  body.innerHTML = html;
+}
+
+/* ── 전송 ── */
 async function MSG_send() {
+  const to     = (document.getElementById('MSG_to')   || {value:''}).value;
   const type   = document.getElementById('MSG_type').value;
   const body   = (document.getElementById('MSG_body').value || '').trim();
   const result = document.getElementById('MSG_sendResult');
   const btn    = document.getElementById('MSG_sendBtn');
   if (!body) { result.style.color = '#ef4444'; result.textContent = '내용을 입력해주세요.'; return; }
-  const name = sessionStorage.getItem('thefin_auth_name') || '알수없음';
   btn.disabled = true; btn.textContent = '전송 중...'; result.textContent = '';
   try {
     const r = await fetch(GAS_URL, {
       method: 'POST',
-      body: JSON.stringify({ module: 'msg', action: 'sendMessage', from: name, type, body })
+      body: JSON.stringify({ module:'msg', action:'sendMessage', from:MSG_myName, to, type, body })
     });
     const d = await r.json();
     if (d && d.ok) {
       result.style.color = '#16a34a';
-      result.textContent = '✓ 전송 완료! 대표님이 확인하실 거예요.';
+      result.textContent = `✓ ${to}에게 전송 완료!`;
       btn.textContent = '전송 완료 ✓';
       document.getElementById('MSG_body').value = '';
-      setTimeout(MSG_close, 2000);
+      setTimeout(() => { MSG_view = 'inbox'; MSG_fetchInbox().then(MSG_renderInbox); }, 1800);
     } else { throw new Error(); }
   } catch(e) {
     btn.disabled = false; btn.textContent = '전송하기';
     result.style.color = '#ef4444';
-    result.textContent = '전송 실패. 네트워크를 확인하고 다시 시도해주세요.';
+    result.textContent = '전송 실패. 네트워크 확인 후 다시 시도해주세요.';
   }
 }
 
-function MSG_renderInbox() {
-  const total  = MSG_messages.length;
-  const unread = MSG_messages.filter(m => !m.read).length;
-  document.getElementById('MSG_modalTitle').textContent =
-    `받은 요청 ${total > 0 ? '(' + total + ')' : ''}${unread > 0 ? '  · 미확인 ' + unread : ''}`;
-  const body = document.getElementById('MSG_modalBody');
-  if (total === 0) { body.innerHTML = '<div class="msg-empty">📭 받은 요청이 없습니다</div>'; return; }
-  body.innerHTML = MSG_messages.map((m, i) => `
-    <div class="msg-item ${m.read ? '' : 'unread'}" onclick="MSG_showDetail(${i})">
-      <div class="msg-item-meta">
-        <div style="display:flex;align-items:center;gap:4px;">
-          <span class="msg-item-from">${m.from}</span>
-          ${!m.read ? '<span class="msg-unread-dot"></span>' : ''}
-        </div>
-        <span class="msg-item-time">${m.time}</span>
-      </div>
-      <div><span class="msg-item-type">${m.type}</span></div>
-      <div class="msg-item-preview">${m.body.replace(/</g,'&lt;').replace(/>/g,'&gt;').slice(0,90)}${m.body.length>90?'…':''}</div>
-    </div>
-  `).join('');
-}
-
+/* ── 상세 보기 ── */
 async function MSG_showDetail(idx) {
   const m = MSG_messages[idx];
   if (!m) return;
   if (!m.read) {
     m.read = true;
-    const badge = document.getElementById('MSG_unreadBadge');
     const unread = MSG_messages.filter(x => !x.read).length;
-    if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'inline-block' : 'none'; }
+    const hBadge = document.getElementById('MSG_unreadBadge');
+    const mBadge = document.getElementById('MBR_msgBadge');
+    if (hBadge) { hBadge.textContent = unread; hBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
+    if (mBadge) { mBadge.textContent = unread; mBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
     fetch(GAS_URL, { method:'POST', body: JSON.stringify({ module:'msg', action:'markRead', id: m.id }) }).catch(()=>{});
   }
-  document.getElementById('MSG_modalTitle').textContent = '요청 상세';
+  document.getElementById('MSG_modalTitle').textContent = '메시지 상세';
   document.getElementById('MSG_modalBody').innerHTML = `
-    <div class="msg-detail-back" onclick="MSG_renderInbox()">← 목록으로</div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div>
-        <span style="font-size:14px;font-weight:800;color:var(--navy)">${m.from}</span>
-        <span class="msg-item-type" style="margin-left:8px">${m.type}</span>
+    <div class="msg-detail-back" onclick="MSG_renderInbox()">← 수신함으로</div>
+    <div style="background:#f8f7f4;border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div>
+          <span style="font-size:13px;font-weight:800;color:var(--navy)">${m.from}</span>
+          <span style="color:#bbb;font-size:12px;margin:0 6px;">→</span>
+          <span style="font-size:13px;font-weight:700;color:#555">${m.to || '전체'}</span>
+        </div>
+        <span class="msg-item-time">${m.time}</span>
       </div>
-      <span class="msg-item-time">${m.time}</span>
+      <span class="msg-item-type">${m.type}</span>
     </div>
-    <div class="msg-detail-body">${m.body.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+    <div class="msg-detail-body">${m.body.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>
+    ${m.type.includes('수정') || m.type.includes('오류') || m.type.includes('기능') ? `
+    <div style="margin-top:16px;padding:12px 14px;background:#fffbf0;border:1.5px solid #fcd34d;border-radius:10px;font-size:12px;color:#92400e;">
+      💡 <strong>베타 피드백</strong> — 이 내용은 다음 업데이트 반영 목록에 추가됩니다.
+    </div>` : ''}
   `;
 }
 
@@ -13636,6 +13726,14 @@ let _MBR_syncTimer = null;
 }
 .msg-modal-close:hover { opacity:1; }
 .msg-modal-body { flex:1; overflow-y:auto; padding:20px; }
+.msg-tabs { display:flex; gap:0; border-bottom:2px solid #e0ddd8; margin-bottom:16px; }
+.msg-tab {
+  flex:1; background:none; border:none; border-bottom:3px solid transparent;
+  padding:9px 4px; font-size:12px; font-weight:700; color:#888; cursor:pointer;
+  transition:color .15s, border-color .15s; margin-bottom:-2px;
+}
+.msg-tab:hover { color:var(--navy); }
+.msg-tab.active { color:var(--navy); border-bottom-color:var(--navy); }
 .msg-field { margin-bottom:14px; }
 .msg-field label { display:block; font-size:12px; font-weight:700; color:#555; margin-bottom:5px; }
 .msg-field label span { font-weight:400; color:#aaa; }
