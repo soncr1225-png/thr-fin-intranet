@@ -5249,7 +5249,7 @@ function C_setFilter(f,b){C_filt=f;document.querySelectorAll('#C_filterRow .filt
 function C_setFilterArc(f,b){C_filtArc=f;document.querySelectorAll('#C_filterRowArchive .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');C_render();}
 
 const C_AH=`<tr><th style="width:104px;">상태</th><th style="width:118px;">사건번호</th><th style="width:130px;">주소지</th><th style="width:130px;">법원</th><th style="width:86px;">경매기일</th><th style="width:88px;">마감요청일</th><th style="width:248px;">조사유형 (담당자)</th><th style="min-width:220px;">기타요청</th><th style="width:62px;"></th></tr>`;
-const C_ZH=`<tr><th style="width:88px;">종료사유</th><th style="width:118px;">사건번호</th><th style="width:140px;">주소지</th><th style="width:75px;">법원</th><th style="width:85px;">경매기일</th><th style="width:65px;">담당자</th><th style="width:180px;">조사유형</th><th>비고</th><th style="width:75px;">종료일</th><th style="width:60px;"></th></tr>`;
+const C_ZH=`<tr><th style="width:88px;">종료사유</th><th style="width:118px;">사건번호</th><th style="width:140px;">주소지</th><th style="width:75px;">법원</th><th style="width:85px;">경매기일</th><th style="width:65px;">담당자</th><th style="width:180px;">조사유형</th><th>비고</th><th style="width:75px;">종료일</th><th style="width:140px;"></th></tr>`;
 
 function C_archiveTags(typeMap){
   if(!typeMap)return '—';
@@ -5402,7 +5402,7 @@ function C_archiveRow(c, compact=false){
 <td>${C_archiveTags(c.typeMap)}</td>
 <td><div class="note-cell" title="${c.note||''}">${c.note||'—'}</div></td>
 ${closedAtTd}
-<td><button class="row-btn" onclick="CD_open('${c.id}')" style="background:#fff8e1;color:#8a5a00;border-color:#f2d67a;margin-right:3px;" title="수수료·낙찰·7단계 관리">💰</button><button class="row-btn restore" onclick="C_restoreToActive('${c.id}')">↩ 복원</button><button class="row-btn del" onclick="C_delCase('${c.id}')">삭제</button></td></tr>`;
+<td style="white-space:nowrap;"><button class="row-btn" onclick="CD_open('${c.id}')" style="background:#fff8e1;color:#8a5a00;border-color:#f2d67a;margin-right:3px;" title="수수료·낙찰·7단계 관리">💰</button><button class="row-btn restore" onclick="C_restoreToActive('${c.id}')" style="white-space:nowrap;">↩ 복원</button><button class="row-btn del" onclick="C_delCase('${c.id}')">삭제</button></td></tr>`;
 }
 
 function C_openMenu(e,id){
