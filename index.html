@@ -5400,6 +5400,8 @@ function C_activeRow(c){
 
 function C_archiveRow(c, compact=false){
   const sm=C_SM[c.status]||C_SM.drop;
+  // compact=true → all탭(C_AH 헤더 9열): 마감요청일 빈 셀 추가, 종료일 셀 제거
+  const deadlineTd = compact ? '<td></td>' : '';
   const closedAtTd = compact ? '' : `<td style="font-size:12px;color:#aaa;white-space:nowrap;">${C_fmt(c.closedAt)}</td>`;
   return`<tr style="opacity:.75;">
 <td><div class="status-wrap"><span class="sbadge ${sm.cls}" onclick="C_openMenu(event,'${c.id}')">${sm.label} ▾</span>
@@ -5417,6 +5419,7 @@ function C_archiveRow(c, compact=false){
 <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${c.address||''}">${c.address||'—'}</td>
 <td style="font-size:12px;color:#aaa;white-space:nowrap;"><span class="editable" onclick="C_startEdit(this,'${c.id}','court','${(c.court||'').replace(/'/g,"&#39;")}')">${c.court||'—'}</span></td>
 <td style="font-size:12px;color:#aaa;white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','auctionDate','${c.auctionDate||''}')">${C_fmt(c.auctionDate)||'—'}</span></td>
+${deadlineTd}
 <td style="overflow:visible;position:relative;">${C_buildTypeCell(c)}</td>
 <td><div class="note-cell" title="${c.note||''}">${c.note||'—'}</div></td>
 ${closedAtTd}
