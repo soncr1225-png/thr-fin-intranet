@@ -12232,8 +12232,10 @@ function CAL_init() {
 
 // 캘린더 이벤트 호버 툴팁
 (function() {
-  const tip = document.getElementById('CAL_tooltip');
-  if (!tip) return;
+  // getElementById 불가 (스크립트 이후에 위치) — 동적 생성
+  const tip = document.createElement('div');
+  tip.id = 'CAL_tooltip';
+  document.body.appendChild(tip);
 
   const LABELS = {
     '경매기일': ['사건번호', '법원',   '주소', '비고'],
@@ -13476,8 +13478,6 @@ let _MBR_syncTimer = null;
   </div>
 </div>
 
-<!-- 캘린더 이벤트 호버 툴팁 -->
-<div id="CAL_tooltip"></div>
 
 </body>
 </html>
