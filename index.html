@@ -2320,13 +2320,17 @@ table.data-table tbody tr:hover,
 <div class="tab-panel" id="panel-cases">
 <div class="container">
 
-  <!-- 통계 카드 -->
-  <div class="stats-row">
-    <div class="stat-card s-blue"><div class="stat-label">진행중</div><div class="stat-value sv-blue" id="st-ongoing">—</div></div>
-    <div class="stat-card s-red"><div class="stat-label">긴급 (7일 이내)</div><div class="stat-value sv-red" id="st-urgent">—</div></div>
-    <div class="stat-card s-amber"><div class="stat-label">조사완료 대기</div><div class="stat-value sv-amber" id="st-done">—</div></div>
-    <div class="stat-card s-gray"><div class="stat-label">기일변경</div><div class="stat-value sv-gray" id="st-changed">—</div></div>
-    <div class="stat-card s-green"><div class="stat-label">이번달 종료</div><div class="stat-value sv-green" id="st-closed">—</div></div>
+  <!-- 통계 바 -->
+  <div class="b-stats-bar" style="padding:16px 0 14px;border-bottom:1px solid #eee;margin-bottom:0;">
+    <div class="b-stat-item"><div class="b-stat-lbl">진행중</div><div class="b-stat-val" style="color:var(--blue);" id="st-ongoing">—</div></div>
+    <div class="b-sdiv"></div>
+    <div class="b-stat-item"><div class="b-stat-lbl">긴급 (7일 이내)</div><div class="b-stat-val" style="color:var(--red);" id="st-urgent">—</div></div>
+    <div class="b-sdiv"></div>
+    <div class="b-stat-item"><div class="b-stat-lbl">조사완료 대기</div><div class="b-stat-val" style="color:var(--amber);" id="st-done">—</div></div>
+    <div class="b-sdiv"></div>
+    <div class="b-stat-item"><div class="b-stat-lbl">기일변경</div><div class="b-stat-val" style="color:var(--gray-3);" id="st-changed">—</div></div>
+    <div class="b-sdiv"></div>
+    <div class="b-stat-item"><div class="b-stat-lbl">이번달 종료</div><div class="b-stat-val" style="color:var(--green);" id="st-closed">—</div></div>
   </div>
 
   <!-- ToDo -->
