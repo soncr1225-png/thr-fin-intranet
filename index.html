@@ -1176,9 +1176,12 @@ tr:hover td { background: #f8f6ff; }
 
 /* ══ 더핀 회원 탭 ══ */
 #panel-member { background:var(--surface-3); height:calc(100vh - 60px); overflow-y:auto; overflow-x:auto; }
-#MBR_stickyHeader { position:sticky; top:0; z-index:var(--z-sticky); background:var(--surface-3); box-shadow:0 2px 8px rgba(0,0,0,.06); padding:12px 28px 8px; }
-#MBR_tHead th { position:sticky; z-index:6; box-shadow:0 2px 0 var(--gold), inset -1px 0 0 rgba(255,255,255,.07); }
-#panel-member .container { max-width:1800px; padding-top:8px; padding-left:28px; padding-right:28px; }
+#MBR_stickyHeader { position:sticky; top:0; z-index:var(--z-sticky); background:var(--surface-3); box-shadow:0 2px 6px rgba(0,0,0,.08); }
+#MBR_stickyHeader .mbr-inner { padding:12px 28px 8px; }
+#MBR_thead-wrap { padding:0 28px; overflow:hidden; }
+#MBR_thead-wrap .mbr-table { border-radius:var(--radius) var(--radius) 0 0; }
+#panel-member .container { max-width:none; padding-top:0; padding-left:28px; padding-right:28px; padding-bottom:40px; }
+#panel-member .mbr-table-wrap { border-radius:0 0 var(--radius) var(--radius); border-top:none; box-shadow:none; overflow:visible; }
 .mbr-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:12px; flex-wrap:wrap; }
 .mbr-header-left { flex:0 0 auto; min-width:260px; word-break:keep-all; }
 .mbr-title { white-space:nowrap; }
@@ -3366,8 +3369,9 @@ table.data-table tbody tr:hover,
 ════════════════════════════════════ -->
 <div class="tab-panel" id="panel-member">
 
-  <!-- ══ 고정 헤더: 제목행·필터·통계카드 모두 sticky div 안에 ══ -->
+  <!-- ══ 고정 헤더: 제목행·필터·통계카드·컬럼헤더 전체 sticky ══ -->
   <div id="MBR_stickyHeader">
+  <div class="mbr-inner">
     <div class="mbr-header">
       <div class="mbr-header-left">
         <div class="mbr-title">더핀 회원 관리</div>
@@ -3473,6 +3477,27 @@ table.data-table tbody tr:hover,
         <div class="mbr-stat-label">이번달 신규</div>
       </div>
     </div>
+  </div><!-- /.mbr-inner -->
+
+  <!-- ── 컬럼 헤더 테이블 (sticky 안에 포함 → 항상 고정) ── -->
+  <div id="MBR_thead-wrap">
+    <table class="mbr-table">
+      <colgroup>
+        <col style="width:152px"><col style="width:55px"><col style="width:112px">
+        <col style="width:80px"><col style="width:215px"><col style="width:75px">
+        <col style="width:68px"><col style="width:70px"><col style="width:70px">
+        <col style="width:55px"><col style="width:82px"><col style="width:55px">
+        <col style="width:165px">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>이름</th><th>응답률</th><th>연락처</th><th>담당자</th>
+          <th>희망지역</th><th>관심물건</th><th>예산</th><th>투자목적</th>
+          <th>주택보유</th><th>수수료</th><th>진행상황</th><th>사건</th><th>관리</th>
+        </tr>
+      </thead>
+    </table>
+  </div>
   </div><!-- /#MBR_stickyHeader -->
 
 <div class="container">
@@ -3507,23 +3532,13 @@ table.data-table tbody tr:hover,
 
   <div class="mbr-table-wrap">
     <table class="mbr-table">
-      <thead id="MBR_tHead">
-        <tr>
-          <th>이름</th>
-          <th>응답률</th>
-          <th>연락처</th>
-          <th>담당자</th>
-          <th>희망지역</th>
-          <th>관심물건</th>
-          <th>예산</th>
-          <th>투자목적</th>
-          <th>주택보유</th>
-          <th>수수료</th>
-          <th>진행상황</th>
-          <th>사건</th>
-          <th>관리</th>
-        </tr>
-      </thead>
+      <colgroup>
+        <col style="width:152px"><col style="width:55px"><col style="width:112px">
+        <col style="width:80px"><col style="width:215px"><col style="width:75px">
+        <col style="width:68px"><col style="width:70px"><col style="width:70px">
+        <col style="width:55px"><col style="width:82px"><col style="width:55px">
+        <col style="width:165px">
+      </colgroup>
       <tbody id="mbr-tbody"></tbody>
     </table>
   </div>
@@ -5006,8 +5021,6 @@ function switchMainTab(t) {
   if(t==='cases') C_switchTab('active');
   // 블로그 탭 진입 시 sticky 헤더 top 값 재계산 (panel이 visible 된 후 측정)
   if(t==='blog') requestAnimationFrame(B_updateTheadTop);
-  // 회원 탭 진입 시 thead top 재계산 (panel visible 후)
-  if(t==='member') requestAnimationFrame(MBR_updateTheadTop);
 }
 
 const _dd=new Date(),_days=['일','월','화','수','목','금','토'];
@@ -8135,7 +8148,6 @@ function MBR_render() {
 
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="13" class="mbr-empty">등록된 회원이 없습니다.<br><span style="font-size:12px;color:#bbb;">「📥 노션 동기화」 또는 「+ 회원 추가」 버튼을 이용해주세요</span></td></tr>`;
-    setTimeout(() => MBR_updateTheadTop(), 0);
     return;
   }
 
@@ -8178,13 +8190,6 @@ function MBR_render() {
         <button class="mbr-del-btn" onclick="MBR_delete('${mid}')">삭제</button>
       </td>
     </tr>`; }).join('');
-}
-
-function MBR_updateTheadTop() {
-  const h = document.getElementById('MBR_stickyHeader');
-  if (!h) return;
-  const top = h.offsetHeight + 'px';
-  document.querySelectorAll('#MBR_tHead th').forEach(th => th.style.top = top);
 }
 
 // ── 칩 헬퍼 ──
