@@ -1,6 +1,37 @@
 # THE FIN 인트라넷 — 인수인계 메모
 
-> 최종 업데이트: 2026-04-25 (세션 10)
+> 최종 업데이트: 2026-04-25 (세션 11)
+
+---
+
+## 세션 11 작업 내역 (2026-04-25)
+
+### 📁 물건조사요청표 — 파일 업로드/다운로드 + Google Drive 연동
+
+**시세조사·보고서작성** 조사유형 행에 파일 첨부 기능 추가.
+
+**UI 변경 (`C_buildTypeCell`)**:
+- 시세조사·보고서작성 행 끝에 `↑` 업로드 버튼 추가
+- 업로드된 파일은 행 아래 칩(chip) 형태로 표시
+  - 📄 클릭 시 Google Drive에서 직접 열기
+  - `×` 클릭 시 Drive에서 파일 삭제 (confirm 확인)
+- 파일이 있으면 업로드 버튼이 해당 유형 색상으로 강조
+
+**신규 함수**:
+- `C_openFilePicker(caseId, typeName)` — 파일 선택 대화상자 열기
+- `C_uploadFile(caseId, typeName, file)` — base64 변환 후 GAS Drive 업로드, 진행 토스트 표시
+- `C_deleteFile(caseId, typeName, fileId)` — GAS Drive에서 파일 삭제
+
+**GAS (`unified-gas.js`)**:
+- `driveTypeFolder(caseNo, typeName)` 헬퍼 추가 — `사건/사건번호/유형명/` 구조로 서브폴더 생성
+- `drivePost('uploadFile')`: `typeName` 파라미터 지원 → 서브폴더에 저장
+- `driveGet('listFiles')`: `typeName` 파라미터 지원 → 서브폴더 내 파일 조회
+
+**영구 저장 (`FEE_SHADOW`)**:
+- `driveFiles` 필드를 `FEE_SHADOW_FIELDS`에 추가
+- `FEE_migrate()`에서 복원 — 새로고침 후에도 파일 목록 유지
+
+**주의**: GAS를 재배포해야 서버 측 변경사항(`driveTypeFolder`)이 적용됨.
 
 ---
 
