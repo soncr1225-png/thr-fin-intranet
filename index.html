@@ -1566,6 +1566,7 @@ tr:hover td { background: #f8f6ff; }
   opacity:0;transition:opacity .13s;
 }
 #CAL_tooltip.visible { opacity:1; }
+#CAL_tooltip.pinned { pointer-events:auto; }
 .cal-tip-type {
   font-size:10px;font-weight:700;letter-spacing:.5px;
   color:#c9a84c;text-transform:uppercase;margin-bottom:8px;
@@ -12224,7 +12225,7 @@ function CAL_render() {
       const inner = e.struck
         ? `<s>${e.label}${e.name ? ' · ' + e.name : ''}</s><span style="margin-left:3px;font-size:9px;background:#e5e7eb;color:#6b7280;border-radius:2px;padding:0 3px;font-style:normal;">${e.reason}</span>`
         : `${e.label}${e.name ? ' · ' + e.name : ''}`;
-      return `<div class="cal-ev" style="background:${e.bg};color:${e.color};border-left-color:${e.color};cursor:${e.onclick?'pointer':'default'};" data-cal-label="${e.label}" ${e.tooltip ? `data-cal-tip="${e.tooltip.replace(/"/g,'&quot;')}"` : ''} ${e.onclick ? `onclick="${e.onclick}"` : ''}>${inner}</div>`;
+      return `<div class="cal-ev" style="background:${e.bg};color:${e.color};border-left-color:${e.color};cursor:pointer;" data-cal-label="${e.label}" ${e.tooltip ? `data-cal-tip="${e.tooltip.replace(/"/g,'&quot;')}"` : ''} ${e.onclick ? `data-cal-goto="${e.onclick.replace(/"/g,'&quot;')}"` : ''} onclick="CAL_chipClick(event)">${inner}</div>`;
     }).join('');
     const more = evs.length > 3 ? `<div class="cal-ev-more">+${evs.length - 3}건 더</div>` : '';
 
@@ -12277,7 +12278,7 @@ function CAL_renderSidebar() {
       const subHtml = e.reason
         ? `<span style="display:inline-block;font-size:9px;background:#e5e7eb;color:#6b7280;border-radius:3px;padding:1px 5px;margin-top:2px;">${e.reason}</span>`
         : (e.sub ? `<span class="cal-sb-sub">${e.sub}</span>` : '');
-      return `<div class="cal-sb-ev" style="border-left-color:${e.color};cursor:pointer;${strikeOpacity}" ${tip ? `data-cal-tip="${tip}"` : ''} ${e.onclick ? `onclick="${e.onclick}"` : ''}>
+      return `<div class="cal-sb-ev" style="border-left-color:${e.color};cursor:pointer;${strikeOpacity}" data-cal-label="${e.label}" ${tip ? `data-cal-tip="${tip}"` : ''} ${e.onclick ? `data-cal-goto="${e.onclick.replace(/"/g,'&quot;')}"` : ''} onclick="CAL_chipClick(event)">
         <span class="cal-sb-type" style="color:${e.color};${typeStyle}">${e.label}</span>
         <div class="cal-sb-info">
           <span class="cal-sb-name" style="${nameStyle}">${e.name || '—'}</span>
@@ -12372,12 +12373,60 @@ function CAL_init() {
   });
 
   document.addEventListener('mouseout', e => {
+    if (tip.classList.contains('pinned')) return;
     if (!e.target.closest('[data-cal-tip]')) return;
     if (e.relatedTarget && e.relatedTarget.closest('[data-cal-tip]')) return;
     tip.classList.remove('visible');
   });
 
-  document.addEventListener('scroll', () => tip.classList.remove('visible'), true);
+  document.addEventListener('scroll', () => {
+    if (!tip.classList.contains('pinned')) tip.classList.remove('visible');
+  }, true);
+
+  // 외부 클릭 시 핀드 팝업 닫기
+  document.addEventListener('click', e => {
+    if (!tip.classList.contains('pinned')) return;
+    if (e.target.closest('#CAL_tooltip') || e.target.closest('[data-cal-goto],[data-cal-tip]')) return;
+    tip.classList.remove('visible', 'pinned');
+  });
+
+  // 캘린더 칩 클릭 → 상세 팝업
+  window.CAL_chipClick = function(ev) {
+    ev.stopPropagation();
+    const el = ev.currentTarget;
+    const raw  = el.dataset.calTip  || '';
+    const goto = el.dataset.calGoto || '';
+    const parts   = raw.split(' | ').filter(Boolean);
+    const evType  = el.dataset.calLabel || '';
+    const labels  = LABELS[evType] || DEFAULT_LABELS;
+
+    const rows = parts.map((p, i) => {
+      const k = labels[i] || '';
+      return k
+        ? `<div class="cal-tip-row"><span class="cal-tip-key">${k}</span><span class="cal-tip-val">${p}</span></div>`
+        : `<div class="cal-tip-row"><span class="cal-tip-val" style="color:#94a3b8">${p}</span></div>`;
+    }).join('');
+    const noteRow = (evType === '경매기일' && parts[3])
+      ? `<div class="cal-tip-note">⚠ ${parts[3]}</div>` : '';
+
+    const closeBtn = `<button onclick="document.getElementById('CAL_tooltip').classList.remove('visible','pinned')" style="float:right;background:none;border:none;color:#94a3b8;cursor:pointer;font-size:16px;line-height:1;padding:0 0 0 8px;margin-top:-2px;">×</button>`;
+    const gotoBtn  = goto
+      ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);text-align:right;"><button onclick="${goto.replace(/"/g,'&quot;')};document.getElementById('CAL_tooltip').classList.remove('visible','pinned')" style="background:#1e3a5f;border:1px solid #c9a84c;color:#c9a84c;border-radius:6px;padding:4px 14px;cursor:pointer;font-size:12px;font-weight:600;">이동 →</button></div>`
+      : '';
+
+    tip.innerHTML = `<div class="cal-tip-type">${closeBtn}${evType}</div>${rows}${noteRow}${gotoBtn}`;
+
+    // chip 기준으로 위치 결정
+    const rect = el.getBoundingClientRect();
+    const tw = 300, th = 160;
+    let x = rect.left, y = rect.bottom + 6;
+    if (x + tw > window.innerWidth  - 8) x = Math.max(8, rect.right - tw);
+    if (y + th > window.innerHeight - 8) y = rect.top - th - 6;
+    if (y < 8) y = 8;
+    tip.style.left = x + 'px';
+    tip.style.top  = y + 'px';
+    tip.classList.add('visible', 'pinned');
+  };
 })();
 
 // ══════════════════════════════════════════════════════════════════
