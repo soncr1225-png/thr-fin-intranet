@@ -6191,6 +6191,7 @@ function A_render() {
     <th style="min-width:90px;text-align:center;">매각결정기일</th>
     <th style="min-width:90px;text-align:center;">항고기간</th>
     <th style="width:120px;min-width:120px;max-width:120px;text-align:center;">잔금납부기일</th>
+    <th style="width:90px;min-width:90px;text-align:center;">대출연결</th>
     <th style="min-width:180px;">비고</th>
     <th style="min-width:80px;"></th>
   </tr>`;
@@ -6433,7 +6434,7 @@ function A_caseRow(cas, cust, isFirst) {
                 onclick="event.stopPropagation();A_showCaseStatusBtns('${cas.id}')">${(C_SM[cas.status]||C_SM.ongoing).label} ▾</span>`}
         </div>
       </td>
-      <td colspan="4" style="color:#bbb;font-size:12px;font-style:italic;background:${caseBg};">— 고객을 등록하면 자동 계산됩니다</td>
+      <td colspan="5" style="color:#bbb;font-size:12px;font-style:italic;background:${caseBg};">— 고객을 등록하면 자동 계산됩니다</td>
       <td style="background:${caseBg};">
         <button onclick="event.stopPropagation();A_openFormForCase('${A_escHtml(cas.caseNo)}')" style="font-size:11px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 10px;cursor:pointer;color:#1d4ed8;margin-right:4px;">+ 고객 추가</button>
         ${cas.status==='closed'&&![...M_active,...M_done].some(m=>m.caseNo===cas.caseNo)?`<button onclick="event.stopPropagation();A_autoAddMyeongdo(A_allCases.find(c=>c.id==='${cas.id}'))" style="font-size:11px;background:#fff7ed;border:1px solid #fed7aa;border-radius:4px;padding:3px 10px;cursor:pointer;color:#c2410c;">명도 등록</button>`:''}
@@ -6461,6 +6462,8 @@ function A_caseRow(cas, cust, isFirst) {
   const appealOk = cust.appealOk === 'O';
   const appealLbl = A_fmt(cust.appealDate) + (appealOk ? ' <span style="color:#16a34a;font-weight:700;">✓</span>' : '');
   const balanceOk = cust.balanceOk === 'O';
+  const isSub = cust.isSub === true || cust.isSub === 'true';
+  const loanOk = cust.loanOk === true || cust.loanOk === 'true';
 
   return `<tr class="${inactiveCls}" style="${borderBot}">
     <td class="a-editable" style="${inactiveTdStyle}font-size:13px;font-weight:700;white-space:nowrap;" data-item-id="${cust.id}" onclick="A_startEditClientName(this)">
@@ -6475,6 +6478,16 @@ function A_caseRow(cas, cust, isFirst) {
         </div>` : ''}
         <div id="A_ic_${cust.id}_content" class="a-editable" style="font-size:12px;color:#555;min-height:14px;flex:1;"
           onclick="A_inlineEdit('${cust.id}','content','${A_escHtml(cust.content||'')}',false)">${A_escHtml(cust.content||'')}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;margin-top:4px;flex-wrap:nowrap;">
+        <button onclick="event.stopPropagation();A_toggleSub('${cust.id}')"
+          style="background:${isSub?'#1e3a5f':'#f3f4f6'};border:1px solid ${isSub?'#c8a44a':'#d1d5db'};border-radius:10px;padding:2px 7px;cursor:pointer;font-size:11px;color:${isSub?'#c8a44a':'#9ca3af'};font-weight:700;white-space:nowrap;transition:all .15s;"
+          title="서브 입찰 여부">서브${isSub?' ✓':' ☐'}</button>
+        ${isSub ? `<select onchange="event.stopPropagation();A_setSubStaff('${cust.id}',this.value)"
+          style="font-size:11px;border:1px solid #d1d5db;border-radius:6px;padding:1px 4px;background:#fff;color:#334155;max-width:70px;cursor:pointer;">
+          <option value="">담당자</option>
+          ${C_MANAGERS.map(m=>`<option value="${m}"${cust.subStaff===m?' selected':''}>${m}</option>`).join('')}
+        </select>` : ''}
       </div>
     </td>
     ${isArchived
@@ -6506,6 +6519,13 @@ function A_caseRow(cas, cust, isFirst) {
               title="${balanceOk?'납부 완료 취소':'납부 완료 확인'}">✓</button>
           </div>
           ${balanceOk ? `<div style="margin-top:3px;"><span style="display:inline-block;background:#1e3a5f;color:#c8a44a;border:1px solid #c8a44a;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;white-space:nowrap;">명도 진행↗</span></div>` : ''}
+        </td>`}
+    ${isArchived
+      ? `<td style="text-align:center;${inactiveTdStyle}"></td>`
+      : `<td id="A_ic_${cust.id}_loanOk" style="text-align:center;${inactiveTdStyle}">
+          <button onclick="event.stopPropagation();A_toggleLoanOk('${cust.id}')"
+            style="background:${loanOk?'#d97706':'#f3f4f6'};border:1px solid ${loanOk?'#d97706':'#d1d5db'};border-radius:12px;padding:2px 8px;cursor:pointer;font-size:11px;color:${loanOk?'#fff':'#9ca3af'};font-weight:700;white-space:nowrap;transition:all .15s;"
+            title="${loanOk?'대출연결 완료 취소':'대출연결 완료 확인'}">${loanOk?'대출 ✓':'대출연결'}</button>
         </td>`}
     ${editTd('note', cust.note, false, 'min-width:180px;color:#555;')}
     <td style="white-space:nowrap;${inactiveTdStyle}">
@@ -6559,6 +6579,36 @@ async function A_toggleOk(id, field) {
     if (cas) A_autoAddMyeongdo(cas);
     A_showMyeongdoToast(item.clientName || '');
   }
+}
+
+async function A_toggleSub(id) {
+  const item = A_items.find(i => i.id === id); if (!item) return;
+  const newVal = !(item.isSub === true || item.isSub === 'true');
+  item.isSub = newVal;
+  if (!newVal) item.subStaff = '';
+  A_render();
+  setSync('loading');
+  const r = await A_gasPost('update', { id, isSub: newVal, subStaff: item.subStaff || '' });
+  setSync(r && r.ok ? 'ok' : 'err');
+}
+
+async function A_setSubStaff(id, staff) {
+  const item = A_items.find(i => i.id === id); if (!item) return;
+  item.subStaff = staff;
+  A_render();
+  setSync('loading');
+  const r = await A_gasPost('update', { id, subStaff: staff });
+  setSync(r && r.ok ? 'ok' : 'err');
+}
+
+async function A_toggleLoanOk(id) {
+  const item = A_items.find(i => i.id === id); if (!item) return;
+  const newVal = !(item.loanOk === true || item.loanOk === 'true');
+  item.loanOk = newVal;
+  A_render();
+  setSync('loading');
+  const r = await A_gasPost('update', { id, loanOk: newVal });
+  setSync(r && r.ok ? 'ok' : 'err');
 }
 
 // ── 낙찰종료 시 명도 탭 자동 등록
