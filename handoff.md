@@ -6,6 +6,18 @@
 
 ## 세션 11 작업 내역 (2026-04-25)
 
+### 🐛 자료실 패널 레이아웃 버그 수정
+
+**증상**: 자료실 탭 클릭 시 서식 목록·뷰어가 표시되지 않음  
+**원인 1**: `#panel-forms`에 명시적 높이가 없어 `overflow:hidden`이 내용을 클리핑  
+**원인 2**: `.lib2-cat-section { width:100% }`가 flex row에서 overflow 발생 → 콘텐츠 밀려남  
+**수정**:
+- `#panel-forms`에 `height:calc(100vh - 60px)` 추가 (panel-blog/panel-member 패턴 통일)
+- `.lib2-cat-section`: `width:100%` → `flex:1; min-width:0; min-height:0` (flex row에서 남은 공간 채움)
+- `.lib2-cat-section.active`에 `align-items:stretch` 명시 (자식 높이 전파 보장)
+
+---
+
 ### 📁 물건조사요청표 — 파일 업로드/다운로드 + Google Drive 연동
 
 **시세조사·보고서작성** 조사유형 행에 파일 첨부 기능 추가.
