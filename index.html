@@ -5307,19 +5307,19 @@ function C_render(){
     if(C_filtArc==='cancel')list=list.filter(c=>c.status==='cancel');
     else if(C_filtArc==='drop')list=list.filter(c=>c.status==='drop');
     else if(C_filtArc==='changed')list=list.filter(c=>c.status==='changed');
-    tbody.innerHTML=list.length?list.map(C_archiveRow).join(''):`<tr class="empty-row"><td colspan="10">종료된 사건이 없습니다</td></tr>`;
+    tbody.innerHTML=list.length?list.map(c=>C_archiveRow(c)).join(''):`<tr class="empty-row"><td colspan="10">종료된 사건이 없습니다</td></tr>`;
   }else if(C_tab==='closed'){
     list=C_cases.filter(c=>c.status==='closed'&&_cMgrMatch(c));
     list.sort(sortDate);
-    tbody.innerHTML=list.length?list.map(C_archiveRow).join(''):`<tr class="empty-row"><td colspan="10">낙찰 사건이 없습니다</td></tr>`;
+    tbody.innerHTML=list.length?list.map(c=>C_archiveRow(c)).join(''):`<tr class="empty-row"><td colspan="10">낙찰 사건이 없습니다</td></tr>`;
   }else if(C_tab==='lawsuit'){
     list=C_cases.filter(c=>c.status==='lawsuit'&&_cMgrMatch(c));
     list.sort(sortDate);
-    tbody.innerHTML=list.length?list.map(C_activeRow).join(''):`<tr class="empty-row"><td colspan="9">소송 사건이 없습니다</td></tr>`;
+    tbody.innerHTML=list.length?list.map(c=>C_activeRow(c)).join(''):`<tr class="empty-row"><td colspan="9">소송 사건이 없습니다</td></tr>`;
   }else if(C_tab==='lost'){
     list=C_cases.filter(c=>c.status==='lost'&&_cMgrMatch(c));
     list.sort(sortDate);
-    tbody.innerHTML=list.length?list.map(C_archiveRow).join(''):`<tr class="empty-row"><td colspan="10">패찰 사건이 없습니다</td></tr>`;
+    tbody.innerHTML=list.length?list.map(c=>C_archiveRow(c)).join(''):`<tr class="empty-row"><td colspan="10">패찰 사건이 없습니다</td></tr>`;
   }
   C_updateStats();
 }
