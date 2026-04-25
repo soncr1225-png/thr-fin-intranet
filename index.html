@@ -1554,6 +1554,34 @@ tr:hover td { background: #f8f6ff; }
 }
 .cal-ev-more { font-size:11px;color:#bbb;padding-left:3px;margin-top:2px; }
 
+/* 캘린더 이벤트 툴팁 */
+#CAL_tooltip {
+  position:fixed;z-index:9999;pointer-events:none;
+  background:#1a2236;color:#fff;
+  border:1px solid rgba(201,168,76,.35);border-radius:10px;
+  padding:12px 16px;max-width:300px;
+  box-shadow:0 8px 32px rgba(0,0,0,.28);
+  font-size:13px;line-height:1;
+  opacity:0;transition:opacity .13s;
+}
+#CAL_tooltip.visible { opacity:1; }
+.cal-tip-type {
+  font-size:10px;font-weight:700;letter-spacing:.5px;
+  color:#c9a84c;text-transform:uppercase;margin-bottom:8px;
+}
+.cal-tip-row { display:flex;gap:6px;margin-bottom:5px;align-items:flex-start; }
+.cal-tip-row:last-child { margin-bottom:0; }
+.cal-tip-key {
+  font-size:10.5px;color:#94a3b8;white-space:nowrap;
+  min-width:44px;padding-top:1px;
+}
+.cal-tip-val { font-size:12.5px;color:#f1f5f9;font-weight:600;line-height:1.45; }
+.cal-tip-note {
+  margin-top:8px;padding-top:8px;
+  border-top:1px solid rgba(255,255,255,.1);
+  font-size:11px;color:#fbbf24;font-weight:700;
+}
+
 /* 우측 사이드바 */
 .cal-sidebar {
   width:280px;flex-shrink:0;background:#fff;
@@ -12114,7 +12142,7 @@ function CAL_render() {
       const inner = e.struck
         ? `<s>${e.label}${e.name ? ' · ' + e.name : ''}</s><span style="margin-left:3px;font-size:9px;background:#e5e7eb;color:#6b7280;border-radius:2px;padding:0 3px;font-style:normal;">${e.reason}</span>`
         : `${e.label}${e.name ? ' · ' + e.name : ''}`;
-      return `<div class="cal-ev" style="background:${e.bg};color:${e.color};border-left-color:${e.color};cursor:${e.onclick?'pointer':'default'};" ${e.tooltip ? `data-cal-tip="${e.tooltip.replace(/"/g,'&quot;')}"` : ''} ${e.onclick ? `onclick="${e.onclick}"` : ''}>${inner}</div>`;
+      return `<div class="cal-ev" style="background:${e.bg};color:${e.color};border-left-color:${e.color};cursor:${e.onclick?'pointer':'default'};" data-cal-label="${e.label}" ${e.tooltip ? `data-cal-tip="${e.tooltip.replace(/"/g,'&quot;')}"` : ''} ${e.onclick ? `onclick="${e.onclick}"` : ''}>${inner}</div>`;
     }).join('');
     const more = evs.length > 3 ? `<div class="cal-ev-more">+${evs.length - 3}건 더</div>` : '';
 
@@ -12202,30 +12230,70 @@ function CAL_init() {
   CAL_render();
 }
 
-// 캘린더 툴팁
+// 캘린더 이벤트 호버 툴팁
 (function() {
-  const tip = document.createElement('div');
-  tip.id = 'cal-tooltip';
-  document.body.appendChild(tip);
+  const tip = document.getElementById('CAL_tooltip');
+  if (!tip) return;
+
+  const LABELS = {
+    '경매기일': ['사건번호', '법원',   '주소', '비고'],
+    '마감':     ['사건번호', '법원',   '주소', '비고'],
+    '매각결정': ['사건번호', '의뢰인', '주소', ''],
+    '항고마감': ['사건번호', '의뢰인', '주소', ''],
+    '잔금납부': ['사건번호', '의뢰인', '주소', ''],
+    '낙찰일':   ['사건번호', '의뢰인', '물건', '법원'],
+    '강제집행': ['사건번호', '의뢰인', '물건', '법원'],
+    '경고장':   ['사건번호', '의뢰인', '물건', '법원'],
+    '이사일':   ['사건번호', '의뢰인', '물건', '법원'],
+  };
+  const DEFAULT_LABELS = ['사건번호', '법원·의뢰인', '주소·물건', '비고'];
+
+  function place(e) {
+    const tw = 300, th = tip.offsetHeight || 130;
+    let x = e.clientX + 18, y = e.clientY + 18;
+    if (x + tw > window.innerWidth - 8)  x = e.clientX - tw - 10;
+    if (y + th > window.innerHeight - 8) y = e.clientY - th - 10;
+    if (x < 8) x = 8;
+    if (y < 8) y = 8;
+    tip.style.left = x + 'px';
+    tip.style.top  = y + 'px';
+  }
 
   document.addEventListener('mouseover', e => {
     const el = e.target.closest('[data-cal-tip]');
     if (!el) return;
-    const parts = el.dataset.calTip.split(' | ').filter(Boolean);
-    tip.textContent = parts.join('\n');
-    tip.classList.add('show');
+    const raw = el.dataset.calTip;
+    if (!raw) return;
+    const parts  = raw.split(' | ').filter(Boolean);
+    const evType = el.dataset.calLabel || '';
+    const labels = LABELS[evType] || DEFAULT_LABELS;
+
+    const rows = parts.map((p, i) => {
+      const k = labels[i] || '';
+      return k
+        ? `<div class="cal-tip-row"><span class="cal-tip-key">${k}</span><span class="cal-tip-val">${p}</span></div>`
+        : `<div class="cal-tip-row"><span class="cal-tip-val" style="color:#94a3b8">${p}</span></div>`;
+    }).join('');
+
+    const noteRow = (evType === '경매기일' && parts[3])
+      ? `<div class="cal-tip-note">⚠ ${parts[3]}</div>` : '';
+
+    tip.innerHTML = `<div class="cal-tip-type">${evType}</div>${rows}${noteRow}`;
+    place(e);
+    tip.classList.add('visible');
   });
+
   document.addEventListener('mousemove', e => {
-    if (!tip.classList.contains('show')) return;
-    const x = e.clientX + 14, y = e.clientY + 14;
-    const r = tip.getBoundingClientRect();
-    tip.style.left = (x + r.width > window.innerWidth ? x - r.width - 28 : x) + 'px';
-    tip.style.top  = (y + r.height > window.innerHeight ? y - r.height - 28 : y) + 'px';
+    if (tip.classList.contains('visible')) place(e);
   });
+
   document.addEventListener('mouseout', e => {
     if (!e.target.closest('[data-cal-tip]')) return;
-    tip.classList.remove('show');
+    if (e.relatedTarget && e.relatedTarget.closest('[data-cal-tip]')) return;
+    tip.classList.remove('visible');
   });
+
+  document.addEventListener('scroll', () => tip.classList.remove('visible'), true);
 })();
 
 // ══════════════════════════════════════════════════════════════════
@@ -13407,6 +13475,9 @@ let _MBR_syncTimer = null;
     <div class="msg-modal-body" id="MSG_modalBody"></div>
   </div>
 </div>
+
+<!-- 캘린더 이벤트 호버 툴팁 -->
+<div id="CAL_tooltip"></div>
 
 </body>
 </html>
