@@ -1529,6 +1529,12 @@ function driveCaseFolder(caseNo) {
   return it2.hasNext() ? it2.next() : caseParent.createFolder(caseNo);
 }
 
+function driveTypeFolder(caseNo, typeName) {
+  var parent = driveCaseFolder(caseNo);
+  var it = parent.getFoldersByName(typeName);
+  return it.hasNext() ? it.next() : parent.createFolder(typeName);
+}
+
 function driveBackupFolder() {
   var root = driveRoot();
   var it   = root.getFoldersByName('백업');
@@ -1539,7 +1545,7 @@ function driveGet(p) {
   // 사건 파일 목록
   if (p.action === 'listFiles') {
     try {
-      var folder = driveCaseFolder(p.caseNo);
+      var folder = p.typeName ? driveTypeFolder(p.caseNo, p.typeName) : driveCaseFolder(p.caseNo);
       var it = folder.getFiles();
       var files = [];
       while (it.hasNext()) {
@@ -1599,7 +1605,7 @@ function drivePost(b) {
   // 파일 업로드
   if (b.action === 'uploadFile') {
     try {
-      var folder = driveCaseFolder(b.caseNo);
+      var folder = b.typeName ? driveTypeFolder(b.caseNo, b.typeName) : driveCaseFolder(b.caseNo);
       var blob   = Utilities.newBlob(Utilities.base64Decode(b.base64), b.mimeType, b.fileName);
       var file   = folder.createFile(blob);
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
