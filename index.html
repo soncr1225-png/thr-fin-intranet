@@ -1175,8 +1175,10 @@ tr:hover td { background: #f8f6ff; }
 }
 
 /* ══ 더핀 회원 탭 ══ */
-#panel-member { background:var(--surface-3); min-height:calc(100vh - 60px); }
-#panel-member .container { max-width:1800px; padding-top:24px; padding-left:28px; padding-right:28px; }
+#panel-member { background:var(--surface-3); height:calc(100vh - 60px); overflow-y:auto; overflow-x:auto; }
+#MBR_stickyHeader { position:sticky; top:0; z-index:var(--z-sticky); background:var(--surface-3); box-shadow:0 2px 8px rgba(0,0,0,.06); padding:16px 28px 12px; }
+#MBR_tHead th { position:sticky; z-index:6; box-shadow:0 2px 0 var(--gold), inset -1px 0 0 rgba(255,255,255,.07); }
+#panel-member .container { max-width:1800px; padding-top:8px; padding-left:28px; padding-right:28px; }
 .mbr-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; gap:12px; flex-wrap:wrap; }
 .mbr-header-left { flex:0 0 auto; min-width:260px; word-break:keep-all; }
 .mbr-title { white-space:nowrap; }
@@ -1204,7 +1206,7 @@ tr:hover td { background: #f8f6ff; }
 .mbr-stat-num { font-size:22px; font-weight:900; color:var(--navy); }
 .mbr-stat-label { font-size:10px; color:#888; margin-top:2px; }
 .mbr-my-label { font-size:10px; color:var(--gold-dim); font-weight:700; }
-.mbr-table-wrap { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border-lt); overflow:hidden; box-shadow:var(--shadow-xs); }
+.mbr-table-wrap { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border-lt); overflow:visible; box-shadow:var(--shadow-xs); }
 .mbr-table { width:100%; border-collapse:collapse; }
 .mbr-table th { background:#0a1e3a; color:#fff; font-size:11px; font-weight:700; padding:11px 12px; border-bottom:2px solid var(--gold); white-space:nowrap; letter-spacing:.03em; }
 .mbr-table td { padding:9px 12px; border-bottom:1px solid var(--border-lt); font-size:12.5px; color:var(--text-2); vertical-align:middle; }
@@ -3363,52 +3365,117 @@ table.data-table tbody tr:hover,
      탭 8: 더핀 회원 관리
 ════════════════════════════════════ -->
 <div class="tab-panel" id="panel-member">
-<div class="container">
 
-  <div class="mbr-header">
-    <div class="mbr-header-left">
-      <div class="mbr-title">더핀 회원 관리</div>
-      <div class="mbr-subtitle">전체 고객 정보를 관리합니다 — 담당자별로 구분됩니다</div>
-    </div>
-    <div class="mbr-header-right">
-      <div class="mbr-user-wrap">
-        <label>현재 담당자</label>
-        <select id="mbr-current-user" onchange="MBR_render()">
-          <option value="">전체 (대표)</option>
-          <option value="손청락">손청락 대표</option>
-          <option value="이제훈">이제훈 이사</option>
-          <option value="장한빛">장한빛 매니저</option>
-          <option value="정은진">정은진 매니저</option>
-        </select>
+  <!-- ══ 고정 헤더: 제목행·필터·통계카드 모두 sticky div 안에 ══ -->
+  <div id="MBR_stickyHeader">
+    <div class="mbr-header">
+      <div class="mbr-header-left">
+        <div class="mbr-title">더핀 회원 관리</div>
+        <div class="mbr-subtitle">전체 고객 정보를 관리합니다 — 담당자별로 구분됩니다</div>
       </div>
-      <div id="admin-data-btns" style="display:contents;">
-        <!-- 통합 동기화 버튼 + 마지막 동기화 시간 -->
-        <div style="display:flex;align-items:center;gap:6px;">
-          <button id="sync-main-btn" class="mbr-smart-btn" onclick="SYNC_run(false)" style="background:#f0fdf4;border-color:#86efac;color:#16a34a;font-weight:700;min-width:100px;">☁️ 전체 동기화</button>
-          <span id="sync-last-time" style="font-size:11px;color:#9ca3af;white-space:nowrap;"></span>
+      <div class="mbr-header-right">
+        <div class="mbr-user-wrap">
+          <label>현재 담당자</label>
+          <select id="mbr-current-user" onchange="MBR_render()">
+            <option value="">전체 (대표)</option>
+            <option value="손청락">손청락 대표</option>
+            <option value="이제훈">이제훈 이사</option>
+            <option value="장한빛">장한빛 매니저</option>
+            <option value="정은진">정은진 매니저</option>
+          </select>
         </div>
-        <!-- JSON 백업 (수동 스냅샷) -->
-        <button class="mbr-smart-btn" onclick="BACKUP_exportAll()" style="background:#fef3c7;border-color:#fcd34d;color:#92400e;" title="모든 데이터를 JSON 파일로 저장">💾 JSON 백업</button>
-        <!-- 더보기 드롭다운 -->
-        <div style="position:relative;display:inline-block;">
-          <button id="sync-more-btn" class="mbr-smart-btn" onclick="SYNC_toggleMore()" style="background:#f5f3ef;border-color:#e5e7eb;color:#6b7280;">⋯ 더보기</button>
-          <div id="sync-more-panel" style="display:none;position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:300;min-width:170px;padding:6px 0;">
-            <button onclick="MBR_importFromNotion();SYNC_closeMore()" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#065f46;font-family:inherit;">📥 노션 동기화</button>
-            <button onclick="MBR_exportAll();SYNC_closeMore()" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#1d4ed8;font-family:inherit;">📤 노션용 복사</button>
-            <div style="height:1px;background:#f0f0f0;margin:4px 0;"></div>
-            <button onclick="MBR_loadFromSheets();SYNC_closeMore()" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#0e7490;font-family:inherit;">⬇️ 구글시트 불러오기</button>
-            <button onclick="BACKUP_importAll();SYNC_closeMore()" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#9f1239;font-family:inherit;">📂 백업 복원</button>
-            <div style="height:1px;background:#f0f0f0;margin:4px 0;"></div>
-            <button onclick="DRIVE_backup();SYNC_closeMore()" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#1d4ed8;font-family:inherit;">☁️ Drive 백업</button>
-            <button onclick="DRIVE_restore();SYNC_closeMore()" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#6d28d9;font-family:inherit;">☁️ Drive 복원</button>
+        <div id="admin-data-btns" style="display:contents;">
+          <!-- 통합 동기화 버튼 + 마지막 동기화 시간 -->
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button id="sync-main-btn" class="mbr-smart-btn" onclick="SYNC_run(false)" style="background:#f0fdf4;border-color:#86efac;color:#16a34a;font-weight:700;min-width:100px;">☁️ 전체 동기화</button>
+            <span id="sync-last-time" style="font-size:11px;color:#9ca3af;white-space:nowrap;"></span>
+          </div>
+          <!-- JSON 백업 (수동 스냅샷) -->
+          <button class="mbr-smart-btn" onclick="BACKUP_exportAll()" style="background:#fef3c7;border-color:#fcd34d;color:#92400e;" title="모든 데이터를 JSON 파일로 저장">💾 JSON 백업</button>
+          <!-- 더보기 드롭다운 -->
+          <div style="position:relative;display:inline-block;">
+            <button id="sync-more-btn" class="mbr-smart-btn" onclick="SYNC_toggleMore()" style="background:#f5f3ef;border-color:#e5e7eb;color:#6b7280;">⋯ 더보기</button>
+            <div id="sync-more-panel" style="display:none;position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:300;min-width:170px;padding:6px 0;">
+              <button onclick="MBR_importFromNotion();SYNC_closeMore()" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#065f46;font-family:inherit;">📥 노션 동기화</button>
+              <button onclick="MBR_exportAll();SYNC_closeMore()" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#1d4ed8;font-family:inherit;">📤 노션용 복사</button>
+              <div style="height:1px;background:#f0f0f0;margin:4px 0;"></div>
+              <button onclick="MBR_loadFromSheets();SYNC_closeMore()" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#0e7490;font-family:inherit;">⬇️ 구글시트 불러오기</button>
+              <button onclick="BACKUP_importAll();SYNC_closeMore()" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#9f1239;font-family:inherit;">📂 백업 복원</button>
+              <div style="height:1px;background:#f0f0f0;margin:4px 0;"></div>
+              <button onclick="DRIVE_backup();SYNC_closeMore()" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#1d4ed8;font-family:inherit;">☁️ Drive 백업</button>
+              <button onclick="DRIVE_restore();SYNC_closeMore()" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#6d28d9;font-family:inherit;">☁️ Drive 복원</button>
+            </div>
           </div>
         </div>
+        <button class="mbr-smart-btn" onclick="MBR_toggleBulkPanel()">📋 일괄 등록</button>
+        <button class="mbr-smart-btn" onclick="MBR_toggleSmartPanel()">🔍 스마트 입력</button>
+        <button class="mbr-add-btn" onclick="MBR_openForm()">+ 회원 추가</button>
       </div>
-      <button class="mbr-smart-btn" onclick="MBR_toggleBulkPanel()">📋 일괄 등록</button>
-      <button class="mbr-smart-btn" onclick="MBR_toggleSmartPanel()">🔍 스마트 입력</button>
-      <button class="mbr-add-btn" onclick="MBR_openForm()">+ 회원 추가</button>
     </div>
-  </div>
+
+    <div class="mbr-filter-bar">
+      <input type="text" id="mbr-search" placeholder="이름, 연락처, 메모 검색..." oninput="MBR_render()">
+      <select id="mbr-filter-type" onchange="MBR_render()">
+        <option value="">전체 유형</option>
+        <option value="개인">개인</option>
+        <option value="법인">법인</option>
+        <option value="공동명의">공동명의</option>
+      </select>
+      <select id="mbr-filter-staff" onchange="MBR_render()">
+        <option value="">전체 담당자</option>
+        <option value="손청락">손청락</option>
+        <option value="이제훈">이제훈</option>
+        <option value="장한빛">장한빛</option>
+        <option value="정은진">정은진</option>
+      </select>
+      <select id="mbr-filter-status" onchange="MBR_render()">
+        <option value="">전체 진행상황</option>
+        <option value="입찰준비">입찰준비</option>
+        <option value="상담중">상담중</option>
+        <option value="낙찰">낙찰</option>
+        <option value="보류">보류</option>
+      </select>
+      <select id="mbr-filter-rrate" onchange="MBR_render()">
+        <option value="">전체 응답률</option>
+        <option value="S">S 최우선</option>
+        <option value="A">A 적극적</option>
+        <option value="B">B 보통</option>
+        <option value="C">C 소극적</option>
+        <option value="END">END 종결</option>
+      </select>
+      <select id="mbr-filter-purpose" onchange="MBR_render()">
+        <option value="">전체 목적</option>
+        <option value="실거주">실거주</option>
+        <option value="투자">투자</option>
+        <option value="임대">임대</option>
+      </select>
+    </div>
+
+    <div class="mbr-stats-row">
+      <div class="mbr-stat-card s-navy">
+        <div class="mbr-stat-num" id="mbr-stat-total">0</div>
+        <div class="mbr-stat-label">전체 회원</div>
+      </div>
+      <div class="mbr-stat-card s-gold" id="mbr-stat-mine-card">
+        <div class="mbr-stat-num" id="mbr-stat-mine">0</div>
+        <div class="mbr-stat-label mbr-my-label" id="mbr-stat-mine-label">내 회원</div>
+      </div>
+      <div class="mbr-stat-card s-blue">
+        <div class="mbr-stat-num" id="mbr-stat-active">0</div>
+        <div class="mbr-stat-label">진행중</div>
+      </div>
+      <div class="mbr-stat-card s-green">
+        <div class="mbr-stat-num" id="mbr-stat-won">0</div>
+        <div class="mbr-stat-label">낙찰</div>
+      </div>
+      <div class="mbr-stat-card s-amber">
+        <div class="mbr-stat-num" id="mbr-stat-new">0</div>
+        <div class="mbr-stat-label">이번달 신규</div>
+      </div>
+    </div>
+  </div><!-- /#MBR_stickyHeader -->
+
+<div class="container">
 
   <!-- 일괄 등록 패널 -->
   <div class="mbr-smart-panel" id="mbr-bulk-panel" style="background:#f0f4ff;border-color:#c7d4f5;">
@@ -3438,70 +3505,9 @@ table.data-table tbody tr:hover,
     </div>
   </div>
 
-  <div class="mbr-filter-bar">
-    <input type="text" id="mbr-search" placeholder="이름, 연락처, 메모 검색..." oninput="MBR_render()">
-    <select id="mbr-filter-type" onchange="MBR_render()">
-      <option value="">전체 유형</option>
-      <option value="개인">개인</option>
-      <option value="법인">법인</option>
-      <option value="공동명의">공동명의</option>
-    </select>
-    <select id="mbr-filter-staff" onchange="MBR_render()">
-      <option value="">전체 담당자</option>
-      <option value="손청락">손청락</option>
-      <option value="이제훈">이제훈</option>
-      <option value="장한빛">장한빛</option>
-      <option value="정은진">정은진</option>
-    </select>
-    <select id="mbr-filter-status" onchange="MBR_render()">
-      <option value="">전체 진행상황</option>
-      <option value="입찰준비">입찰준비</option>
-      <option value="상담중">상담중</option>
-      <option value="낙찰">낙찰</option>
-      <option value="보류">보류</option>
-    </select>
-    <select id="mbr-filter-rrate" onchange="MBR_render()">
-      <option value="">전체 응답률</option>
-      <option value="S">S 최우선</option>
-      <option value="A">A 적극적</option>
-      <option value="B">B 보통</option>
-      <option value="C">C 소극적</option>
-      <option value="END">END 종결</option>
-    </select>
-    <select id="mbr-filter-purpose" onchange="MBR_render()">
-      <option value="">전체 목적</option>
-      <option value="실거주">실거주</option>
-      <option value="투자">투자</option>
-      <option value="임대">임대</option>
-    </select>
-  </div>
-
-  <div class="mbr-stats-row">
-    <div class="mbr-stat-card s-navy">
-      <div class="mbr-stat-num" id="mbr-stat-total">0</div>
-      <div class="mbr-stat-label">전체 회원</div>
-    </div>
-    <div class="mbr-stat-card s-gold" id="mbr-stat-mine-card">
-      <div class="mbr-stat-num" id="mbr-stat-mine">0</div>
-      <div class="mbr-stat-label mbr-my-label" id="mbr-stat-mine-label">내 회원</div>
-    </div>
-    <div class="mbr-stat-card s-blue">
-      <div class="mbr-stat-num" id="mbr-stat-active">0</div>
-      <div class="mbr-stat-label">진행중</div>
-    </div>
-    <div class="mbr-stat-card s-green">
-      <div class="mbr-stat-num" id="mbr-stat-won">0</div>
-      <div class="mbr-stat-label">낙찰</div>
-    </div>
-    <div class="mbr-stat-card s-amber">
-      <div class="mbr-stat-num" id="mbr-stat-new">0</div>
-      <div class="mbr-stat-label">이번달 신규</div>
-    </div>
-  </div>
-
   <div class="mbr-table-wrap">
     <table class="mbr-table">
-      <thead>
+      <thead id="MBR_tHead">
         <tr>
           <th>이름</th>
           <th>응답률</th>
@@ -8127,9 +8133,11 @@ function MBR_render() {
 
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="13" class="mbr-empty">등록된 회원이 없습니다.<br><span style="font-size:12px;color:#bbb;">「📥 노션 동기화」 또는 「+ 회원 추가」 버튼을 이용해주세요</span></td></tr>`;
+    setTimeout(() => MBR_updateTheadTop(), 0);
     return;
   }
 
+  setTimeout(() => MBR_updateTheadTop(), 0);
   tbody.innerHTML = filtered.map(m => {
     const mid = m.id;
     const rrHtml = m.responseRate
@@ -8168,6 +8176,13 @@ function MBR_render() {
         <button class="mbr-del-btn" onclick="MBR_delete('${mid}')">삭제</button>
       </td>
     </tr>`; }).join('');
+}
+
+function MBR_updateTheadTop() {
+  const h = document.getElementById('MBR_stickyHeader');
+  if (!h) return;
+  const top = h.offsetHeight + 'px';
+  document.querySelectorAll('#MBR_tHead th').forEach(th => th.style.top = top);
 }
 
 // ── 칩 헬퍼 ──
