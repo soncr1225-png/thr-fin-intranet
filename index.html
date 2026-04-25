@@ -5343,6 +5343,7 @@ function C_buildTypeCell(c){
   </div>`;
 
   // 조사유형 3개 행
+  const UPLOADABLE = new Set(['시세조사','보고서작성']);
   const typeRows=['시세조사','현장조사','보고서작성'].map(t=>{
     const col=TC[t];
     const mgrs=C_getMgrs(c,t);
@@ -5356,14 +5357,108 @@ function C_buildTypeCell(c){
       ?`<button onclick="event.stopPropagation();C_showAddMgrSel('${sid}')" style="flex-shrink:0;width:16px;height:16px;border-radius:50%;border:1.5px solid ${isOn?col+'66':'#e5e7eb'};background:transparent;cursor:pointer;font-size:11px;font-weight:700;color:${isOn?col:'#d1d5db'};padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;">+</button>
         <select id="C_addsel_${sid}" onchange="C_addTypeMgr('${c.id}','${t}',this.value);this.style.display='none';this.value='';" style="display:none;font-size:10px;border:1px solid #d1d5db;border-radius:4px;padding:1px 4px;max-width:72px;"><option value="">선택</option>${addable.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>`
       :'';
-    return`<div style="${ROW}" onclick="event.stopPropagation();">
-      <button onclick="C_toggleType('${c.id}','${t}')" style="background:none;border:none;cursor:pointer;padding:0;flex-shrink:0;display:flex;align-items:center;">${DOT(isOn,col)}</button>
-      <span onclick="C_toggleType('${c.id}','${t}')" style="flex-shrink:0;font-size:11px;font-weight:700;color:${isOn?col:'#cbd5e1'};cursor:pointer;white-space:nowrap;min-width:54px;">${t}</span>
-      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">${names}${plusBtn}</div>
-    </div>`;
+
+    let uploadBtn = '';
+    let chipsHtml = '';
+    if (UPLOADABLE.has(t)) {
+      const files = (c.driveFiles && c.driveFiles[t]) || [];
+      const hasFi = files.length > 0;
+      uploadBtn = `<button onclick="event.stopPropagation();C_openFilePicker('${c.id}','${t}')" title="파일 업로드" style="flex-shrink:0;width:16px;height:16px;border-radius:4px;border:1.5px solid ${hasFi?col+'66':'#e5e7eb'};background:transparent;cursor:pointer;font-size:10px;color:${hasFi?col:'#d1d5db'};padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;">↑</button>`;
+      if (hasFi) {
+        chipsHtml = files.map(f=>`<div style="display:flex;align-items:center;gap:2px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;max-width:195px;">
+          <a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="font-size:10px;color:#2563eb;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:155px;" title="${f.name}">📄 ${f.name}</a>
+          <button onclick="event.stopPropagation();C_deleteFile('${c.id}','${t}','${f.id}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:#bbb;padding:0 0 0 2px;line-height:1;flex-shrink:0;">×</button>
+        </div>`).join('');
+      }
+    }
+    return`<div onclick="event.stopPropagation();">
+      <div style="${ROW}">
+        <button onclick="C_toggleType('${c.id}','${t}')" style="background:none;border:none;cursor:pointer;padding:0;flex-shrink:0;display:flex;align-items:center;">${DOT(isOn,col)}</button>
+        <span onclick="C_toggleType('${c.id}','${t}')" style="flex-shrink:0;font-size:11px;font-weight:700;color:${isOn?col:'#cbd5e1'};cursor:pointer;white-space:nowrap;min-width:54px;">${t}</span>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">${names}${plusBtn}${uploadBtn}</div>
+      </div>${chipsHtml?`<div style="padding-left:20px;margin-top:2px;display:flex;flex-direction:column;gap:2px;">${chipsHtml}</div>`:''}</div>`;
   }).join('');
 
   return`<div style="min-width:220px;padding:2px 4px;">${mgrRow}${typeRows}</div>`;
+}
+
+function C_openFilePicker(caseId, typeName) {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.pdf,.doc,.docx,.xls,.xlsx,.hwp,.jpg,.jpeg,.png,.zip';
+  inp.style.display = 'none';
+  inp.onchange = e => {
+    const f = e.target.files[0];
+    if (f) C_uploadFile(caseId, typeName, f);
+    document.body.removeChild(inp);
+  };
+  document.body.appendChild(inp);
+  inp.click();
+}
+
+async function C_uploadFile(caseId, typeName, file) {
+  const c = C_cases.find(x => x.id === caseId);
+  if (!c) return;
+  const toastId = `drv_${caseId}_${typeName}`;
+  const caseNo = c.caseNo || caseId;
+  const showToast = msg => {
+    let t = document.getElementById(toastId);
+    if (!t) {
+      t = document.createElement('div');
+      t.id = toastId;
+      t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1e3a5f;color:#fff;font-size:12px;padding:8px 14px;border-radius:8px;z-index:9999;box-shadow:0 2px 12px rgba(0,0,0,.2);';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+  };
+  const removeToast = () => { const t = document.getElementById(toastId); if (t) t.remove(); };
+  showToast(`📤 ${file.name} 업로드 중…`);
+  try {
+    const base64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+    const resp = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ module: 'drive', action: 'uploadFile', caseNo, typeName, base64, mimeType: file.type || 'application/octet-stream', fileName: file.name })
+    });
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || '업로드 실패');
+    if (!c.driveFiles) c.driveFiles = {};
+    if (!c.driveFiles[typeName]) c.driveFiles[typeName] = [];
+    c.driveFiles[typeName].push({ id: data.id, name: data.name, url: data.url });
+    FEE_saveShadow();
+    removeToast();
+    C_render();
+  } catch(e) {
+    removeToast();
+    alert(`업로드 실패: ${e.message}`);
+  }
+}
+
+async function C_deleteFile(caseId, typeName, fileId) {
+  const c = C_cases.find(x => x.id === caseId);
+  if (!c) return;
+  if (!confirm('파일을 삭제하시겠습니까?')) return;
+  try {
+    const resp = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ module: 'drive', action: 'deleteFile', fileId })
+    });
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || '삭제 실패');
+    if (c.driveFiles && c.driveFiles[typeName]) {
+      c.driveFiles[typeName] = c.driveFiles[typeName].filter(f => f.id !== fileId);
+    }
+    FEE_saveShadow();
+    C_render();
+  } catch(e) {
+    alert(`삭제 실패: ${e.message}`);
+  }
 }
 
 function C_activeRow(c){
@@ -12436,7 +12531,7 @@ function CAL_init() {
 // (GAS 백엔드는 신규 필드를 모르므로 sync 시 덮어쓰기 방지용)
 const FEE_SHADOW_KEY = 'thefin_fee_shadow_v1';
 const FEE_RATES = { '아파트':1, '다가구':2, '빌딩':2, '공장':2, '토지':2, '특수물건':3 };
-const FEE_SHADOW_FIELDS = ['currentStage','stageNote','propertyType','feeRate','bidPrice','bidDate','fee1Received','fee1Date','fee2Received','fee2Date','staffShares','feeNote','clientName','manager'];
+const FEE_SHADOW_FIELDS = ['currentStage','stageNote','propertyType','feeRate','bidPrice','bidDate','fee1Received','fee1Date','fee2Received','fee2Date','staffShares','feeNote','clientName','manager','driveFiles'];
 
 function FEE_loadShadow() {
   try { return JSON.parse(localStorage.getItem(FEE_SHADOW_KEY) || '{}'); }
@@ -12501,6 +12596,7 @@ function FEE_migrate() {
     if (c.feeNote == null)      c.feeNote      = s.feeNote || '';
     if (c.clientName == null)   c.clientName   = s.clientName || '';
     if (c.manager    == null)   c.manager      = s.manager    || '';
+    if (c.driveFiles == null)   c.driveFiles   = s.driveFiles  || {};
   });
 }
 
