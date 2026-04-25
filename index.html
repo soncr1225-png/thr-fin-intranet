@@ -5380,7 +5380,7 @@ function C_activeRow(c){
 
 function C_archiveRow(c, compact=false){
   const sm=C_SM[c.status]||C_SM.drop;
-  const closedAtTd = compact ? '' : `<td style="font-size:12px;color:#aaa;">${C_fmt(c.closedAt)}</td>`;
+  const closedAtTd = compact ? '' : `<td style="font-size:12px;color:#aaa;white-space:nowrap;">${C_fmt(c.closedAt)}</td>`;
   return`<tr style="opacity:.75;">
 <td><div class="status-wrap"><span class="sbadge ${sm.cls}" onclick="C_openMenu(event,'${c.id}')">${sm.label} ▾</span>
 <div class="status-menu" id="C_m${c.id}">
@@ -5393,10 +5393,10 @@ function C_archiveRow(c, compact=false){
 <div class="smenu-sep"></div>
 <button class="smenu-item" onclick="C_chStatus('${c.id}','ongoing')" style="color:var(--blue);font-weight:700;">↩ 진행중으로 복원</button>
 </div></div></td>
-<td style="font-family:monospace;font-size:12px;">${c.caseNo||''}</td>
-<td>${c.address||''}</td>
-<td style="font-size:12px;color:#aaa;"><span class="editable" onclick="C_startEdit(this,'${c.id}','court','${(c.court||'').replace(/'/g,"&#39;")}')">${c.court||'—'}</span></td>
-<td style="font-size:12px;color:#aaa;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','auctionDate','${c.auctionDate||''}')">${C_fmt(c.auctionDate)||'—'}</span></td>
+<td style="font-family:monospace;font-size:12px;white-space:nowrap;">${c.caseNo||''}</td>
+<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${c.address||''}">${c.address||'—'}</td>
+<td style="font-size:12px;color:#aaa;white-space:nowrap;"><span class="editable" onclick="C_startEdit(this,'${c.id}','court','${(c.court||'').replace(/'/g,"&#39;")}')">${c.court||'—'}</span></td>
+<td style="font-size:12px;color:#aaa;white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','auctionDate','${c.auctionDate||''}')">${C_fmt(c.auctionDate)||'—'}</span></td>
 <td><span class="mgr-badge mgr-${c.manager||''}">${c.manager||'—'}</span></td>
 <td>${C_archiveTags(c.typeMap)}</td>
 <td><div class="note-cell" title="${c.note||''}">${c.note||'—'}</div></td>
@@ -5880,7 +5880,7 @@ function B_activeRow(item){
       </select>
     </td>
     <td style="font-family:monospace;font-size:11px;font-weight:700;color:var(--navy);white-space:nowrap;">${item.caseNum||''}</td>
-    <td style="font-size:12px;">${item.name||''}</td>
+    <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${item.name||''}">${item.name||''}</td>
     <td style="font-size:11px;color:#9ca3af;white-space:nowrap;">${B_fmtDate(item.date)}</td>
     <td style="text-align:center;font-size:11px;color:#9ca3af;white-space:nowrap;">${item.round||''}</td>
     <td style="text-align:center;">${dlStr}</td>
@@ -6403,13 +6403,13 @@ function A_caseRow(cas, cust, isFirst) {
 
   // ── 사건 공통 셀 (첫 번째 행만 표시)
   const caseCells = isFirst ? `
-    <td style="font-size:11px;font-weight:600;color:#334155;vertical-align:middle;${caseOpacity}background:${caseBg};">${cas.caseNo||'—'}</td>
-    <td style="font-size:12px;color:#475569;vertical-align:middle;${caseOpacity}background:${caseBg};">
+    <td style="font-size:11px;font-weight:600;color:#334155;vertical-align:middle;white-space:nowrap;${caseOpacity}background:${caseBg};">${cas.caseNo||'—'}</td>
+    <td style="font-size:12px;color:#475569;vertical-align:middle;white-space:nowrap;${caseOpacity}background:${caseBg};">
       ${cas.id.startsWith('orphan_')
         ? `<span style="color:#aaa;">${cas.court||'—'}</span>`
         : `<span class="editable" onclick="C_startEdit(this,'${cas.id}','court','${(cas.court||'').replace(/'/g,"&#39;")}')">${cas.court||'—'}</span>`}
     </td>
-    <td style="font-size:12px;font-weight:600;color:#1e293b;vertical-align:middle;${caseOpacity}background:${caseBg};">${C_shortAddr(cas.address)||'—'}</td>
+    <td style="font-size:12px;font-weight:600;color:#1e293b;vertical-align:middle;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${caseOpacity}background:${caseBg};" title="${cas.address||''}">${C_shortAddr(cas.address)||'—'}</td>
     <td id="A_ic_cas_${cas.id}_auctionDate" class="a-editable" style="white-space:nowrap;font-size:12px;text-align:center;vertical-align:middle;${caseOpacity}background:${caseBg};"
       onclick="A_startEditAuctionDate('${cas.id}','${cas.caseNo}','${cas.auctionDate||''}')">${A_fmt(cas.auctionDate)||'—'}</td>
   ` : `
@@ -6462,7 +6462,7 @@ function A_caseRow(cas, cust, isFirst) {
   const balanceOk = cust.balanceOk === 'O';
 
   return `<tr class="${inactiveCls}" style="${borderBot}">
-    <td class="a-editable" style="${inactiveTdStyle}font-size:13px;font-weight:700;" data-item-id="${cust.id}" onclick="A_startEditClientName(this)">
+    <td class="a-editable" style="${inactiveTdStyle}font-size:13px;font-weight:700;white-space:nowrap;" data-item-id="${cust.id}" onclick="A_startEditClientName(this)">
       ${A_escHtml(cust.clientName)||'<span style="color:#ccc;font-weight:400;font-size:11px;">고객명</span>'}
     </td>
     ${caseCells}
@@ -6992,7 +6992,7 @@ function M_row(item) {
   const completeBtn = !isDone
     ? `<button onclick="M_complete('${item.id}')" style="font-size:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:2px 6px;cursor:pointer;color:#15803d;display:block;margin-bottom:3px;">명도완료</button>`
     : '';
-  const eStyle = `font-size:11px;cursor:pointer;border-bottom:1px dashed #c8a44a;vertical-align:middle;${rowBg}`;
+  const eStyle = `font-size:11px;cursor:pointer;border-bottom:1px dashed #c8a44a;vertical-align:middle;white-space:nowrap;${rowBg}`;
   const eDateTd = (field, v) =>
     `<td id="M_ic_${item.id}_${field}" class="a-editable" onclick="M_inlineEdit('${item.id}','${field}','${v||''}',true)"
       style="white-space:nowrap;font-size:12px;text-align:center;vertical-align:middle;${v?'color:#1e293b;':'color:#ccc;'}${rowBg}">${M_fmt(v)||'—'}</td>`;
@@ -7001,14 +7001,14 @@ function M_row(item) {
       <button onclick="M_editRow('${item.id}')" style="font-size:11px;background:#fffef5;border:1px solid #c8a44a;border-radius:4px;padding:3px 8px;cursor:pointer;color:#92400e;white-space:nowrap;">수정</button>
     </td>
     <td style="vertical-align:middle;${rowBg}">
-      <div style="font-size:13px;font-weight:700;color:#1a1a2e;">${item.clientName||'—'}</div>
-      ${item.court||item.caseNo ? `<div style="font-size:10px;color:#64748b;margin-top:2px;">
+      <div style="font-size:13px;font-weight:700;color:#1a1a2e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;" title="${item.clientName||''}">${item.clientName||'—'}</div>
+      ${item.court||item.caseNo ? `<div style="font-size:10px;color:#64748b;margin-top:2px;white-space:nowrap;">
         ${item.court ? `📍 ${item.court}` : ''}${item.court&&item.caseNo ? ' · ' : ''}${item.caseNo||''}
       </div>` : ''}
     </td>
     <td style="white-space:nowrap;font-size:12px;text-align:center;vertical-align:middle;${rowBg}">${M_fmt(item.auctionDate)||'—'}</td>
     <td style="vertical-align:middle;${rowBg}">
-      <div style="font-size:12px;font-weight:600;color:#1e293b;">${item.propertyName||'—'}</div>
+      <div style="font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;" title="${item.propertyName||''}">${item.propertyName||'—'}</div>
       <div id="M_ic_${item.id}_injunctionNo" class="a-editable"
         onclick="M_inlineEdit('${item.id}','injunctionNo','${M_esc(item.injunctionNo||'')}',false)"
         style="font-size:10px;color:#64748b;margin-top:2px;cursor:pointer;border-bottom:1px dashed #c8a44a;display:inline-block;">
@@ -7933,10 +7933,10 @@ function MBR_render() {
         ${m.memo ? `<div style="font-size:10px;color:#bbb;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;"${memoTip}>${m.memo}</div>` : ''}
       </td>
       <td>${rrHtml}</td>
-      <td style="font-size:11px;color:#555;">${m.phone || '<span style="color:#ccc">—</span>'}</td>
-      <td>${staffHtml}</td>
+      <td style="font-size:11px;color:#555;white-space:nowrap;">${m.phone || '<span style="color:#ccc">—</span>'}</td>
+      <td style="white-space:nowrap;">${staffHtml}</td>
       <td style="max-width:220px;line-height:1.6;">${m.region ? m.region.split('/').map(r => { const t = r.trim(); const cls = t.startsWith('서울') ? '서울' : t.startsWith('경기') ? '경기' : t.startsWith('인천') ? '인천' : '기타'; const label = /^(서울|경기|인천)\s*전체$/.test(t) ? t.replace(/\s*전체$/, '') : /^(서울|경기|인천)\s+/.test(t) ? t.replace(/^(서울|경기|인천)\s+/, '') : t; return `<span class="mbr-region-tag ${cls}">${label}</span>`; }).join('') : '<span style="color:#ccc">—</span>'}</td>
-      <td style="font-size:11px;">${m.proptype || '<span style="color:#ccc">—</span>'}</td>
+      <td style="font-size:11px;white-space:nowrap;">${m.proptype || '<span style="color:#ccc">—</span>'}</td>
       <td>
         <span class="mbr-editable" style="font-size:12px;font-weight:700;" title="클릭해서 예산 수정" onclick="MBR_inlineBudget(event,'${mid}')">${m.budget || '<span style=\\"color:#ccc\\">—</span>'}</span>
       </td>
