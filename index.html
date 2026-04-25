@@ -7261,12 +7261,15 @@ async function loadBulk() {
     if (d && Array.isArray(d.cases)) {
       _bulkSave(d);
       applyBulkData(d);
-      document.getElementById('C_cacheBanner').style.display = 'none';
+      const banner = document.getElementById('C_cacheBanner');
+      if (banner) banner.style.display = 'none';
       setSync('ok');
     } else {
+      console.error('[loadBulk] 응답 형식 오류:', d);
       setSync('err');
     }
   } catch(e) {
+    console.error('[loadBulk] fetch 실패:', e);
     setSync('err');
   }
 }
@@ -11510,37 +11513,21 @@ async function SYNC_pullData() {
   SYNC_isPulling = true;
   setSync('loading');
   try {
-    // 7개 GAS 요청 병렬 실행
-    const [c, a, t, bList, bArc, mAct, mDone] = await Promise.all([
-      C_api('getCases'), C_api('getArchive'), C_api('getTodos'),
-      B_api('list'), B_api('getArchive'),
-      M_gasGet('listActive'), M_gasGet('listDone')
-    ]);
-    // 사건 데이터
-    if (Array.isArray(c) && Array.isArray(a)) {
-      C_cases = [...c, ...a];
-      C_cacheSave(C_CACHE_CASES, C_cases);
-      C_render(); A_allCases = C_cases; A_render();
-      setBadge('mainBadge-cases', C_cases.filter(x => C_ACTIVE.includes(x.status)).length);
-      setBadge('mainBadge-auction', C_cases.filter(x => C_AUCTION_BADGE_STATUS.includes(x.status)).length);
+    // getBulk 단일 요청 (loadBulk와 동일 방식 — 7개 병렬 요청 대신 안정성 우선)
+    const r = await fetch(`${GAS_URL}?action=getBulk`);
+    const d = await r.json();
+    if (d && Array.isArray(d.cases)) {
+      _bulkSave(d);
+      applyBulkData(d);
+      SYNC_lastPull = new Date();
+      setSync('ok');
+      SYNC_updateBadge();
+    } else {
+      console.error('[SYNC_pullData] 응답 형식 오류:', d);
+      setSync('err');
     }
-    if (Array.isArray(t) && t.length > 0) {
-      C_todos = t; C_cacheSave(C_CACHE_TODOS, C_todos); C_renderTodos();
-    }
-    // 블로그 데이터
-    if (bList && bList.success) B_items = bList.data || [];
-    if (bArc && bArc.success) B_archive = bArc.data || [];
-    B_render(); B_updateStats();
-    setBadgeShared('mainBadge-blog', B_items.length);
-    // 명도 데이터
-    if (mAct && mAct.ok) M_active = mAct.data;
-    if (mDone && mDone.ok) M_done = mDone.data;
-    M_render();
-
-    SYNC_lastPull = new Date();
-    setSync('ok');
-    SYNC_updateBadge();
   } catch(e) {
+    console.error('[SYNC_pullData] fetch 실패:', e);
     setSync('err');
   } finally {
     SYNC_isPulling = false;
