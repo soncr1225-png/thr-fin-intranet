@@ -1,6 +1,62 @@
 # THE FIN 인트라넷 — 인수인계 메모
 
-> 최종 업데이트: 2026-04-23 (세션 9)
+> 최종 업데이트: 2026-04-25 (세션 10)
+
+---
+
+## 세션 10 작업 내역 (2026-04-25)
+
+### 🔧 개발 인프라 구축 (CI 게이트 · 도구 경계 · 에이전트)
+
+**`.claude/agents/fin-dev.md`** — THE FIN 전담 서브에이전트 신설
+- model: sonnet, permissionMode: acceptEdits, 도구: Read/Write/Edit/Bash/Grep/Glob
+- 자율 실행 원칙·아키텍처 개요·TDZ 버그 패턴·개발 규칙 내장
+
+**`scripts/validate.js`** — CI 검증 스크립트 신설
+- 7개 항목 자동 검사: 파일 크기(>60KB) · 필수 DOM 12개 · 필수 함수 8개 · TDZ 패턴(CAL_year < loadBulk) · 하드코딩 시크릿 · GAS URL 참조 · 브랜드 컬러 변수
+- 오류 시 `exit(1)` → 커밋 차단
+
+**`.claude/settings.json`** — CI 게이트 + 도구 경계
+- PostToolUse hook: Edit/Write 실행 후 `node scripts/validate.js` 자동 실행 (즉시 피드백)
+- deny list: `rm -rf *`, `git push --force`, `git reset --hard`, `git clean -f`, `git branch -D`, `truncate`, `> index.html`
+
+**`.git/hooks/pre-commit`** — 커밋 전 자동 검증
+- index.html 또는 unified-gas.js가 staged 됐을 때만 validate.js 실행
+- 검증 실패 시 커밋 차단
+
+### 🤖 자율 실행 원칙 저장
+
+- CLAUDE.md에 `🤖 자율 실행 원칙` 섹션 추가 — 묻지 않고 판단·실행, git push 직전만 한 줄 보고
+- fin-dev.md에 동일 원칙 반영
+- 메모리 파일(`feedback_autonomous_mode.md`)에도 영구 저장
+
+### 🐛 캘린더 TDZ 버그 수정 (치명적)
+
+**증상**: 캘린더가 "2026년 1월" 빈 그리드로 표시  
+**원인**: `let CAL_year` / `let CAL_month`가 line 11979에 선언됐으나 `loadBulk()` 호출(line 7245) 시점에 이미 `applyBulkData → CAL_render`가 실행되어 TDZ ReferenceError 발생  
+**수정**: 두 변수 선언을 `loadBulk()` 바로 앞으로 이동  
+- validate.js TDZ 검사 항목으로 등록 → 재발 방지
+
+### 🗓 캘린더 툴팁 — 마우스 호버 시 사건 상세 팝업
+
+- 캘린더 칩에 마우스를 가져다 대면 사건 상세 정보 팝업 표시
+- `data-cal-label` / `data-cal-tip` 속성으로 칩에 JSON 데이터 임베드
+- **DOM 순서 문제 해결**: `getElementById('CAL_tooltip')` null 반환 버그 → `document.createElement('div')` + `document.body.appendChild(tip)` 방식으로 변경 (스크립트 실행 시점과 무관)
+- event delegation(`document.addEventListener('mouseover')`) 방식으로 동적 생성 칩도 정상 처리
+- 레이블별 표시 필드 정의 (`LABELS` 맵: 경매기일·매각결정·낙찰일·명도 이벤트 등)
+- CSS: `position:fixed`, `z-index:9999`, `opacity` transition으로 부드러운 표시/숨김
+
+### 📊 전체 테이블 레이아웃 수정
+
+두줄 표기 방지 + 전체 일관성 개선. ellipsis 적용 셀에는 `title` 속성 추가 (hover 시 전체 내용 확인).
+
+| 탭 | 수정 내용 |
+|---|---|
+| C_ (물건조사요청표) | 사건번호·법원·경매기일·마감요청일 `white-space:nowrap`; 기타요청 `min-width:220px` |
+| A_ (더핀 일정표) | 사건번호·법원·고객명 nowrap; 물건주소 ellipsis (`max-width:180px`) |
+| B_ (블로그 물건추천) | 물건내용 ellipsis (`max-width:160px`) |
+| M_ (명도) | 피신청인 nowrap; 고객명 ellipsis (`max-width:140px`); 물건명 ellipsis (`max-width:200px`) |
+| MBR_ (더핀 회원) | 연락처·담당자·관심물건 nowrap |
 
 ---
 
