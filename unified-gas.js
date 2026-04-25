@@ -1702,7 +1702,7 @@ var SH_MSG = '메시지';
 
 function msgGet(p) {
   var ss = casesSS();
-  if (p.action === 'getMessages') return getMsgs(ss);
+  if (p.action === 'getMessages') return getMsgs(ss, p);
   return json({ error: 'unknown msg action' });
 }
 
@@ -1713,33 +1713,54 @@ function msgPost(b) {
   return json({ error: 'unknown msg action' });
 }
 
-function getMsgs(ss) {
+// 스키마 v2: [ID, 보낸사람, 받는사람, 내용, 유형, 전송시각, 읽음]
+function getMsgs(ss, p) {
   var sheet = ss.getSheetByName(SH_MSG);
-  if (!sheet || sheet.getLastRow() < 2) return json({ ok: true, messages: [] });
-  var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 6).getValues();
-  var msgs = data.map(function(r) {
-    return { id: r[0], from: r[1], body: r[2], type: r[3], time: r[4], read: r[5] === true };
-  }).reverse();
-  return json({ ok: true, messages: msgs });
+  if (!sheet || sheet.getLastRow() < 2) return json({ ok: true, messages: [], sent: [] });
+  var lastRow = sheet.getLastRow() - 1;
+  var numCols = sheet.getLastColumn();
+  var data = sheet.getRange(2, 1, lastRow, numCols).getValues();
+  var user    = (p && p.user)  ? String(p.user)  : '';
+  var isAdmin = (p && p.admin) === '1';
+
+  var messages = [], sent = [];
+  data.forEach(function(r) {
+    // 구형(6열) 호환: to 없으면 '전체'로 간주
+    var id, from, to, body, type, time, read;
+    if (numCols >= 7) {
+      id = r[0]; from = r[1]; to = r[2]; body = r[3]; type = r[4]; time = r[5]; read = r[6] === true;
+    } else {
+      id = r[0]; from = r[1]; to = '전체'; body = r[2]; type = r[3]; time = r[4]; read = r[5] === true;
+    }
+    var obj = { id: id, from: from, to: to, body: body, type: type, time: time, read: read };
+    // 수신함: 나에게 온 메시지 (to == user 또는 to == '전체') 또는 관리자는 전체
+    if (isAdmin || to === user || to === '전체') messages.push(obj);
+    // 발신함: 내가 보낸 메시지
+    if (from === user) sent.push(obj);
+  });
+  messages.reverse();
+  sent.reverse();
+  return json({ ok: true, messages: messages, sent: sent });
 }
 
 function sendMsg(ss, b) {
   var sheet = ss.getSheetByName(SH_MSG);
   if (!sheet) {
     sheet = ss.insertSheet(SH_MSG);
-    sheet.appendRow(['ID', '보낸사람', '내용', '유형', '전송시각', '읽음']);
+    sheet.appendRow(['ID', '보낸사람', '받는사람', '내용', '유형', '전송시각', '읽음']);
     sheet.setFrozenRows(1);
   }
   var id  = Utilities.getUuid();
   var now = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm');
-  sheet.appendRow([id, b.from || '알수없음', b.body || '', b.type || '기타', now, false]);
+  sheet.appendRow([id, b.from || '알수없음', b.to || '전체', b.body || '', b.type || '기타', now, false]);
 
   // 텔레그램 알림 (ADMIN_CHAT_ID 설정 시)
   var chatId = prop('ADMIN_CHAT_ID');
   if (chatId) {
-    var txt = '💬 [수정 요청]\n' +
+    var txt = '💬 [메시지]\n' +
       '───────────────\n' +
       '👤 보낸사람: ' + (b.from || '?') + '\n' +
+      '📩 받는사람: ' + (b.to || '전체') + '\n' +
       '🏷 유형: ' + (b.type || '기타') + '\n' +
       '🕐 시각: ' + now + '\n\n' +
       '📝 내용:\n' + (b.body || '');
@@ -1751,9 +1772,11 @@ function sendMsg(ss, b) {
 function markMsgRead(ss, id) {
   var sheet = ss.getSheetByName(SH_MSG);
   if (!sheet) return json({ ok: false });
-  var data = sheet.getRange(2, 1, Math.max(sheet.getLastRow() - 1, 1), 1).getValues();
+  var lastRow = Math.max(sheet.getLastRow() - 1, 1);
+  var data = sheet.getRange(2, 1, lastRow, 1).getValues();
+  var readCol = sheet.getLastColumn(); // 마지막 열이 읽음 여부
   for (var i = 0; i < data.length; i++) {
-    if (data[i][0] === id) { sheet.getRange(i + 2, 6).setValue(true); return json({ ok: true }); }
+    if (data[i][0] === id) { sheet.getRange(i + 2, readCol).setValue(true); return json({ ok: true }); }
   }
   return json({ ok: false, error: 'not found' });
 }
