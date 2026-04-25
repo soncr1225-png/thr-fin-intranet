@@ -5330,30 +5330,27 @@ function C_activeRow(c){
   const dl=C_daysLeft(c.auctionDate);
   const db=urg?`<span class="blink" style="font-size:10px;background:#fef2f2;color:var(--red);padding:1px 5px;border-radius:3px;font-weight:700;margin-left:3px;">D-${dl}</span>`:'';
   const tm=c.typeMap||{};
-  const typeColors={'시세조사':['#1e40af','#dbeafe'],'현장조사':['#166534','#dcfce7'],'보고서작성':['#6b21a8','#f3e8ff']};
-  const typeShort={'시세조사':'시세조사','현장조사':'현장조사','보고서작성':'보고서작성'};
-  const mgrSelStyle=c.manager
-    ?'flex:1;min-width:0;font-size:11px;font-weight:700;border:1.5px solid #c8a44a;border-radius:6px;padding:3px 5px;background:#1e3a5f;color:#c8a44a;cursor:pointer;'
-    :'flex:1;min-width:0;font-size:11px;font-weight:600;border:1px solid #e2e8f0;border-radius:6px;padding:3px 5px;background:#fff;color:#94a3b8;cursor:pointer;';
+  const typeColors={'시세조사':'#2563eb','현장조사':'#16a34a','보고서작성':'#7c3aed'};
   const typeCells=['시세조사','현장조사','보고서작성'].map(t=>{
-    const [col,bg]=typeColors[t];
+    const col=typeColors[t];
     const mgrs=C_getMgrs(c,t);
     const isOn=mgrs.length>0;
     const safeId=`${c.id}_${t.replace(/\s/g,'_')}`;
-    const mgrBadges=mgrs.map(m=>
-      `<span style="display:inline-flex;align-items:center;background:${bg};border:1px solid ${col}55;border-radius:99px;padding:1px 5px 1px 8px;font-size:11px;font-weight:700;color:${col};gap:1px;white-space:nowrap;">${m}<button onclick="event.stopPropagation();C_removeTypeMgr('${c.id}','${t}','${m}')" style="background:none;border:none;cursor:pointer;font-size:11px;color:${col};opacity:.5;padding:0 0 0 2px;line-height:1;">×</button></span>`
-    ).join('');
+    const names=mgrs.map(m=>
+      `<span style="font-size:11px;font-weight:600;color:#374151;">${m}<button onclick="event.stopPropagation();C_removeTypeMgr('${c.id}','${t}','${m}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:#9ca3af;padding:0 0 0 1px;line-height:1;">×</button></span>`
+    ).join('<span style="color:#d1d5db;font-size:10px;margin:0 1px;">·</span>');
     const addable=C_MANAGERS.filter(m=>!mgrs.includes(m));
     const plusBtn=addable.length>0
-      ?`<button onclick="event.stopPropagation();C_showAddMgrSel('${safeId}')" style="width:18px;height:18px;border-radius:50%;border:1.5px dashed ${isOn?col:'#d1d5db'};background:transparent;cursor:pointer;font-size:13px;color:${isOn?col:'#cbd5e1'};padding:0;line-height:1;flex-shrink:0;">+</button>
-        <select id="C_addsel_${safeId}" onchange="C_addTypeMgr('${c.id}','${t}',this.value);this.style.display='none';this.value='';" style="display:none;font-size:10px;border:1px solid #ccc;border-radius:5px;padding:1px 3px;max-width:70px;">
+      ?`<button onclick="event.stopPropagation();C_showAddMgrSel('${safeId}')" style="background:none;border:none;cursor:pointer;font-size:13px;color:#9ca3af;padding:0;line-height:1;margin-left:1px;" title="추가">+</button>
+        <select id="C_addsel_${safeId}" onchange="C_addTypeMgr('${c.id}','${t}',this.value);this.style.display='none';this.value='';" style="display:none;font-size:10px;border:1px solid #d1d5db;border-radius:4px;padding:1px 3px;max-width:70px;">
           <option value="">선택</option>${addable.map(m=>`<option value="${m}">${m}</option>`).join('')}
         </select>`
       :'';
-    return`<div style="display:flex;align-items:center;gap:5px;padding:4px 6px;border-radius:6px;background:${isOn?bg:'transparent'};border:1px solid ${isOn?col+'44':'#f1f5f9'};margin-bottom:3px;">
-      <span onclick="event.stopPropagation();C_toggleType('${c.id}','${t}')" style="flex-shrink:0;font-size:10px;font-weight:800;cursor:pointer;color:${isOn?col:'#cbd5e1'};white-space:nowrap;min-width:40px;">${typeShort[t]}</span>
-      <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;flex:1;">
-        ${isOn?(mgrBadges||`<span style="font-size:11px;color:${col};opacity:.5;">담당자 미지정</span>`):'<span style="font-size:11px;color:#d1d5db;">—</span>'}
+    return`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;">
+      <button onclick="event.stopPropagation();C_toggleType('${c.id}','${t}')" style="width:10px;height:10px;border-radius:50%;border:2px solid ${isOn?col:'#d1d5db'};background:${isOn?col:'transparent'};flex-shrink:0;cursor:pointer;padding:0;transition:all .12s;"></button>
+      <span onclick="event.stopPropagation();C_toggleType('${c.id}','${t}')" style="font-size:11px;font-weight:700;color:${isOn?col:'#9ca3af'};cursor:pointer;white-space:nowrap;min-width:46px;">${t}</span>
+      <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;">
+        ${isOn?names:''}
         ${plusBtn}
       </div>
     </div>`;
@@ -5381,11 +5378,12 @@ function C_activeRow(c){
 <td style="font-size:12px;white-space:nowrap;"><span class="editable" onclick="C_startEdit(this,'${c.id}','court','${(c.court||'').replace(/'/g,"&#39;")}')">${c.court||'—'}</span></td>
 <td style="font-size:12px;color:#888;white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','auctionDate','${c.auctionDate||''}')">${C_fmt(c.auctionDate)}</span>${db}</td>
 <td class="${C_dlCls(c.deadline)}" style="white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','deadline','${c.deadline||''}')">${C_fmt(c.deadline)}</span></td>
-<td style="overflow:visible;position:relative;padding:6px 4px;">
-  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:7px 9px;min-width:220px;">
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;padding-bottom:6px;border-bottom:1.5px solid #e2e8f0;">
-      <span style="font-size:10px;font-weight:800;color:#475569;white-space:nowrap;flex-shrink:0;">총괄</span>
-      <select onchange="event.stopPropagation();C_setManager('${c.id}',this.value)" style="${mgrSelStyle}">
+<td style="overflow:visible;position:relative;">
+  <div style="min-width:215px;padding:2px 0;">
+    <div style="display:flex;align-items:center;gap:5px;padding-bottom:6px;margin-bottom:5px;border-bottom:1px solid #f0f0f0;">
+      <span style="font-size:10px;font-weight:700;color:#6b7280;letter-spacing:.3px;white-space:nowrap;">총괄담당자</span>
+      <select onchange="event.stopPropagation();C_setManager('${c.id}',this.value)"
+        style="flex:1;min-width:0;border:none;border-bottom:1.5px solid ${c.manager?'#1e3a5f':'#e5e7eb'};background:transparent;font-size:12px;font-weight:${c.manager?'700':'400'};color:${c.manager?'#1e3a5f':'#9ca3af'};cursor:pointer;outline:none;padding:0 2px;">
         <option value="">미지정</option>
         ${C_MANAGERS.map(m=>`<option value="${m}"${c.manager===m?' selected':''}>${m}</option>`).join('')}
       </select>
