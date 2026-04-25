@@ -7403,6 +7403,7 @@ function applyBulkData(d) {
 
   // 사건 관리 (C_CACHE_CASES/TODOS는 BULK_CACHE에 이미 포함 — 중복 저장 하지 않음)
   C_cases = allCases;
+  if (typeof FEE_migrate === 'function') FEE_migrate();
   C_todos = d.todos || [];
   C_renderTodos(); C_render();
 
