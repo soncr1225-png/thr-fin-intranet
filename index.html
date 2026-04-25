@@ -12346,10 +12346,14 @@ function CAL_init() {
   }
 
   document.addEventListener('mouseover', e => {
+    // 핀드 팝업 위에서는 hover 무시 (팝업 자체 위에 커서가 있을 때)
+    if (e.target.closest('#CAL_tooltip')) return;
     const el = e.target.closest('[data-cal-tip]');
     if (!el) return;
     const raw = el.dataset.calTip;
     if (!raw) return;
+    // 칩 위로 마우스가 오면 핀드 상태 해제 → hover 툴팁 활성화
+    tip.classList.remove('pinned');
     const parts  = raw.split(' | ').filter(Boolean);
     const evType = el.dataset.calLabel || '';
     const labels = LABELS[evType] || DEFAULT_LABELS;
