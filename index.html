@@ -5495,6 +5495,7 @@ function C_setManager(id,mgr){
   c.manager=mgr;
   C_apiBg('updateCase',{id,status:c.status,caseNo:c.caseNo,address:c.address,court:c.court,auctionDate:c.auctionDate,deadline:c.deadline,note:c.note,manager:mgr});
   C_cacheSave(C_CACHE_CASES,C_cases);
+  if(typeof FEE_saveShadow==='function')FEE_saveShadow();
   C_updateStats();
 }
 function C_getMgrs(c,type){const v=(c.typeMap||{})[type];if(!v)return[];return Array.isArray(v)?v.filter(Boolean):[v];}
@@ -12438,7 +12439,7 @@ function CAL_init() {
 // (GAS 백엔드는 신규 필드를 모르므로 sync 시 덮어쓰기 방지용)
 const FEE_SHADOW_KEY = 'thefin_fee_shadow_v1';
 const FEE_RATES = { '아파트':1, '다가구':2, '빌딩':2, '공장':2, '토지':2, '특수물건':3 };
-const FEE_SHADOW_FIELDS = ['currentStage','stageNote','propertyType','feeRate','bidPrice','bidDate','fee1Received','fee1Date','fee2Received','fee2Date','staffShares','feeNote','clientName'];
+const FEE_SHADOW_FIELDS = ['currentStage','stageNote','propertyType','feeRate','bidPrice','bidDate','fee1Received','fee1Date','fee2Received','fee2Date','staffShares','feeNote','clientName','manager'];
 
 function FEE_loadShadow() {
   try { return JSON.parse(localStorage.getItem(FEE_SHADOW_KEY) || '{}'); }
@@ -12502,6 +12503,7 @@ function FEE_migrate() {
     if (c.staffShares == null)  c.staffShares  = s.staffShares || {};
     if (c.feeNote == null)      c.feeNote      = s.feeNote || '';
     if (c.clientName == null)   c.clientName   = s.clientName || '';
+    if (c.manager    == null)   c.manager      = s.manager    || '';
   });
 }
 
