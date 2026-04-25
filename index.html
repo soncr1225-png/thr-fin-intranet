@@ -5367,11 +5367,11 @@ function C_buildTypeCell(c){
     if (UPLOADABLE.has(t)) {
       const files = (c.driveFiles && c.driveFiles[t]) || [];
       const hasFi = files.length > 0;
-      uploadBtn = `<button onclick="event.stopPropagation();C_openFilePicker('${c.id}','${t}')" title="파일 업로드" style="flex-shrink:0;width:16px;height:16px;border-radius:4px;border:1.5px solid ${hasFi?col+'66':'#e5e7eb'};background:transparent;cursor:pointer;font-size:10px;color:${hasFi?col:'#d1d5db'};padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;">↑</button>`;
+      uploadBtn = `<button onclick="event.stopPropagation();C_openFilePicker('${c.id}','${t}')" title="파일 업로드" style="flex-shrink:0;height:18px;padding:0 6px;border-radius:9px;border:1.5px solid ${hasFi?col:'#d1d5db'};background:${hasFi?col+'18':'#f9fafb'};cursor:pointer;font-size:10px;font-weight:700;color:${hasFi?col:'#9ca3af'};line-height:1;display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">⬆<span style="font-size:9px;letter-spacing:-.01em;">업로드</span></button>`;
       if (hasFi) {
-        chipsHtml = files.map(f=>`<div style="display:flex;align-items:center;gap:2px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;max-width:195px;">
-          <a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="font-size:10px;color:#2563eb;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:155px;" title="${f.name}">📄 ${f.name}</a>
-          <button onclick="event.stopPropagation();C_deleteFile('${c.id}','${t}','${f.id}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:#bbb;padding:0 0 0 2px;line-height:1;flex-shrink:0;">×</button>
+        chipsHtml = files.map(f=>`<div style="display:flex;align-items:center;gap:3px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:2px 7px 2px 5px;max-width:210px;">
+          <a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="font-size:10px;font-weight:600;color:#2563eb;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:168px;display:flex;align-items:center;gap:3px;" title="${f.name}"><span style="font-size:12px;flex-shrink:0;">⬇</span>${f.name}</a>
+          <button onclick="event.stopPropagation();C_deleteFile('${c.id}','${t}','${f.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;color:#93c5fd;padding:0;line-height:1;flex-shrink:0;margin-left:1px;" title="삭제">✕</button>
         </div>`).join('');
       }
     }
@@ -5380,7 +5380,7 @@ function C_buildTypeCell(c){
         <button onclick="C_toggleType('${c.id}','${t}')" style="background:none;border:none;cursor:pointer;padding:0;flex-shrink:0;display:flex;align-items:center;">${DOT(isOn,col)}</button>
         <span onclick="C_toggleType('${c.id}','${t}')" style="flex-shrink:0;font-size:11px;font-weight:700;color:${isOn?col:'#cbd5e1'};cursor:pointer;white-space:nowrap;min-width:54px;">${t}</span>
         <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">${names}${plusBtn}${uploadBtn}</div>
-      </div>${chipsHtml?`<div style="padding-left:20px;margin-top:2px;display:flex;flex-direction:column;gap:2px;">${chipsHtml}</div>`:''}</div>`;
+      </div>${chipsHtml?`<div style="padding-left:0;margin-top:3px;margin-bottom:2px;display:flex;flex-direction:column;gap:2px;">${chipsHtml}</div>`:''}</div>`;
   }).join('');
 
   return`<div style="min-width:220px;padding:2px 4px;">${mgrRow}${typeRows}</div>`;
