@@ -947,7 +947,7 @@ tr:hover td { background: #f8f6ff; }
 }
 .sk-block { display: inline-block; height: 14px; border-radius: 4px; }
 
-.note-cell { max-width: 150px; font-size: 12px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.note-cell { max-width: 340px; min-width: 220px; font-size: 12px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dw{color:var(--red);font-weight:700;} .dc{color:var(--amber);font-weight:700;} .dok{color:#374151;}
 
 @media(max-width:640px){
@@ -5247,7 +5247,7 @@ function C_switchTab(t){
 function C_setFilter(f,b){C_filt=f;document.querySelectorAll('#C_filterRow .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');C_render();}
 function C_setFilterArc(f,b){C_filtArc=f;document.querySelectorAll('#C_filterRowArchive .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');C_render();}
 
-const C_AH=`<tr><th style="width:88px;">상태</th><th style="width:108px;">사건번호</th><th style="width:120px;">주소지</th><th style="width:140px;">법원</th><th style="width:110px;">경매기일</th><th style="width:80px;">마감요청일</th><th style="width:240px;">조사유형 (담당자)</th><th>기타요청</th><th style="width:55px;"></th></tr>`;
+const C_AH=`<tr><th style="width:104px;">상태</th><th style="width:118px;">사건번호</th><th style="width:130px;">주소지</th><th style="width:130px;">법원</th><th style="width:86px;">경매기일</th><th style="width:88px;">마감요청일</th><th style="width:248px;">조사유형 (담당자)</th><th style="min-width:220px;">기타요청</th><th style="width:62px;"></th></tr>`;
 const C_ZH=`<tr><th style="width:88px;">종료사유</th><th style="width:118px;">사건번호</th><th style="width:140px;">주소지</th><th style="width:75px;">법원</th><th style="width:85px;">경매기일</th><th style="width:65px;">담당자</th><th style="width:180px;">조사유형</th><th>비고</th><th style="width:75px;">종료일</th><th style="width:60px;"></th></tr>`;
 
 function C_archiveTags(typeMap){
@@ -5368,11 +5368,11 @@ function C_activeRow(c){
 <button class="smenu-item" onclick="C_chStatus('${c.id}','changed')" style="color:#d97706;font-weight:700;">🔒 기일변경</button>
 <button class="smenu-item" onclick="C_chStatus('${c.id}','drop')" style="color:#9f1239;font-weight:700;">🔒 기타종료</button>
 </div></div></td>
-<td style="font-family:monospace;font-size:12px;"><span class="editable" onclick="C_startEdit(this,'${c.id}','caseNo','${(c.caseNo||'').replace(/'/g,"&#39;")}')">${c.caseNo||''}</span></td>
+<td style="font-family:monospace;font-size:12px;white-space:nowrap;"><span class="editable" onclick="C_startEdit(this,'${c.id}','caseNo','${(c.caseNo||'').replace(/'/g,"&#39;")}')">${c.caseNo||''}</span></td>
 <td style="max-width:150px;"><span class="editable" title="${c.address||''}" onclick="C_startEdit(this,'${c.id}','address','${(c.address||'').replace(/'/g,"&#39;")}')" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${C_shortAddr(c.address)}</span></td>
-<td style="font-size:12px;"><span class="editable" onclick="C_startEdit(this,'${c.id}','court','${(c.court||'').replace(/'/g,"&#39;")}')">${c.court||'—'}</span></td>
-<td style="font-size:12px;color:#888;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','auctionDate','${c.auctionDate||''}')">${C_fmt(c.auctionDate)}</span>${db}</td>
-<td class="${C_dlCls(c.deadline)}"><span class="editable" onclick="C_startEditDate(this,'${c.id}','deadline','${c.deadline||''}')">${C_fmt(c.deadline)}</span></td>
+<td style="font-size:12px;white-space:nowrap;"><span class="editable" onclick="C_startEdit(this,'${c.id}','court','${(c.court||'').replace(/'/g,"&#39;")}')">${c.court||'—'}</span></td>
+<td style="font-size:12px;color:#888;white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','auctionDate','${c.auctionDate||''}')">${C_fmt(c.auctionDate)}</span>${db}</td>
+<td class="${C_dlCls(c.deadline)}" style="white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','deadline','${c.deadline||''}')">${C_fmt(c.deadline)}</span></td>
 <td style="overflow:visible;position:relative;"><div style="min-width:240px;">${typeCells}</div></td>
 <td><span class="editable note-cell" title="${c.note||''}" onclick="C_startEdit(this,'${c.id}','note','${(c.note||'').replace(/'/g,"&#39;")}')">${c.note||'—'}</span></td>
 <td style="white-space:nowrap;"><button class="row-btn" onclick="CD_open('${c.id}')" style="background:#fff8e1;color:#8a5a00;border-color:#f2d67a;margin-right:3px;" title="수수료·낙찰·7단계 관리">💰</button><button class="row-btn del" onclick="C_delCase('${c.id}')">삭제</button></td></tr>`;
