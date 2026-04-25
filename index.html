@@ -12563,6 +12563,36 @@ const STAGES = [
 ];
 const OVERDUE_DAYS = 30;
 
+// 7단계 진행 표시 셀 (도트 스텝 + 진행 숫자)
+function FEE_stageCell(stage, st) {
+  const STEP_COLORS = ['#0891b2','#2563eb','#1e40af','#7c3aed','#c8a44a','#d97706','#dc2626'];
+  const MAX = 7;
+  const isSpecial = stage > 7;
+  const dots = [];
+  for (let i = 0; i < MAX; i++) {
+    const n = i + 1;
+    const sc = STEP_COLORS[i];
+    if (i > 0) {
+      const lineColor = (!isSpecial && n <= stage) ? sc + '88' : '#e5e7eb';
+      dots.push(`<span style="flex:1;height:1.5px;background:${lineColor};max-width:8px;min-width:3px;"></span>`);
+    }
+    if (!isSpecial && n === stage) {
+      dots.push(`<span title="${n}. ${STAGES[i].name}" style="width:9px;height:9px;border-radius:50%;background:${sc};box-shadow:0 0 0 2px #fff,0 0 0 3.5px ${sc};flex-shrink:0;display:inline-block;"></span>`);
+    } else if (!isSpecial && n < stage) {
+      dots.push(`<span title="${n}. ${STAGES[i].name}" style="width:6px;height:6px;border-radius:50%;background:${sc};flex-shrink:0;display:inline-block;opacity:0.85;"></span>`);
+    } else {
+      dots.push(`<span title="${n}. ${STAGES[i].name}" style="width:6px;height:6px;border-radius:50%;background:#e5e7eb;flex-shrink:0;display:inline-block;"></span>`);
+    }
+  }
+  const progressText = isSpecial
+    ? `<span style="font-size:10px;font-weight:700;color:${st.color};">${st.name}</span>`
+    : `<span style="font-size:10px;font-weight:800;color:${st.color};">${stage}<span style="font-weight:400;color:#94a3b8;">/7</span> · ${st.name}</span>`;
+  return `<div style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;">
+    <div style="display:flex;align-items:center;width:90px;">${dots.join('')}</div>
+    ${progressText}
+  </div>`;
+}
+
 // status → stage 자동 추론 (기존 데이터 보존용)
 function FEE_inferStage(c) {
   if (c.currentStage && c.currentStage >= 1 && c.currentStage <= 9) return c.currentStage;
@@ -12795,7 +12825,7 @@ function DASH_renderCaseList() {
       return `<tr style="border-top:1px solid #f0f0f0;">
         <td style="padding:7px 10px;font-family:monospace;">${c.caseNo||'—'}</td>
         <td style="padding:7px 10px;">${c.address ? c.address.substring(0,24) : '—'}</td>
-        <td style="padding:7px 10px;text-align:center;"><span style="background:${st.color}15;color:${st.color};padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;">${stage}. ${st.name}</span></td>
+        <td style="padding:7px 10px;text-align:center;">${FEE_stageCell(stage, st)}</td>
         <td style="padding:7px 10px;text-align:right;font-weight:700;">${f.total ? FEE_fmtWon(f.total) : '—'}</td>
         <td style="padding:7px 10px;text-align:center;">${c.fee1Received?'<span style="color:#0f7b3b;">✓</span>':'<span style="color:#ddd;">○</span>'}</td>
         <td style="padding:7px 10px;text-align:center;">${c.fee2Received?'<span style="color:#0f7b3b;">✓</span>':'<span style="color:#ddd;">○</span>'}</td>
