@@ -2187,9 +2187,14 @@ table.data-table tbody tr:hover,
     </div>
 
     <!-- 메시지 (로그인 후 표시) -->
-    <div class="main-tab" id="mainTab-msg" onclick="MSG_open()" style="display:none;position:relative;">
-      <span class="tab-icon">💬</span>메시지
-      <span id="MSG_navBadge" style="display:none;position:absolute;top:4px;right:4px;
+    <div id="mainTab-msg" onclick="MSG_open()" style="display:none;position:relative;
+      flex-direction:column;align-items:center;justify-content:center;gap:2px;
+      padding:6px 14px;cursor:pointer;border-bottom:2px solid transparent;
+      color:rgba(255,255,255,.6);font-size:11px;font-weight:600;letter-spacing:.02em;
+      white-space:nowrap;transition:color .17s,border-color .17s,background .17s;">
+      <span style="font-size:18px;line-height:1;">💬</span>
+      <span>메시지</span>
+      <span id="MSG_navBadge" style="display:none;position:absolute;top:4px;right:6px;
         background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:800;
         padding:1px 5px;min-width:14px;text-align:center;line-height:1.4;"></span>
     </div>
@@ -12114,7 +12119,11 @@ function MSG_applyRole(name) {
   MSG_isAdmin = (name === '손청락');
   // 네비 메시지 탭 표시
   const navTab = document.getElementById('mainTab-msg');
-  if (navTab) navTab.style.display = '';
+  if (navTab) {
+    navTab.style.display = 'flex';
+    navTab.onmouseenter = () => { navTab.style.color='rgba(255,255,255,.9)'; navTab.style.background='rgba(255,255,255,.04)'; };
+    navTab.onmouseleave = () => { navTab.style.color='rgba(255,255,255,.6)'; navTab.style.background=''; };
+  }
   // 헤더 버튼도 유지 (백업 접근)
   const btn = document.getElementById('MSG_headerBtn');
   const lbl = document.getElementById('MSG_label');
@@ -12151,9 +12160,12 @@ async function MSG_fetchInbox() {
 }
 
 function MSG_open() {
-  document.getElementById('MSG_overlay').classList.remove('hidden');
+  const overlay = document.getElementById('MSG_overlay');
+  if (!overlay) return;
+  overlay.classList.remove('hidden');
   MSG_view = 'inbox';
-  MSG_fetchInbox().then(MSG_renderInbox);
+  MSG_renderInbox();                          // 즉시 현재 캐시 데이터로 렌더
+  MSG_fetchInbox().then(MSG_renderInbox);     // 백그라운드 갱신
 }
 
 function MSG_close() {
