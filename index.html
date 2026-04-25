@@ -1483,7 +1483,7 @@ tr:hover td { background: #f8f6ff; }
 .auth-pw-strength { height: 4px; border-radius: 2px; margin-top: 6px; transition: all .3s; }
 
 /* ══ 캘린더 탭 ══ */
-#panel-cal { flex-direction:column;overflow:hidden;background:#f4f2ee; }
+#panel-cal { flex-direction:column;overflow:hidden;background:#f4f2ee;min-height:calc(100vh - 60px); }
 #panel-cal.active { display:flex; }
 
 .cal-header {
@@ -10659,6 +10659,10 @@ function AUTH_applyRole(name, role, label) {
   setBadge('mainBadge-auction', C_cases.filter(c=>C_AUCTION_BADGE_STATUS.includes(c.status)).length);
   // 블로그: 공용 콘텐츠이므로 테스트 계정도 실제 숫자 표시
   if (B_items.length > 0) setBadgeShared('mainBadge-blog', B_items.length);
+  // 캘린더 탭이 열려있으면 권한 반영 후 재렌더
+  if (typeof CAL_render === 'function') {
+    if (document.getElementById('panel-cal')?.classList.contains('active')) CAL_render();
+  }
 }
 
 // ── 세션 만료 체크 ────────────────────────────────────────────────
