@@ -7242,6 +7242,9 @@ async function loadBulk() {
   }
 }
 
+let CAL_year = new Date().getFullYear();
+let CAL_month = new Date().getMonth();
+
 loadBulk();
 
 document.addEventListener('keydown',e=>{
@@ -11976,8 +11979,7 @@ window.addEventListener('resize', B_updateTheadTop);
 // ══════════════════════════════════════════════════════════════════
 //  캘린더 (CAL)
 // ══════════════════════════════════════════════════════════════════
-let CAL_year = new Date().getFullYear();
-let CAL_month = new Date().getMonth();
+// CAL_year / CAL_month are declared earlier (before loadBulk) to avoid TDZ
 
 function CAL_fmt(y, m, d) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
