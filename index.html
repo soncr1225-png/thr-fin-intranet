@@ -13787,7 +13787,7 @@ function GCAL_syncByCaseNo(caseNo, cBase) {
     existingIds:     GCAL_getIds(caseNo)
   };
 
-  fetch(GAS_URL, {
+  return fetch(GAS_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ module: 'calendar', action: 'syncEvents', data: payload })
@@ -13796,46 +13796,79 @@ function GCAL_syncByCaseNo(caseNo, cBase) {
   .then(res => {
     if (res.ok && res.ids) {
       GCAL_setIds(caseNo, res.ids);
-      GCAL_showToast('✓ 구글 캘린더 동기화 완료');
+      return true;
+    } else {
+      console.warn('[GCAL] 동기화 실패:', res);
+      return false;
     }
   })
-  .catch(() => {});
+  .catch(err => { console.error('[GCAL] fetch 오류:', err); return false; });
 }
 
 // 전체 활성 사건 일괄 동기화 (캘린더 탭 "전체 동기화" 버튼용)
-function GCAL_syncAll() {
+async function GCAL_syncAll() {
   if (typeof C_cases === 'undefined') { alert('사건 데이터가 로드되지 않았습니다.'); return; }
   const btn = document.getElementById('GCAL_syncAllBtn');
   if (btn) { btn.disabled = true; btn.textContent = '동기화 중...'; }
+
   const active = C_cases.filter(c => !['closed','lost','cancel','drop','changed'].includes(c.status));
-  let done = 0;
-  active.forEach(c => {
-    // 딜레이를 줘서 GAS rate limit 회피
-    setTimeout(() => {
-      GCAL_syncByCaseNo(c.caseNo, c);
-      done++;
-      if (done === active.length && btn) {
-        btn.disabled = false;
-        btn.textContent = '☁ 전체 동기화';
-        GCAL_showToast('✓ ' + active.length + '건 구글 캘린더 동기화 완료');
-      }
-    }, done * 300);
-  });
-  if (active.length === 0 && btn) { btn.disabled = false; btn.textContent = '☁ 전체 동기화'; }
+  if (active.length === 0) {
+    if (btn) { btn.disabled = false; btn.textContent = '☁ 전체 동기화'; }
+    GCAL_showToast('동기화할 활성 사건이 없습니다.', '#888');
+    return;
+  }
+
+  // GAS 연결 사전 확인
+  let testOk = false;
+  try {
+    const testRes = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ module: 'calendar', action: 'getCalId' })
+    }).then(r => r.json());
+    testOk = testRes.ok && testRes.calId;
+    if (!testOk) {
+      if (btn) { btn.disabled = false; btn.textContent = '☁ 전체 동기화'; }
+      GCAL_showToast('⚠ GAS 재배포 또는 GCAL_init() 실행 필요', '#e05454');
+      alert('구글 캘린더 연동 실패\n\n원인: GAS가 아직 재배포되지 않았거나\nGAS 편집기에서 GCAL_init()을 실행하지 않았습니다.\n\n해결:\n1. unified-gas.js를 GAS에 붙여넣고 새 버전 배포\n2. GAS 편집기 → 실행 → GCAL_init → 권한 허용\n3. 다시 시도');
+      return;
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '☁ 전체 동기화'; }
+    GCAL_showToast('⚠ GAS 연결 실패', '#e05454');
+    return;
+  }
+
+  // 순차 동기화 (GAS rate limit 대응 — 300ms 간격)
+  let ok = 0, fail = 0;
+  for (let i = 0; i < active.length; i++) {
+    if (btn) btn.textContent = `동기화 중... (${i+1}/${active.length})`;
+    const result = await GCAL_syncByCaseNo(active[i].caseNo, active[i]);
+    if (result) ok++; else fail++;
+    if (i < active.length - 1) await new Promise(r => setTimeout(r, 300));
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = '☁ 전체 동기화'; }
+  if (fail === 0) {
+    GCAL_showToast(`✓ ${ok}건 구글 캘린더 동기화 완료`);
+  } else {
+    GCAL_showToast(`⚠ ${ok}건 완료, ${fail}건 실패`, '#e05454');
+  }
 }
 
-function GCAL_showToast(msg) {
+function GCAL_showToast(msg, bg) {
   let t = document.getElementById('GCAL_toast');
   if (!t) {
     t = document.createElement('div');
     t.id = 'GCAL_toast';
-    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0f7b3b;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;';
     document.body.appendChild(t);
   }
+  t.style.background = bg || '#0f7b3b';
   t.textContent = msg;
   t.style.opacity = '1';
   clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 3500);
 }
 
 // ══════════════════════════════════════════════════════════════════
