@@ -3310,7 +3310,7 @@ table.data-table tbody tr:hover,
       </div>
 
       <div class="ag-card-footer">
-        <div class="ag-card-footer-staff">담당: <strong id="ag-out-staff"></strong></div>
+        <div class="ag-card-footer-staff">담당: <strong id="ag-out-staff"></strong> <span id="ag-out-staff-phone" style="font-size:11px;color:#888;font-weight:400;"></span></div>
         <div class="ag-card-footer-contact" style="font-size:11px;color:#888;">THE FIN 더핀중개법인</div>
       </div>
     </div>
@@ -3395,7 +3395,7 @@ table.data-table tbody tr:hover,
 
   <!-- 푸터 -->
   <div style="background:#142040;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;">
-    <div style="color:#fff;font-size:12px;">담당: <strong id="mob-staff" style="color:#c8a44a;"></strong></div>
+    <div style="color:#fff;font-size:12px;">담당: <strong id="mob-staff" style="color:#c8a44a;"></strong> <span id="mob-staff-phone" style="color:#8899bb;font-size:11px;font-weight:400;"></span></div>
     <div style="font-size:10px;color:#6b7a99;">THE FIN 더핀중개법인</div>
   </div>
 </div>
@@ -7592,6 +7592,12 @@ document.addEventListener('keydown',e=>{
 // ══════════════════════════════════════════════════════════════════
 //  탭 7: 입찰안내문 (AG_ 네임스페이스)
 // ══════════════════════════════════════════════════════════════════
+const AG_PHONES = {
+  '손청락': '010-6406-9991',
+  '이제훈': '010-6890-0059',
+  '정은진': '010-8072-1432',
+  '장한빛': '010-2108-6403',
+};
 function AG_showAI(show, msg) {
   const g = document.getElementById('global-ai-overlay');
   g.style.display = show ? 'flex' : 'none';
@@ -7921,6 +7927,7 @@ function AG_generate() {
   const minprice = document.getElementById('ag-min-price').value.trim();
   const deposit = document.getElementById('ag-deposit').value.trim();
   const staff = document.getElementById('ag-staff').value;
+  const staffPhone = AG_PHONES[staff] || '';
   const type = document.querySelector('input[name="ag-type"]:checked')?.value || '개인';
   const proxy = document.querySelector('input[name="ag-proxy"]:checked')?.value || '직접';
   const ownership = document.querySelector('input[name="ag-ownership"]:checked')?.value || '단독';
@@ -7949,6 +7956,7 @@ function AG_generate() {
   document.getElementById('ag-out-minprice').textContent = minprice ? minprice + '원' : '—';
   document.getElementById('ag-out-deposit').textContent = deposit ? deposit + '원' : '—';
   document.getElementById('ag-out-staff').textContent = staff;
+  document.getElementById('ag-out-staff-phone').textContent = staffPhone ? ' · ' + staffPhone : '';
 
   AG_updateDocs();
 
@@ -7962,6 +7970,7 @@ function AG_generate() {
   document.getElementById('mob-minprice').textContent   = minprice ? minprice + '원' : '—';
   document.getElementById('mob-deposit').textContent    = deposit ? deposit + '원' : '—';
   document.getElementById('mob-staff').textContent      = staff;
+  document.getElementById('mob-staff-phone').textContent = staffPhone ? ' · ' + staffPhone : '';
   const jointLabels = {
     '둘다직접':    '(공동명의 · 둘다 직접 참가)',
     '1명직접1명위임': '(공동명의 · 1명 직접참가 · 1명 위임)',
@@ -8072,6 +8081,7 @@ function AG_copyText() {
   const minp = document.getElementById('ag-out-minprice').textContent;
   const dep = document.getElementById('ag-out-deposit').textContent;
   const staff = document.getElementById('ag-out-staff').textContent;
+  const phone = (AG_PHONES[staff] || '');
   const docs = [...document.querySelectorAll('#ag-out-docs li')].map(li=>'  ✓ '+li.textContent).join('\n');
 
   const txt = `【THE FIN 경매 입찰 안내】\n\n`
@@ -8083,7 +8093,7 @@ function AG_copyText() {
     + `\n▶ 최저매각가격: ${minp}\n`
     + `▶ 입찰보증금: ${dep}\n`
     + `\n▶ 준비서류\n${docs}\n`
-    + `\n담당: ${staff} | THE FIN 더핀중개법인`;
+    + `\n담당: ${staff}${phone ? ' · ' + phone : ''} | THE FIN 더핀중개법인`;
 
   navigator.clipboard.writeText(txt).then(()=>alert('클립보드에 복사되었습니다.')).catch(()=>alert('복사 실패 — 직접 선택 후 복사해주세요.'));
 }
