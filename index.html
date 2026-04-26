@@ -1178,7 +1178,7 @@ tr:hover td { background: #f8f6ff; }
 #panel-member { background:var(--surface-3); height:calc(100vh - 60px); overflow-y:auto; overflow-x:auto; }
 #MBR_stickyHeader { position:sticky; top:0; z-index:var(--z-sticky); background:var(--surface-3); box-shadow:0 2px 6px rgba(0,0,0,.08); }
 #MBR_stickyHeader .mbr-inner { padding:12px 28px 8px; }
-#MBR_thead-wrap { padding:0; overflow:hidden; }
+#MBR_thead-wrap { padding:0 28px; border:1px solid transparent; overflow:hidden; }
 #MBR_thead-wrap .mbr-table { border-radius:var(--radius) var(--radius) 0 0; }
 #panel-member .container { max-width:none; padding-top:0; padding-left:28px; padding-right:28px; padding-bottom:40px; }
 #panel-member .mbr-table-wrap { border-radius:0 0 var(--radius) var(--radius); border-top:none; box-shadow:none; overflow:visible; }
@@ -3429,11 +3429,6 @@ table.data-table tbody tr:hover,
             <option value="정은진">정은진 매니저</option>
           </select>
         </div>
-        <!-- 직원 메시지 버튼 -->
-        <button class="mbr-smart-btn" id="MBR_msgBtn" onclick="MSG_open()" style="background:#f0f4ff;border-color:#c7d2fe;color:#3730a3;position:relative;">
-          💬 메시지
-          <span id="MBR_msgBadge" style="display:none;position:absolute;top:-5px;right:-5px;background:#ef4444;color:#fff;border-radius:99px;font-size:10px;font-weight:800;padding:1px 5px;min-width:16px;text-align:center;"></span>
-        </button>
         <div id="admin-data-btns" style="display:contents;">
           <!-- 통합 동기화 버튼 + 마지막 동기화 시간 -->
           <div style="display:flex;align-items:center;gap:6px;">
@@ -11971,7 +11966,14 @@ async function SYNC_run(silent) {
       }))
     };
     const r = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) });
-    await r.json();
+    const text = await r.text();
+    let result;
+    try { result = JSON.parse(text); } catch(_) {
+      console.error('[SYNC] GAS 응답 파싱 실패:', text.slice(0, 300));
+      throw new Error('GAS 응답이 JSON이 아닙니다 — GAS 재배포가 필요할 수 있습니다.');
+    }
+    if (result && result.error) throw new Error('GAS 오류: ' + result.error);
+    if (!result || !result.ok) throw new Error('GAS 응답 이상: ' + JSON.stringify(result));
     SYNC_lastTime = new Date();
     SYNC_updateLastTime();
     if (!silent) alert(`동기화 완료! 회원 ${MBR_members.length}명`);
@@ -12494,9 +12496,6 @@ function MSG_applyRole(name) {
   const lbl = document.getElementById('MSG_label');
   if (btn) btn.style.display = 'flex';
   if (lbl) lbl.textContent = '메시지';
-  // MBR 패널 내 버튼도 표시
-  const mbrBtn = document.getElementById('MBR_msgBtn');
-  if (mbrBtn) mbrBtn.style.display = '';
   // 수신함 폴링 (전원)
   MSG_fetchInbox();
   if (MSG_pollTimer) clearInterval(MSG_pollTimer);
