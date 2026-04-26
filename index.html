@@ -2189,18 +2189,6 @@ table.data-table tbody tr:hover,
       <span class="tab-icon">📂</span>자료실
     </div>
 
-    <!-- 메시지 (로그인 후 표시) -->
-    <div id="mainTab-msg" onclick="MSG_open()" style="display:none;position:relative;
-      flex-direction:column;align-items:center;justify-content:center;gap:2px;
-      padding:6px 14px;cursor:pointer;border-bottom:2px solid transparent;
-      color:rgba(255,255,255,.6);font-size:11px;font-weight:600;letter-spacing:.02em;
-      white-space:nowrap;transition:color .17s,border-color .17s,background .17s;">
-      <span style="font-size:18px;line-height:1;">💬</span>
-      <span>메시지</span>
-      <span id="MSG_navBadge" style="display:none;position:absolute;top:4px;right:6px;
-        background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:800;
-        padding:1px 5px;min-width:14px;text-align:center;line-height:1.4;"></span>
-    </div>
   </nav>
 
   <div class="header-right">
@@ -12478,25 +12466,17 @@ let MSG_isAdmin   = false;
 let MSG_myName    = '';
 let MSG_pollTimer = null;
 let MSG_view      = 'inbox'; // 'inbox' | 'compose' | 'sent'
+let MSG_loaded    = false;  // GAS에서 최소 1회 응답받았는지
 
 const MSG_MEMBERS = ['손청락','이제훈','장한빛','정은진'];
 
 function MSG_applyRole(name) {
   MSG_myName  = name;
   MSG_isAdmin = (name === '손청락');
-  // 네비 메시지 탭 표시
-  const navTab = document.getElementById('mainTab-msg');
-  if (navTab) {
-    navTab.style.display = 'flex';
-    navTab.onmouseenter = () => { navTab.style.color='rgba(255,255,255,.9)'; navTab.style.background='rgba(255,255,255,.04)'; };
-    navTab.onmouseleave = () => { navTab.style.color='rgba(255,255,255,.6)'; navTab.style.background=''; };
-  }
-  // 헤더 버튼도 유지 (백업 접근)
   const btn = document.getElementById('MSG_headerBtn');
   const lbl = document.getElementById('MSG_label');
   if (btn) btn.style.display = 'flex';
   if (lbl) lbl.textContent = '메시지';
-  // 수신함 폴링 (전원)
   MSG_fetchInbox();
   if (MSG_pollTimer) clearInterval(MSG_pollTimer);
   MSG_pollTimer = setInterval(MSG_fetchInbox, 2 * 60 * 1000);
@@ -12509,6 +12489,7 @@ async function MSG_fetchInbox() {
     if (d && d.ok) {
       MSG_messages = d.messages || [];
       MSG_sent     = d.sent     || [];
+      MSG_loaded   = true;
       const unread = MSG_messages.filter(m => !m.read).length;
       // 헤더 배지
       const hBadge = document.getElementById('MSG_unreadBadge');
@@ -12516,9 +12497,6 @@ async function MSG_fetchInbox() {
       // MBR 배지
       const mBadge = document.getElementById('MBR_msgBadge');
       if (mBadge) { mBadge.textContent = unread; mBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
-      // 네비 탭 배지
-      const nBadge = document.getElementById('MSG_navBadge');
-      if (nBadge) { nBadge.textContent = unread; nBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
     }
   } catch(e) {}
 }
@@ -12563,7 +12541,9 @@ function MSG_renderInbox() {
   const body = document.getElementById('MSG_modalBody');
   let html = MSG_tabBar('inbox');
   if (total === 0) {
-    html += '<div class="msg-empty">📭 받은 메시지가 없습니다</div>';
+    html += MSG_loaded
+      ? '<div class="msg-empty">📭 받은 메시지가 없습니다</div>'
+      : '<div class="msg-empty" style="color:#999;">⏳ 불러오는 중...</div>';
   } else {
     html += MSG_messages.map((m, i) => `
       <div class="msg-item ${m.read ? '' : 'unread'}" onclick="MSG_showDetail(${i})">
@@ -14098,6 +14078,7 @@ let _MBR_syncTimer = null;
   font-weight:700; cursor:pointer; transition:background .2s; white-space:nowrap;
 }
 #MSG_headerBtn:hover { background:rgba(255,255,255,.2); }
+#MSG_headerBtn:active { background:rgba(255,255,255,.3); transform:scale(.97); }
 #MSG_unreadBadge {
   background:#ef4444; color:#fff; border-radius:99px; font-size:10px;
   font-weight:800; padding:1px 6px; min-width:16px; text-align:center; display:none;
