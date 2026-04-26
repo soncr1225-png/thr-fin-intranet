@@ -5425,22 +5425,20 @@ function C_render(){
 
 function C_buildTypeCell(c){
   const TC={'시세조사':'#2563eb','현장조사':'#16a34a','보고서작성':'#7c3aed'};
-  const ROW='display:flex;align-items:center;gap:7px;min-height:26px;padding:1px 0;';
-  const DOT=(on,col)=>`<span style="flex-shrink:0;width:8px;height:8px;border-radius:50%;border:2px solid ${on?col:'#d1d5db'};background:${on?col:'transparent'};display:inline-block;"></span>`;
-  const LBL=(txt,col)=>`<span style="flex-shrink:0;font-size:11px;font-weight:700;color:${col};white-space:nowrap;min-width:54px;">${txt}</span>`;
+  const ROW='display:flex;align-items:center;gap:5px;min-height:22px;padding:1px 0;flex-wrap:wrap;';
+  const DOT=(on,col)=>`<span style="flex-shrink:0;width:7px;height:7px;border-radius:50%;border:2px solid ${on?col:'#d1d5db'};background:${on?col:'transparent'};display:inline-block;"></span>`;
+  const LBL=(txt,col)=>`<span style="flex-shrink:0;font-size:11px;font-weight:700;color:${col};white-space:nowrap;min-width:48px;">${txt}</span>`;
 
-  // 총괄담당자 행 — 실제 visible select
-  const mgrRow=`<div style="${ROW}padding-bottom:5px;margin-bottom:4px;border-bottom:1px solid #f0f0f0;">
-    <span style="flex-shrink:0;width:8px;height:8px;border-radius:2px;background:${c.manager?'#1e3a5f':'#d1d5db'};display:inline-block;"></span>
+  const mgrRow=`<div style="${ROW}padding-bottom:3px;margin-bottom:3px;border-bottom:1px solid #f0f0f0;">
+    <span style="flex-shrink:0;width:7px;height:7px;border-radius:2px;background:${c.manager?'#1e3a5f':'#d1d5db'};display:inline-block;"></span>
     ${LBL('총괄',c.manager?'#1e3a5f':'#9ca3af')}
     <select onchange="event.stopPropagation();C_setManager('${c.id}',this.value)"
-      style="flex:1;min-width:60px;font-size:11px;font-weight:${c.manager?'700':'400'};color:${c.manager?'#1e3a5f':'#9ca3af'};border:1px solid ${c.manager?'#bfdbfe':'#e5e7eb'};border-radius:6px;padding:2px 6px;background:${c.manager?'#eff6ff':'#fafafa'};cursor:pointer;outline:none;">
+      style="flex:1;min-width:56px;font-size:11px;font-weight:${c.manager?'700':'400'};color:${c.manager?'#1e3a5f':'#9ca3af'};border:1px solid ${c.manager?'#bfdbfe':'#e5e7eb'};border-radius:6px;padding:1px 4px;background:${c.manager?'#eff6ff':'#fafafa'};cursor:pointer;outline:none;">
       <option value="">미지정</option>
       ${C_MANAGERS.map(m=>`<option value="${m}"${c.manager===m?' selected':''}>${m}</option>`).join('')}
     </select>
   </div>`;
 
-  // 조사유형 3개 행
   const UPLOADABLE = new Set(['시세조사','보고서작성']);
   const typeRows=['시세조사','현장조사','보고서작성'].map(t=>{
     const col=TC[t];
@@ -5449,32 +5447,27 @@ function C_buildTypeCell(c){
     const sid=`${c.id}_${t.replace(/\s/g,'_')}`;
     const names=mgrs.map(m=>
       `<span style="font-size:11px;font-weight:600;color:#374151;white-space:nowrap;">${m}<button onclick="event.stopPropagation();C_removeTypeMgr('${c.id}','${t}','${m}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:#bbb;padding:0 0 0 1px;line-height:1;">×</button></span>`
-    ).join('<span style="color:#e5e7eb;margin:0 2px;">·</span>');
+    ).join('<span style="color:#e5e7eb;margin:0 1px;">·</span>');
     const addable=C_MANAGERS.filter(m=>!mgrs.includes(m));
     const plusBtn=addable.length>0
-      ?`<button onclick="event.stopPropagation();C_showAddMgrSel('${sid}')" style="flex-shrink:0;width:16px;height:16px;border-radius:50%;border:1.5px solid ${isOn?col+'66':'#e5e7eb'};background:transparent;cursor:pointer;font-size:11px;font-weight:700;color:${isOn?col:'#d1d5db'};padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;">+</button>
+      ?`<button onclick="event.stopPropagation();C_showAddMgrSel('${sid}')" style="flex-shrink:0;width:15px;height:15px;border-radius:50%;border:1.5px solid ${isOn?col+'66':'#e5e7eb'};background:transparent;cursor:pointer;font-size:10px;font-weight:700;color:${isOn?col:'#d1d5db'};padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;">+</button>
         <select id="C_addsel_${sid}" onchange="C_addTypeMgr('${c.id}','${t}',this.value);this.style.display='none';this.value='';" style="display:none;font-size:10px;border:1px solid #d1d5db;border-radius:4px;padding:1px 4px;max-width:72px;"><option value="">선택</option>${addable.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>`
       :'';
 
-    let uploadBtn = '';
-    let chipsHtml = '';
-    if (UPLOADABLE.has(t)) {
-      const files = (c.driveFiles && c.driveFiles[t]) || [];
-      const hasFi = files.length > 0;
-      uploadBtn = `<button onclick="event.stopPropagation();C_openFilePicker('${c.id}','${t}')" title="파일 업로드" style="flex-shrink:0;height:18px;padding:0 6px;border-radius:9px;border:1.5px solid ${hasFi?col:'#d1d5db'};background:${hasFi?col+'18':'#f9fafb'};cursor:pointer;font-size:10px;font-weight:700;color:${hasFi?col:'#9ca3af'};line-height:1;display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">⬆<span style="font-size:9px;letter-spacing:-.01em;">업로드</span></button>`;
-      if (hasFi) {
-        chipsHtml = files.map(f=>`<div style="display:flex;align-items:center;gap:3px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:2px 7px 2px 5px;max-width:210px;">
-          <a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="font-size:10px;font-weight:600;color:#2563eb;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:168px;display:flex;align-items:center;gap:3px;" title="${f.name}"><span style="font-size:12px;flex-shrink:0;">⬇</span>${f.name}</a>
-          <button onclick="event.stopPropagation();C_deleteFile('${c.id}','${t}','${f.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;color:#93c5fd;padding:0;line-height:1;flex-shrink:0;margin-left:1px;" title="삭제">✕</button>
-        </div>`).join('');
+    let uploadBtn='', inlineChips='';
+    if(UPLOADABLE.has(t)){
+      const files=(c.driveFiles&&c.driveFiles[t])||[];
+      const hasFi=files.length>0;
+      uploadBtn=`<button onclick="event.stopPropagation();C_openFilePicker('${c.id}','${t}')" title="파일 업로드" style="flex-shrink:0;height:16px;padding:0 5px;border-radius:8px;border:1.5px solid ${hasFi?col:'#d1d5db'};background:${hasFi?col+'18':'#f9fafb'};cursor:pointer;font-size:10px;font-weight:700;color:${hasFi?col:'#9ca3af'};line-height:1;display:inline-flex;align-items:center;gap:1px;white-space:nowrap;">⬆업로드</button>`;
+      if(hasFi){
+        inlineChips=files.map(f=>`<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" title="${f.name}" style="display:inline-flex;align-items:center;gap:2px;max-width:130px;font-size:10px;font-weight:600;color:#2563eb;text-decoration:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:1px 4px;overflow:hidden;white-space:nowrap;flex-shrink:0;">📎<span style="overflow:hidden;text-overflow:ellipsis;max-width:90px;display:inline-block;">${f.name}</span><button onclick="event.stopPropagation();C_deleteFile('${c.id}','${t}','${f.id}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:#93c5fd;padding:0;line-height:1;flex-shrink:0;margin-left:1px;">✕</button></a>`).join('');
       }
     }
-    return`<div onclick="event.stopPropagation();">
-      <div style="${ROW}">
-        <button onclick="C_toggleType('${c.id}','${t}')" style="background:none;border:none;cursor:pointer;padding:0;flex-shrink:0;display:flex;align-items:center;">${DOT(isOn,col)}</button>
-        <span onclick="C_toggleType('${c.id}','${t}')" style="flex-shrink:0;font-size:11px;font-weight:700;color:${isOn?col:'#cbd5e1'};cursor:pointer;white-space:nowrap;min-width:54px;">${t}</span>
-        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">${names}${plusBtn}${uploadBtn}</div>
-      </div>${chipsHtml?`<div style="padding-left:0;margin-top:3px;margin-bottom:2px;display:flex;flex-direction:column;gap:2px;">${chipsHtml}</div>`:''}</div>`;
+    return`<div onclick="event.stopPropagation();" style="${ROW}">
+      <button onclick="C_toggleType('${c.id}','${t}')" style="background:none;border:none;cursor:pointer;padding:0;flex-shrink:0;display:flex;align-items:center;">${DOT(isOn,col)}</button>
+      <span onclick="C_toggleType('${c.id}','${t}')" style="flex-shrink:0;font-size:11px;font-weight:700;color:${isOn?col:'#cbd5e1'};cursor:pointer;white-space:nowrap;min-width:50px;">${t}</span>
+      <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;">${names}${plusBtn}${uploadBtn}${inlineChips}</div>
+    </div>`;
   }).join('');
 
   return`<div style="min-width:220px;padding:2px 4px;">${mgrRow}${typeRows}</div>`;
@@ -5748,16 +5741,24 @@ async function C_addClientConfirm(caseId, caseNo) {
   if (!name) { input?.focus(); return; }
   document.getElementById('C_addClientPopup')?.remove();
 
+  // 경매기일에서 매각결정기일 등 자동 계산
+  const cas = C_cases.find(x => x.id === caseId);
+  let dateFields = {};
+  if (cas && cas.auctionDate && typeof A_calcDates === 'function') {
+    const { saleDecisionDate, appealDate, balanceDate } = A_calcDates(cas.auctionDate);
+    dateFields = { saleDecisionDate, appealDate, balanceDate };
+  }
+
   // A_items에 추가 (더핀 일정표 연동)
   const tempId = 'tmp_' + Date.now();
-  const newItem = { id: tempId, caseNo, clientName: name, status: 'ongoing', content: '', note: '' };
+  const newItem = { id: tempId, caseNo, clientName: name, status: 'ongoing', content: '', note: '', ...dateFields };
   if (typeof A_items !== 'undefined') { A_items.push(newItem); }
   C_render();
   if (typeof A_render === 'function') A_render();
 
   // GAS 저장
   if (typeof A_gasPost === 'function') {
-    const r = await A_gasPost('add', { caseNo, clientName: name, status: 'ongoing', content: '' });
+    const r = await A_gasPost('add', { caseNo, clientName: name, status: 'ongoing', content: '', ...dateFields });
     if (r && r.ok && r.id) {
       const idx = A_items?.findIndex(i => i.id === tempId);
       if (idx >= 0) A_items[idx].id = r.id;
@@ -5768,8 +5769,19 @@ async function C_addClientConfirm(caseId, caseNo) {
 function C_editField(id,field,value){
   const c=C_cases.find(x=>x.id===id);if(!c)return;
   c[field]=value;
-  if(field==='auctionDate'){const newDL=C_calcDL(value);c.deadline=newDL;C_apiBg('updateCase',{id,status:c.status,auctionDate:value,deadline:newDL});}
-  else{C_apiBg('updateCase',{id,status:c.status,caseNo:c.caseNo,address:c.address,court:c.court,auctionDate:c.auctionDate,deadline:c.deadline,note:c.note});}
+  if(field==='auctionDate'){
+    const newDL=C_calcDL(value);c.deadline=newDL;
+    C_apiBg('updateCase',{id,status:c.status,auctionDate:value,deadline:newDL});
+    // 연동된 A_items 날짜 자동 업데이트 (더핀 일정표 + 캘린더)
+    if(value && typeof A_calcDates==='function'){
+      const {saleDecisionDate,appealDate,balanceDate}=A_calcDates(value);
+      const linked=(typeof A_items!=='undefined')?A_items.filter(i=>i.caseNo===c.caseNo):[];
+      linked.forEach(i=>{
+        i.saleDecisionDate=saleDecisionDate;i.appealDate=appealDate;i.balanceDate=balanceDate;
+        if(typeof A_gasPost==='function')A_gasPost('update',{id:i.id,saleDecisionDate,appealDate,balanceDate});
+      });
+    }
+  }else{C_apiBg('updateCase',{id,status:c.status,caseNo:c.caseNo,address:c.address,court:c.court,auctionDate:c.auctionDate,deadline:c.deadline,note:c.note});}
   C_cacheSave(C_CACHE_CASES,C_cases);C_updateStats();
   if(field==='auctionDate'||field==='deadline') GCAL_syncFromCaseId(id);
   A_render();
