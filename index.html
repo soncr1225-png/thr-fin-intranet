@@ -11266,6 +11266,16 @@ function AUTH_addMember() {
   AUTH_showAdmin();
 }
 
+// ── 메시지·제보함 변수 선언 (AUTH_init 이전 초기화 필수) ──────────
+let MSG_messages  = [];
+let MSG_sent      = [];
+let MSG_isAdmin   = false;
+let MSG_myName    = '';
+let MSG_pollTimer = null;
+let MSG_view      = 'inbox';
+let MSG_loaded    = false;
+let FB_list       = [];
+
 // ── 페이지 로드 시 세션 확인 ──────────────────────────────────────
 (function AUTH_init() {
   AUTH_loadUsers();
@@ -12386,7 +12396,6 @@ async function BETA_send(payload) {
 // ══════════════════════════════════════════════════════════════════
 //  FB — 관리자 제보함 (오류제보 시트)
 // ══════════════════════════════════════════════════════════════════
-var FB_list = [];
 
 function FB_escape(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -12470,13 +12479,6 @@ document.addEventListener('click', e => {
 // ══════════════════════════════════════════════════════════════════
 //  메시지 / 직원간 소통 + 베타 수정요청 (MSG_ v2)
 // ══════════════════════════════════════════════════════════════════
-var MSG_messages  = [];   // 내 수신함 메시지 목록
-var MSG_sent      = [];   // 내 발신함 메시지 목록
-var MSG_isAdmin   = false;
-var MSG_myName    = '';
-var MSG_pollTimer = null;
-var MSG_view      = 'inbox'; // 'inbox' | 'compose' | 'sent'
-var MSG_loaded    = false;  // GAS에서 최소 1회 응답받았는지
 
 const MSG_MEMBERS = ['손청락','이제훈','장한빛','정은진'];
 
