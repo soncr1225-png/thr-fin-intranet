@@ -1488,7 +1488,9 @@ function loadAuction(ss, shName) {
   if (sheet.getLastColumn() < 13) hdrStyle(13, '잔금납부확정', 70);
   if (sheet.getLastColumn() < 14) hdrStyle(14, '서브여부', 60);
   if (sheet.getLastColumn() < 15) hdrStyle(15, '서브담당자', 70);
-  var cols = Math.min(sheet.getLastColumn(), 15);
+  if (sheet.getLastColumn() < 16) hdrStyle(16, '대출연결', 60);
+  if (sheet.getLastColumn() < 17) hdrStyle(17, '카톡전달', 60);
+  var cols = Math.min(sheet.getLastColumn(), 17);
   var vals = sheet.getRange(2, 1, sheet.getLastRow() - 1, cols).getValues();
   return { ok: true, data: vals.map(mapAuctionRow) };
 }
@@ -1509,7 +1511,9 @@ function mapAuctionRow(r) {
     createdAt:        r[11] ? kstDate(r[11]) : '',
     balanceOk:        String(r[12] || ''),
     isSub:            r[13] === true || r[13] === 'TRUE' || r[13] === 'true',
-    subStaff:         String(r[14] || '')
+    subStaff:         String(r[14] || ''),
+    loanOk:           r[15] === true || r[15] === 'TRUE' || r[15] === 'true',
+    reportSent:       r[16] === true || r[16] === 'TRUE' || r[16] === 'true'
   };
 }
 
@@ -1546,7 +1550,9 @@ function addAuction(ss, d) {
     new Date(),
     d.balanceOk        || '',
     d.isSub            || false,
-    d.subStaff         || ''
+    d.subStaff         || '',
+    d.loanOk           || false,
+    d.reportSent       || false
   ]);
   return { ok: true, id: id };
 }
@@ -1567,6 +1573,8 @@ function updateAuction(ss, d) {
   sv(13, d.balanceOk);
   if (d.isSub !== undefined) sv(14, d.isSub);
   if (d.subStaff !== undefined) sv(15, d.subStaff);
+  if (d.loanOk !== undefined) sv(16, d.loanOk);
+  if (d.reportSent !== undefined) sv(17, d.reportSent);
   return { ok: true };
 }
 
@@ -1753,7 +1761,7 @@ function statsGet(p) {
   var aData = [];
   var aSheet = sh(ss, SH_AUCTION);
   if (aSheet.getLastRow() > 1)
-    aData = aSheet.getRange(2,1,aSheet.getLastRow()-1,Math.min(aSheet.getLastColumn(),15)).getValues().map(mapAuctionRow);
+    aData = aSheet.getRange(2,1,aSheet.getLastRow()-1,Math.min(aSheet.getLastColumn(),17)).getValues().map(mapAuctionRow);
 
   // 사건목록(active+archived)에서 해당 월 auctionDate 사건번호 수집
   var allCases = loadCases(ss, SH_CASES_ACTIVE).concat(loadCases(ss, SH_CASES_ARCHIVE));
