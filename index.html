@@ -12495,22 +12495,36 @@ function MSG_applyRole(name) {
 }
 
 async function MSG_fetchInbox() {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 8000);
   try {
-    const r = await fetch(`${GAS_URL}?module=msg&action=getMessages&user=${encodeURIComponent(MSG_myName)}&admin=${MSG_isAdmin?'1':'0'}`);
+    const r = await fetch(`${GAS_URL}?module=msg&action=getMessages&user=${encodeURIComponent(MSG_myName)}&admin=${MSG_isAdmin?'1':'0'}`, { signal: ctrl.signal });
+    clearTimeout(tid);
     const d = await r.json();
     if (d && d.ok) {
       MSG_messages = d.messages || [];
       MSG_sent     = d.sent     || [];
       MSG_loaded   = true;
       const unread = MSG_messages.filter(m => !m.read).length;
-      // 헤더 배지
       const hBadge = document.getElementById('MSG_unreadBadge');
       if (hBadge) { hBadge.textContent = unread; hBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
-      // MBR 배지
       const mBadge = document.getElementById('MBR_msgBadge');
       if (mBadge) { mBadge.textContent = unread; mBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
     }
-  } catch(e) {}
+  } catch(e) {
+    clearTimeout(tid);
+    // 모달이 열려있고 아직 로드 전이면 연결 오류 표시
+    const overlay = document.getElementById('MSG_overlay');
+    if (overlay && !overlay.classList.contains('hidden') && !MSG_loaded) {
+      const body = document.getElementById('MSG_modalBody');
+      if (body && body.innerHTML.includes('⏳')) {
+        body.innerHTML = body.innerHTML.replace(
+          /<div class="msg-empty"[^>]*>⏳[^<]*<\/div>/,
+          '<div class="msg-empty" style="color:#ef4444;">⚠️ 서버 연결 실패 — 잠시 후 다시 시도해주세요</div>'
+        );
+      }
+    }
+  }
 }
 
 function MSG_open() {
@@ -14096,7 +14110,7 @@ let _MBR_syncTimer = null;
   font-weight:800; padding:1px 6px; min-width:16px; text-align:center; display:none;
 }
 .msg-overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:9500;
+  position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:99999;
   display:flex; align-items:center; justify-content:center;
 }
 .msg-overlay.hidden { display:none; }
