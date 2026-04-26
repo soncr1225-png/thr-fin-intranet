@@ -13811,12 +13811,19 @@ function DASH_renderCaseList() {
         : `<button onclick="CD_open('${c.id}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border:1.5px dashed #d1d5db;border-radius:20px;background:#f9fafb;color:#9ca3af;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">미수령</button>`;
       const allStaff = FEE_getAllStaff(c);
       const chips = allStaff.map(s => { const col = _PART_COLORS[s]||'#666'; return `<span style="display:inline-block;background:${col}18;color:${col};border:1px solid ${col}40;border-radius:12px;padding:1px 7px;font-size:10px;font-weight:700;">${s}</span>`; }).join('');
+      const mbrMatch = (typeof MBR_members !== 'undefined' && c.clientName) ? MBR_members.find(m => m.name === c.clientName) : null;
+      const mbrFeeRate = mbrMatch ? mbrMatch.feeRate : '';
+      const feeDisplay = (c.manualFee > 0) ? FEE_fmtWon(c.manualFee) : f.total ? FEE_fmtWon(f.total) : null;
+      const feeCellInner = feeDisplay
+        ? `<span style="font-size:13px;font-weight:800;color:#142040;">${feeDisplay}${c.manualFee>0?'<span style="font-size:9px;color:#c8a44a;margin-left:3px;font-weight:700;">수기</span>':''}</span>`
+        : `<span style="color:#bbb;font-size:12px;">— <span style="font-size:10px;color:#c8a44a;font-weight:700;">입력</span></span>`;
+      const mbrBadge = mbrFeeRate ? `<div style="font-size:9px;color:#9ca3af;margin-top:2px;">고객 요율 <span style="color:#c8a44a;font-weight:700;">${mbrFeeRate}</span></div>` : '';
       return `<tr style="border-top:1px solid #f0f0f0;">
         <td style="padding:8px 10px;vertical-align:middle;">${clientLabel}<span style="font-family:monospace;font-size:11px;color:#666;">${c.caseNo||'—'}</span></td>
         <td style="padding:8px 10px;vertical-align:middle;font-size:12px;">${c.address ? c.address.substring(0,24) : '—'}</td>
         <td style="padding:8px 10px;text-align:center;vertical-align:middle;">${FEE_stageCell(stage, st)}</td>
         <td style="padding:8px 10px;vertical-align:middle;"><div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;">${chips||'<span style="color:#ccc;font-size:11px;">—</span>'}<button onclick="PART_open('${c.id}')" style="margin-left:2px;padding:2px 7px;border:1px solid #d1d5db;background:#f9fafb;color:#374151;border-radius:10px;cursor:pointer;font-size:10px;font-weight:700;">수정</button></div></td>
-        <td style="padding:8px 10px;text-align:right;vertical-align:middle;"><span style="font-size:13px;font-weight:800;color:#142040;">${(c.manualFee > 0) ? FEE_fmtWon(c.manualFee) : f.total ? FEE_fmtWon(f.total) : '<span style=\\"color:#ccc;font-weight:400;\\">—</span>'}</span></td>
+        <td style="padding:8px 10px;text-align:right;vertical-align:middle;cursor:pointer;" onclick="DASH_feeEdit('${c.id}',this)" title="클릭해서 수수료 직접 입력"><div>${feeCellInner}</div>${mbrBadge}</td>
         <td style="padding:8px 10px;text-align:center;vertical-align:middle;">${fee1Badge}</td>
         <td style="padding:8px 10px;text-align:center;vertical-align:middle;">${fee2Badge}</td>
         <td style="padding:8px 10px;text-align:center;vertical-align:middle;"><button onclick="CD_open('${c.id}')" style="padding:4px 10px;border:1px solid #c8a44a;background:#fff8e1;color:#8a5a00;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">💰 관리</button></td>
@@ -13824,6 +13831,35 @@ function DASH_renderCaseList() {
     }).join('')}
     </tbody>
   </table>`;
+}
+
+function DASH_feeEdit(caseId, el) {
+  FEE_migrate();
+  const c = C_cases.find(x => x.id === caseId);
+  if (!c) return;
+  const cur = c.manualFee > 0 ? c.manualFee : (FEE_calc(c).total || 0);
+  el.onclick = null;
+  el.innerHTML = `<input type="text"
+    value="${cur ? Number(cur).toLocaleString('ko-KR') : ''}"
+    placeholder="수수료 금액 (원)"
+    style="width:110px;padding:4px 8px;border:2px solid #c8a44a;border-radius:6px;font-size:13px;font-weight:700;text-align:right;font-family:inherit;color:#142040;box-sizing:border-box;outline:none;"
+    oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/\\B(?=(\\d{3})+(?!\\d))/g,',')"
+    onkeydown="if(event.key==='Enter'){DASH_feeSave('${caseId}',this.value);event.preventDefault();}if(event.key==='Escape'){DASH_render();}"
+    onblur="DASH_feeSave('${caseId}',this.value)"
+  >`;
+  el.querySelector('input').focus();
+  el.querySelector('input').select();
+}
+
+function DASH_feeSave(caseId, rawStr) {
+  const c = C_cases.find(x => x.id === caseId);
+  if (!c) return;
+  const val = Number((rawStr || '').replace(/[^0-9]/g, '')) || 0;
+  if (c.manualFee === val) { DASH_render(); return; }
+  c.manualFee = val;
+  FEE_saveShadow();
+  if (typeof C_cacheSave === 'function') C_cacheSave(C_CACHE_CASES, C_cases);
+  DASH_render();
 }
 
 // ══════════════════════════════════════════════════════════════════
