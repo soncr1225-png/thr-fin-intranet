@@ -13915,8 +13915,8 @@ function PART_render(c) {
         ? PART_sel(`PART_saveSubStaff('${aItem.id}',this.value)`, subStaff)
         : '<span style="font-size:11px;color:#bbb;">더핀 일정표에서 설정</span>' },
     { label:'명도 담당자', desc:'명도 절차 담당', color:'#dc2626',
-      value: c.evictionStaff,
-      content: `${PART_sel(`PART_save('eviction',this.value)`, c.evictionStaff)}${mStaff.length ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;align-items:center;"><span style="font-size:10px;color:#aaa;">명도탭:</span>${mStaffHtml}</div>` : ''}` },
+      value: c.evictionStaff, skipChip: true,
+      content: `${mStaffHtml}${c.evictionStaff && !mStaff.includes(c.evictionStaff) ? PART_chip(c.evictionStaff) : ''}${!mStaff.length && !c.evictionStaff ? PART_chip('') : ''}${PART_sel(`PART_save('eviction',this.value)`, c.evictionStaff)}` },
   ];
 
   const feeResult = FEE_calc(c);
@@ -13944,7 +13944,7 @@ function PART_render(c) {
           </div>
           <div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              ${PART_chip(row.value)}
+              ${row.skipChip ? '' : PART_chip(row.value)}
               ${row.content}
             </div>
           </div>
