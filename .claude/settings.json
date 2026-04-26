@@ -1,5 +1,10 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(mkdir *)",
+      "Bash(node scripts/validate.js*)"
+    ],
     "deny": [
       "Bash(rm -rf *)",
       "Bash(git push --force*)",
