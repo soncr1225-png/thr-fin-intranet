@@ -5167,12 +5167,15 @@ const C_MANAGERS=['손청락','이제훈','장한빛','정은진'];
 function C_isAssigned(c, name) {
   if (!name) return true;
   if (c.manager === name) return true;
+  if (c.blogStaff === name) return true;
   const tm = c.typeMap || {};
   if (Object.values(tm).some(v => Array.isArray(v) ? v.includes(name) : v === name)) return true;
   if (c.evictionStaff === name) return true;
   if (typeof A_items !== 'undefined') {
     if (A_items.some(i => i.caseNo === c.caseNo && i.subStaff === name)) return true;
   }
+  const co = c.coParticipants || {};
+  if (Object.values(co).some(arr => Array.isArray(arr) && arr.includes(name))) return true;
   return false;
 }
 let C_cases=[], C_todos=[], C_tab='active', C_filt='all', C_filtArc='all', C_undoStack=[], C_syncTimer=null;
@@ -5498,14 +5501,18 @@ function C_buildTypeCell(c){
   const DOT=(on,col)=>`<span style="flex-shrink:0;width:7px;height:7px;border-radius:50%;border:2px solid ${on?col:'#d1d5db'};background:${on?col:'transparent'};display:inline-block;"></span>`;
 
   // 총괄 행 (1줄)
-  const mgrRow=`<div style="display:flex;align-items:center;gap:4px;padding-bottom:3px;margin-bottom:3px;border-bottom:1px solid #f0f0f0;" onclick="event.stopPropagation();">
-    <span style="flex-shrink:0;width:7px;height:7px;border-radius:2px;background:${c.manager?'#1e3a5f':'#d1d5db'};display:inline-block;"></span>
-    <span style="flex-shrink:0;font-size:11px;font-weight:700;color:${c.manager?'#1e3a5f':'#9ca3af'};white-space:nowrap;">총괄</span>
-    <select onchange="event.stopPropagation();C_setManager('${c.id}',this.value)"
-      style="flex:1;min-width:50px;font-size:11px;font-weight:${c.manager?'700':'400'};color:${c.manager?'#1e3a5f':'#9ca3af'};border:1px solid ${c.manager?'#bfdbfe':'#e5e7eb'};border-radius:6px;padding:1px 4px;background:${c.manager?'#eff6ff':'#fafafa'};cursor:pointer;outline:none;">
-      <option value="">미지정</option>
-      ${C_MANAGERS.map(m=>`<option value="${m}"${c.manager===m?' selected':''}>${m}</option>`).join('')}
-    </select>
+  const _coMgrs=(c.coParticipants||{}).manager||[];
+  const mgrRow=`<div style="padding-bottom:3px;margin-bottom:3px;border-bottom:1px solid #f0f0f0;" onclick="event.stopPropagation();">
+    <div style="display:flex;align-items:center;gap:4px;">
+      <span style="flex-shrink:0;width:7px;height:7px;border-radius:2px;background:${c.manager?'#1e3a5f':'#d1d5db'};display:inline-block;"></span>
+      <span style="flex-shrink:0;font-size:11px;font-weight:700;color:${c.manager?'#1e3a5f':'#9ca3af'};white-space:nowrap;">총괄</span>
+      <select onchange="event.stopPropagation();C_setManager('${c.id}',this.value)"
+        style="flex:1;min-width:50px;font-size:11px;font-weight:${c.manager?'700':'400'};color:${c.manager?'#1e3a5f':'#9ca3af'};border:1px solid ${c.manager?'#bfdbfe':'#e5e7eb'};border-radius:6px;padding:1px 4px;background:${c.manager?'#eff6ff':'#fafafa'};cursor:pointer;outline:none;">
+        <option value="">미지정</option>
+        ${C_MANAGERS.map(m=>`<option value="${m}"${c.manager===m?' selected':''}>${m}</option>`).join('')}
+      </select>
+    </div>
+    ${_coMgrs.length?`<div style="margin-top:2px;display:flex;flex-wrap:wrap;gap:2px;">${_coMgrs.map(m=>{const col=_PART_COL[m]||'#666';return`<span style="font-size:9px;font-weight:700;color:${col};background:${col}15;border:1px solid ${col}30;border-radius:8px;padding:0 4px;white-space:nowrap;">+${m}</span>`;}).join('')}</div>`:''}
   </div>`;
 
   // 3가지 조사유형 한 줄에 나란히
@@ -7763,7 +7770,7 @@ function _bulkAge() {
 // FEE_ consts declared here (before applyBulkData) to avoid TDZ when FEE_migrate is called on cached data load
 const FEE_SHADOW_KEY = 'thefin_fee_shadow_v1';
 const FEE_RATES = { '아파트':1, '다가구':2, '빌딩':2, '공장':2, '토지':2, '특수물건':3 };
-const FEE_SHADOW_FIELDS = ['currentStage','stageNote','propertyType','feeRate','bidPrice','bidDate','fee1Received','fee1Date','fee2Received','fee2Date','staffShares','feeNote','clientName','manager','driveFiles','manualFee','blogStaff'];
+const FEE_SHADOW_FIELDS = ['currentStage','stageNote','propertyType','feeRate','bidPrice','bidDate','fee1Received','fee1Date','fee2Received','fee2Date','staffShares','feeNote','clientName','manager','driveFiles','manualFee','blogStaff','coParticipants'];
 const STAGES = [
   { n:1, name:'블로그 홍보', color:'#0891b2' },
   { n:2, name:'상담',        color:'#2563eb' },
@@ -13584,7 +13591,8 @@ function FEE_migrate() {
     if (c.manager    == null)   c.manager      = s.manager    || '';
     if (c.driveFiles == null)   c.driveFiles   = s.driveFiles  || {};
     if (c.manualFee  == null)   c.manualFee    = s.manualFee   || 0;
-    if (c.blogStaff  == null)   c.blogStaff    = s.blogStaff   || '';
+    if (c.blogStaff       == null) c.blogStaff       = s.blogStaff       || '';
+    if (c.coParticipants  == null) c.coParticipants  = s.coParticipants  || {};
   });
 }
 
@@ -13635,6 +13643,8 @@ function FEE_getAllStaff(c) {
   mAll.filter(m => m.caseNo === c.caseNo).forEach(m => {
     (m.staffList || '').split(',').filter(Boolean).forEach(s => set.add(s));
   });
+  const coPart = c.coParticipants || {};
+  Object.values(coPart).forEach(arr => { if (Array.isArray(arr)) arr.forEach(x => { if (x) set.add(x); }); });
   return [...set].filter(Boolean);
 }
 
@@ -13859,7 +13869,7 @@ function PART_sel(onch, selected) {
 
 function PART_render(c) {
   const tm = c.typeMap || {};
-  const getFirst = v => Array.isArray(v) ? (v[0] || '') : (v || '');
+  const co = c.coParticipants || {};
 
   // 더핀 일정표에서 서브 담당자 연결
   const aItem = (typeof A_items !== 'undefined')
@@ -13875,7 +13885,7 @@ function PART_render(c) {
   });
   const mStaff = [...mStaffSet];
 
-  // 블로그 게시 현황 (B_items에서 caseNum으로 매칭, read-only)
+  // 블로그 게시 현황
   const B_BLOG_ACCOUNTS = [
     { key:'blogA', name:'자스크' }, { key:'blogB', name:'더퀸' },
     { key:'blogC', name:'인스톨' }, { key:'blogD', name:'연예인' },
@@ -13888,37 +13898,95 @@ function PART_render(c) {
       }).join('')
     : '<span style="font-size:10px;color:#bbb;">블로그 탭에 등록 없음</span>';
 
-  // 명도 탭 담당자 칩 (read-only)
-  const mStaffHtml = mStaff.length
-    ? mStaff.map(s => { const col = _PART_COL[s]||'#dc2626'; return PART_chip(s); }).join('')
-    : '';
+  // ── helpers ──
+  const emptyChip = `<span style="color:#bbb;font-size:12px;">미지정</span>`;
 
-  const rows = [
-    { label:'총괄 담당자', desc:'상담·입찰·대출 담당', color:'#7c3aed',
-      value: c.manager,
-      content: PART_sel(`PART_save('manager',this.value)`, c.manager) },
-    { label:'블로그 작성', desc:'블로그 포스팅 담당', color:'#0891b2',
-      value: c.blogStaff,
-      content: `${PART_sel(`PART_saveBlogStaff('${c.id}',this.value)`, c.blogStaff)}<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;">${blogStatusHtml}</div>` },
-    { label:'시세조사', desc:'시세 분석 담당', color:'#0891b2',
-      value: getFirst(tm['시세조사']),
-      content: PART_sel(`PART_save('시세조사',this.value)`, getFirst(tm['시세조사'])) },
-    { label:'현장조사', desc:'현장 실사 담당', color:'#1e40af',
-      value: getFirst(tm['현장조사']),
-      content: PART_sel(`PART_save('현장조사',this.value)`, getFirst(tm['현장조사'])) },
-    { label:'보고서작성', desc:'분석 보고서 작성', color:'#7c3aed',
-      value: getFirst(tm['보고서작성']),
-      content: PART_sel(`PART_save('보고서작성',this.value)`, getFirst(tm['보고서작성'])) },
-    { label:'서브 (입찰)', desc: aItem ? '서브 입찰 담당' : '더핀 일정표에서 설정', color:'#c8a44a',
-      value: subStaff,
-      content: aItem
-        ? PART_sel(`PART_saveSubStaff('${aItem.id}',this.value)`, subStaff)
-        : '<span style="font-size:11px;color:#bbb;">더핀 일정표에서 설정</span>' },
-    { label:'명도 담당자', desc:'명도 절차 담당', color:'#dc2626',
-      value: c.evictionStaff, skipChip: true,
-      content: `${mStaffHtml}${c.evictionStaff && !mStaff.includes(c.evictionStaff) ? PART_chip(c.evictionStaff) : ''}${!mStaff.length && !c.evictionStaff ? PART_chip('') : ''}${PART_sel(`PART_save('eviction',this.value)`, c.evictionStaff)}` },
-  ];
+  const chip = (name, onRemove) => {
+    const col = _PART_COL[name] || '#142040';
+    const btn = onRemove
+      ? `<button onclick="${onRemove}" style="background:none;border:none;cursor:pointer;font-size:11px;color:${col}99;padding:0 0 0 3px;line-height:1;vertical-align:middle;">×</button>`
+      : '';
+    return `<span style="display:inline-flex;align-items:center;background:${col}18;color:${col};border:1px solid ${col}40;border-radius:20px;padding:2px 8px;font-size:12px;font-weight:700;">${name}${btn}</span>`;
+  };
 
+  const coChips = (field) =>
+    (co[field] || []).map(m => chip(m, `PART_removeCo('${c.id}','${field}','${m}')`)).join('');
+
+  const plusBtn = (field, existingNames) => {
+    const addable = C_MANAGERS.filter(m => !existingNames.includes(m));
+    if (!addable.length) return '';
+    const pid = `PART_pl_${c.id}_${field}`;
+    return `<button onclick="document.getElementById('${pid}').style.display='inline-block';this.style.display='none';" style="width:22px;height:22px;border-radius:50%;border:1.5px dashed #94a3b8;background:transparent;cursor:pointer;font-size:14px;font-weight:700;color:#94a3b8;padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">+</button>
+      <select id="${pid}" onchange="PART_addCo('${c.id}','${field}',this.value);" style="display:none;font-size:12px;border:1px solid #d1d5db;border-radius:6px;padding:3px 6px;">
+        <option value="">선택</option>${addable.map(m=>`<option value="${m}">${m}</option>`).join('')}
+      </select>`;
+  };
+
+  const typePlusBtn = (type, mgrs) => {
+    const addable = C_MANAGERS.filter(m => !mgrs.includes(m));
+    if (!addable.length) return '';
+    const pid = `PART_tpl_${c.id}_${type.replace(/\s/g,'')}`;
+    return `<button onclick="document.getElementById('${pid}').style.display='inline-block';this.style.display='none';" style="width:22px;height:22px;border-radius:50%;border:1.5px dashed #94a3b8;background:transparent;cursor:pointer;font-size:14px;font-weight:700;color:#94a3b8;padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">+</button>
+      <select id="${pid}" onchange="PART_addTypeMgr('${c.id}','${type}',this.value);" style="display:none;font-size:12px;border:1px solid #d1d5db;border-radius:6px;padding:3px 6px;">
+        <option value="">선택</option>${addable.map(m=>`<option value="${m}">${m}</option>`).join('')}
+      </select>`;
+  };
+
+  const makeRow = (label, desc, color, chipsArea, belowArea) => `
+    <div style="display:grid;grid-template-columns:100px 1fr;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f5f5f5;">
+      <div style="padding-top:4px;">
+        <div style="font-size:12px;font-weight:800;color:${color};">${label}</div>
+        <div style="font-size:10px;color:#aaa;margin-top:2px;">${desc}</div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${chipsArea}</div>
+        ${belowArea ? `<div style="margin-top:6px;">${belowArea}</div>` : ''}
+      </div>
+    </div>`;
+
+  // ── 총괄 담당자 ──
+  const mgrAllNames = [c.manager, ...(co.manager || [])].filter(Boolean);
+  const mgrChips = (c.manager ? chip(c.manager) : emptyChip) + coChips('manager') + plusBtn('manager', mgrAllNames);
+  const row_manager = makeRow('총괄 담당자', '상담·입찰·대출 담당', '#7c3aed', mgrChips, PART_sel(`PART_save('manager',this.value)`, c.manager));
+
+  // ── 블로그 작성 ──
+  const blogAllNames = [c.blogStaff, ...(co.blogStaff || [])].filter(Boolean);
+  const blogChips = (c.blogStaff ? chip(c.blogStaff) : emptyChip) + coChips('blogStaff') + plusBtn('blogStaff', blogAllNames);
+  const row_blog = makeRow('블로그 작성', '블로그 포스팅 담당', '#0891b2', blogChips,
+    PART_sel(`PART_saveBlogStaff('${c.id}',this.value)`, c.blogStaff) + `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;">${blogStatusHtml}</div>`);
+
+  // ── 시세조사 ──
+  const siseMgrs = C_getMgrs(c, '시세조사');
+  const siseChips = (siseMgrs.length ? siseMgrs.map(m => chip(m, `PART_removeTypeMgr('${c.id}','시세조사','${m}')`)).join('') : emptyChip) + typePlusBtn('시세조사', siseMgrs);
+  const row_sise = makeRow('시세조사', '시세 분석 담당', '#0891b2', siseChips, '');
+
+  // ── 현장조사 ──
+  const hyeonMgrs = C_getMgrs(c, '현장조사');
+  const hyeonChips = (hyeonMgrs.length ? hyeonMgrs.map(m => chip(m, `PART_removeTypeMgr('${c.id}','현장조사','${m}')`)).join('') : emptyChip) + typePlusBtn('현장조사', hyeonMgrs);
+  const row_hyeon = makeRow('현장조사', '현장 실사 담당', '#1e40af', hyeonChips, '');
+
+  // ── 보고서작성 ──
+  const bogoMgrs = C_getMgrs(c, '보고서작성');
+  const bogoChips = (bogoMgrs.length ? bogoMgrs.map(m => chip(m, `PART_removeTypeMgr('${c.id}','보고서작성','${m}')`)).join('') : emptyChip) + typePlusBtn('보고서작성', bogoMgrs);
+  const row_bogo = makeRow('보고서작성', '분석 보고서 작성', '#7c3aed', bogoChips, '');
+
+  // ── 서브 (입찰) ──
+  const subAllNames = [subStaff, ...(co.subStaff || [])].filter(Boolean);
+  const subChips = aItem
+    ? (subStaff ? chip(subStaff) : emptyChip) + coChips('subStaff') + plusBtn('subStaff', subAllNames)
+    : '<span style="font-size:11px;color:#bbb;">더핀 일정표에서 설정</span>';
+  const row_sub = makeRow('서브 (입찰)', aItem ? '서브 입찰 담당' : '더핀 일정표에서 설정', '#c8a44a', subChips,
+    aItem ? PART_sel(`PART_saveSubStaff('${aItem.id}',this.value)`, subStaff) : '');
+
+  // ── 명도 담당자 ──
+  const evicAllNames = [...mStaff, c.evictionStaff, ...(co.evictionStaff || [])].filter(Boolean);
+  const mStaffChipsHtml = mStaff.map(m => chip(m)).join('');
+  const evicPrimaryChip = c.evictionStaff && !mStaff.includes(c.evictionStaff) ? chip(c.evictionStaff) : '';
+  const evicBodyHtml = mStaffChipsHtml + evicPrimaryChip + coChips('evictionStaff');
+  const evicChips = (evicBodyHtml || emptyChip) + plusBtn('evictionStaff', evicAllNames);
+  const row_evic = makeRow('명도 담당자', '명도 절차 담당', '#dc2626', evicChips, PART_sel(`PART_save('eviction',this.value)`, c.evictionStaff));
+
+  // ── 수수료 배분율 ──
   const feeResult = FEE_calc(c);
   const shares = c.staffShares || {};
   const shareHtml = C_MANAGERS.map(s => {
@@ -13936,20 +14004,7 @@ function PART_render(c) {
 
   document.getElementById('PART_body').innerHTML = `
     <div style="margin-bottom:18px;">
-      ${rows.map(row => `
-        <div style="display:grid;grid-template-columns:100px 1fr;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f5f5f5;">
-          <div style="padding-top:4px;">
-            <div style="font-size:12px;font-weight:800;color:${row.color};">${row.label}</div>
-            <div style="font-size:10px;color:#aaa;margin-top:2px;">${row.desc}</div>
-          </div>
-          <div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              ${row.skipChip ? '' : PART_chip(row.value)}
-              ${row.content}
-            </div>
-          </div>
-        </div>
-      `).join('')}
+      ${row_manager}${row_blog}${row_sise}${row_hyeon}${row_bogo}${row_sub}${row_evic}
     </div>
     <div style="border-top:2px solid #f0f0f0;padding-top:14px;">
       <div style="font-size:12px;font-weight:800;color:#142040;margin-bottom:10px;">💰 수수료 배분율</div>
@@ -14015,6 +14070,46 @@ function PART_saveShare(staffName, val) {
   FEE_saveShadow();
   if (typeof C_cacheSave === 'function') C_cacheSave(C_CACHE_CASES, C_cases);
   DASH_render();
+}
+
+function PART_addCo(id, field, name) {
+  if (!name) return;
+  const c = C_cases.find(x => x.id === id);
+  if (!c) return;
+  if (!c.coParticipants) c.coParticipants = {};
+  if (!c.coParticipants[field]) c.coParticipants[field] = [];
+  if (!c.coParticipants[field].includes(name)) c.coParticipants[field].push(name);
+  FEE_saveShadow();
+  if (typeof C_cacheSave === 'function') C_cacheSave(C_CACHE_CASES, C_cases);
+  PART_render(c);
+  DASH_render();
+}
+
+function PART_removeCo(id, field, name) {
+  const c = C_cases.find(x => x.id === id);
+  if (!c || !c.coParticipants || !c.coParticipants[field]) return;
+  c.coParticipants[field] = c.coParticipants[field].filter(m => m !== name);
+  FEE_saveShadow();
+  if (typeof C_cacheSave === 'function') C_cacheSave(C_CACHE_CASES, C_cases);
+  PART_render(c);
+  DASH_render();
+}
+
+function PART_addTypeMgr(id, type, mgr) {
+  if (!mgr) return;
+  C_addTypeMgr(id, type, mgr);
+  setTimeout(() => {
+    const c = C_cases.find(x => x.id === id);
+    if (c) { PART_render(c); DASH_render(); }
+  }, 100);
+}
+
+function PART_removeTypeMgr(id, type, mgr) {
+  C_removeTypeMgr(id, type, mgr);
+  setTimeout(() => {
+    const c = C_cases.find(x => x.id === id);
+    if (c) { PART_render(c); DASH_render(); }
+  }, 100);
 }
 
 // ══════════════════════════════════════════════════════════════════
