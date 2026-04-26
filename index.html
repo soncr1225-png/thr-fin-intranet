@@ -2201,20 +2201,6 @@ table.data-table tbody tr:hover,
     <div id="save-indicator" style="font-size:11px;color:#22c55e;display:none;transition:opacity .5s;">✓ 저장됨</div>
     <div id="storage-warn" style="font-size:11px;color:#f59e0b;display:none;cursor:pointer;" onclick="SYS_showStorageDetail()" title="클릭해서 자세히 보기">⚠ 저장공간</div>
     <div style="font-size:11px;color:#787470;" id="headerDate"></div>
-    <button id="MSG_headerBtn" onclick="MSG_open()" title="메시지">
-      💬 <span id="MSG_label">메시지</span>
-      <span id="MSG_unreadBadge">0</span>
-    </button>
-    <script>
-      (function(){
-        var n=sessionStorage.getItem('thefin_auth_name');
-        var e=sessionStorage.getItem('thefin_auth_expiry');
-        if(n&&e&&Date.now()<+e){
-          var b=document.getElementById('MSG_headerBtn');
-          if(b)b.style.display='flex';
-        }
-      })();
-    </script>
     <div class="auth-user-badge" id="auth-header-badge" style="display:none;">
       <div class="auth-user-info">
         <span class="auth-user-name" id="auth-header-name">—</span>
@@ -12482,6 +12468,17 @@ document.addEventListener('click', e => {
 
 const MSG_MEMBERS = ['손청락','이제훈','장한빛','정은진'];
 
+function MSG_positionBtn() {
+  const badge = document.getElementById('auth-header-badge');
+  const btn   = document.getElementById('MSG_headerBtn');
+  if (!badge || !btn) return;
+  const rect = badge.getBoundingClientRect();
+  if (rect.width > 0) {
+    btn.style.right = (window.innerWidth - rect.left + 8) + 'px';
+  }
+}
+window.addEventListener('resize', MSG_positionBtn);
+
 function MSG_applyRole(name) {
   MSG_myName  = name;
   MSG_isAdmin = (name === '손청락');
@@ -12489,6 +12486,7 @@ function MSG_applyRole(name) {
   const lbl = document.getElementById('MSG_label');
   if (btn) btn.style.display = 'flex';
   if (lbl) lbl.textContent = '메시지';
+  MSG_positionBtn();
   MSG_fetchInbox();
   if (MSG_pollTimer) clearInterval(MSG_pollTimer);
   MSG_pollTimer = setInterval(MSG_fetchInbox, 2 * 60 * 1000);
@@ -14098,7 +14096,8 @@ let _MBR_syncTimer = null;
 
 /* ── 메시지/요청 기능 ─────────────────────────────────── */
 #MSG_headerBtn {
-  position:relative; display:none; align-items:center; gap:5px;
+  position:fixed; top:14px; right:260px; z-index:99998;
+  display:none; align-items:center; gap:5px;
   background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18);
   border-radius:8px; padding:5px 11px; color:#fff; font-size:12px;
   font-weight:700; cursor:pointer; transition:background .2s; white-space:nowrap;
@@ -14268,6 +14267,24 @@ let _MBR_syncTimer = null;
     }
   }, 0);
 })();
+</script>
+
+<!-- ════════════════════════════════════════════════════════
+     메시지 버튼 (fixed — 모든 탭에서 항상 최상위)
+════════════════════════════════════════════════════════ -->
+<button id="MSG_headerBtn" onclick="MSG_open()" title="메시지">
+  💬 <span id="MSG_label">메시지</span>
+  <span id="MSG_unreadBadge">0</span>
+</button>
+<script>
+  (function(){
+    var n=sessionStorage.getItem('thefin_auth_name');
+    var e=sessionStorage.getItem('thefin_auth_expiry');
+    if(n&&e&&Date.now()<+e){
+      var b=document.getElementById('MSG_headerBtn');
+      if(b)b.style.display='flex';
+    }
+  })();
 </script>
 
 <!-- ════════════════════════════════════════════════════════
