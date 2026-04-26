@@ -5347,8 +5347,8 @@ function C_switchTab(t){
 function C_setFilter(f,b){C_filt=f;document.querySelectorAll('#C_filterRow .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');C_render();}
 function C_setFilterArc(f,b){C_filtArc=f;document.querySelectorAll('#C_filterRowArchive .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');C_render();}
 
-const C_AH=`<tr><th style="width:104px;">상태</th><th style="width:118px;">사건번호</th><th style="width:130px;">주소지</th><th style="width:130px;">법원</th><th style="width:86px;">경매기일</th><th style="width:88px;">마감요청일</th><th style="width:248px;">조사유형 (담당자)</th><th style="min-width:220px;">기타요청</th><th style="width:62px;"></th></tr>`;
-const C_ZH=`<tr><th style="width:88px;">종료사유</th><th style="width:118px;">사건번호</th><th style="width:140px;">주소지</th><th style="width:75px;">법원</th><th style="width:85px;">경매기일</th><th style="width:245px;">조사유형 (담당자)</th><th>비고</th><th style="width:75px;">종료일</th><th style="width:140px;"></th></tr>`;
+const C_AH=`<tr><th style="width:104px;">상태</th><th style="width:118px;">사건번호</th><th style="width:130px;">고객</th><th style="width:130px;">주소지</th><th style="width:130px;">법원</th><th style="width:86px;">경매기일</th><th style="width:88px;">마감요청일</th><th style="width:248px;">조사유형 (담당자)</th><th style="min-width:220px;">기타요청</th><th style="width:62px;"></th></tr>`;
+const C_ZH=`<tr><th style="width:88px;">종료사유</th><th style="width:118px;">사건번호</th><th style="width:130px;">고객</th><th style="width:140px;">주소지</th><th style="width:75px;">법원</th><th style="width:85px;">경매기일</th><th style="width:245px;">조사유형 (담당자)</th><th>비고</th><th style="width:75px;">종료일</th><th style="width:140px;"></th></tr>`;
 
 function C_archiveTags(typeMap){
   if(!typeMap)return '—';
@@ -5583,6 +5583,7 @@ function C_activeRow(c){
 <button class="smenu-item" onclick="C_chStatus('${c.id}','drop')" style="color:#9f1239;font-weight:700;">🔒 기타종료</button>
 </div></div></td>
 <td style="font-family:monospace;font-size:12px;white-space:nowrap;"><span class="editable" onclick="C_startEdit(this,'${c.id}','caseNo','${(c.caseNo||'').replace(/'/g,"&#39;")}')">${c.caseNo||''}</span></td>
+<td style="max-width:140px;padding:4px 6px;">${C_clientCell(c)}</td>
 <td style="max-width:150px;"><span class="editable" title="${c.address||''}" onclick="C_startEdit(this,'${c.id}','address','${(c.address||'').replace(/'/g,"&#39;")}')" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${C_shortAddr(c.address)}</span></td>
 <td style="font-size:12px;white-space:nowrap;"><span class="editable" onclick="C_startEdit(this,'${c.id}','court','${(c.court||'').replace(/'/g,"&#39;")}')">${c.court||'—'}</span></td>
 <td style="font-size:12px;color:#888;white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','auctionDate','${c.auctionDate||''}')">${C_fmt(c.auctionDate)}</span>${db}</td>
@@ -5594,7 +5595,7 @@ function C_activeRow(c){
 
 function C_archiveRow(c, compact=false){
   const sm=C_SM[c.status]||C_SM.drop;
-  // compact=true → all탭(C_AH 헤더 9열): 마감요청일 빈 셀 추가, 종료일 셀 제거
+  // compact=true → all탭(C_AH 헤더 10열): 마감요청일 빈 셀 추가, 종료일 셀 제거
   const deadlineTd = compact ? '<td></td>' : '';
   const closedAtTd = compact ? '' : `<td style="font-size:12px;color:#aaa;white-space:nowrap;">${C_fmt(c.closedAt)}</td>`;
   return`<tr style="opacity:.75;">
@@ -5610,6 +5611,7 @@ function C_archiveRow(c, compact=false){
 <button class="smenu-item" onclick="C_chStatus('${c.id}','ongoing')" style="color:var(--blue);font-weight:700;">↩ 진행중으로 복원</button>
 </div></div></td>
 <td style="font-family:monospace;font-size:12px;white-space:nowrap;">${c.caseNo||''}</td>
+<td style="max-width:140px;padding:4px 6px;">${C_clientCell(c)}</td>
 <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${c.address||''}">${c.address||'—'}</td>
 <td style="font-size:12px;color:#aaa;white-space:nowrap;"><span class="editable" onclick="C_startEdit(this,'${c.id}','court','${(c.court||'').replace(/'/g,"&#39;")}')">${c.court||'—'}</span></td>
 <td style="font-size:12px;color:#aaa;white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','auctionDate','${c.auctionDate||''}')">${C_fmt(c.auctionDate)||'—'}</span></td>
@@ -5672,6 +5674,95 @@ function C_restoreToActive(id){
   A_render();
   if(typeof CAL_render==='function') CAL_render();
   C_api('restoreCase',{id}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
+}
+
+// ── 고객 셀 (A_items 연동) ────────────────────────────────────
+function C_clientCell(c) {
+  const clients = (typeof A_items !== 'undefined') ? A_items.filter(i => i.caseNo === c.caseNo && i.clientName) : [];
+  const chips = clients.map(ci => {
+    const esc = (ci.clientName||'').replace(/'/g,"&#39;");
+    return `<span onclick="C_goToClient('${c.caseNo}','${esc}')" title="더핀 일정표에서 보기"
+      style="display:inline-flex;align-items:center;background:#e8f0fe;color:#1a56db;border:1px solid #c7d8fc;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;gap:4px;transition:background .12s;"
+      onmouseover="this.style.background='#c7d8fc'" onmouseout="this.style.background='#e8f0fe'">${ci.clientName}</span>`;
+  }).join('');
+  const addBtn = `<button onclick="C_addClient('${c.id}','${(c.caseNo||'').replace(/'/g,"&#39;")}')"
+    style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#f3f4f6;border:1px solid #d1d5db;cursor:pointer;font-size:13px;color:#6b7280;line-height:1;padding:0;flex-shrink:0;"
+    title="고객 추가">+</button>`;
+  return `<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;min-height:24px;">${chips}${addBtn}</div>`;
+}
+
+// 더핀 일정표(A탭)로 이동 + 해당 고객 하이라이트
+function C_goToClient(caseNo, clientName) {
+  document.querySelector('[onclick*="showTab(\'tab-a\'"]') && showTab('tab-a');
+  // nav 탭 클릭으로 A탭 활성화
+  const navBtns = document.querySelectorAll('.nav-btn, .nav-dropdown-item');
+  navBtns.forEach(b => { if (b.textContent.includes('더핀 일정표') || b.getAttribute('onclick')?.includes('tab-a')) b.click(); });
+  setTimeout(() => {
+    // 해당 고객 행 강조
+    const rows = document.querySelectorAll('#A_tBody tr');
+    rows.forEach(row => {
+      const text = row.textContent || '';
+      if (text.includes(clientName) && text.includes(caseNo)) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        row.style.outline = '2px solid #1a56db';
+        row.style.background = '#eff6ff';
+        setTimeout(() => { row.style.outline = ''; row.style.background = ''; }, 2500);
+      }
+    });
+  }, 400);
+}
+
+// 고객 추가 팝업
+function C_addClient(caseId, caseNo) {
+  document.getElementById('C_addClientPopup')?.remove();
+  const pop = document.createElement('div');
+  pop.id = 'C_addClientPopup';
+  pop.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:22px 24px;z-index:9999;box-shadow:0 8px 40px rgba(0,0,0,.18);min-width:300px;';
+  // 더핀 회원 목록으로 datalist 구성
+  const memberOpts = (typeof MBR_members !== 'undefined')
+    ? MBR_members.map(m => `<option value="${(m.name||'').replace(/"/g,'&quot;')}">`).join('')
+    : '';
+  pop.innerHTML = `
+    <div style="font-weight:800;font-size:14px;color:#142040;margin-bottom:4px;">👤 고객 추가</div>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:12px;">사건번호: ${caseNo}</div>
+    <input id="C_addClientInput" type="text" list="C_addClientList" placeholder="고객명 입력 (회원 자동완성)"
+      style="width:100%;padding:9px 11px;border:1px solid #c5d0e6;border-radius:7px;font-size:13px;box-sizing:border-box;margin-bottom:12px;font-family:inherit;">
+    <datalist id="C_addClientList">${memberOpts}</datalist>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="document.getElementById('C_addClientPopup').remove()"
+        style="padding:7px 16px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:7px;cursor:pointer;font-size:12px;">취소</button>
+      <button onclick="C_addClientConfirm('${caseId}','${caseNo.replace(/'/g,"&#39;")}')"
+        style="padding:7px 16px;background:#142040;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;">추가</button>
+    </div>`;
+  document.body.appendChild(pop);
+  setTimeout(() => document.getElementById('C_addClientInput')?.focus(), 60);
+  document.getElementById('C_addClientInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') C_addClientConfirm(caseId, caseNo);
+    if (e.key === 'Escape') pop.remove();
+  });
+}
+
+async function C_addClientConfirm(caseId, caseNo) {
+  const input = document.getElementById('C_addClientInput');
+  const name = (input?.value || '').trim();
+  if (!name) { input?.focus(); return; }
+  document.getElementById('C_addClientPopup')?.remove();
+
+  // A_items에 추가 (더핀 일정표 연동)
+  const tempId = 'tmp_' + Date.now();
+  const newItem = { id: tempId, caseNo, clientName: name, status: 'ongoing', content: '', note: '' };
+  if (typeof A_items !== 'undefined') { A_items.push(newItem); }
+  C_render();
+  if (typeof A_render === 'function') A_render();
+
+  // GAS 저장
+  if (typeof A_gasPost === 'function') {
+    const r = await A_gasPost('add', { caseNo, clientName: name, status: 'ongoing', content: '' });
+    if (r && r.ok && r.id) {
+      const idx = A_items?.findIndex(i => i.id === tempId);
+      if (idx >= 0) A_items[idx].id = r.id;
+    }
+  }
 }
 
 function C_editField(id,field,value){
