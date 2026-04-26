@@ -13148,10 +13148,7 @@ function FEE_stageCell(stage, st) {
 
   return `<div style="display:inline-flex;align-items:center;gap:10px;">
     <div style="display:inline-flex;align-items:flex-end;gap:5px;">${bars}</div>
-    <div style="display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.4;">
-      <span style="font-size:15px;font-weight:900;color:${sc};">${stage}<span style="font-weight:400;color:#b0b8c4;font-size:12px;">/7</span></span>
-      <span style="font-size:13px;font-weight:700;color:${sc};">${stageName}</span>
-    </div>
+    <span style="font-size:13px;font-weight:900;color:${sc};white-space:nowrap;">${stage}<span style="font-weight:400;color:#b0b8c4;font-size:11px;">/7</span> ${stageName}</span>
   </div>`;
 }
 
@@ -13363,15 +13360,14 @@ function DASH_renderOverdue() {
 function DASH_renderCaseList() {
   const host = document.getElementById('DASH_caseList');
   if (!host || typeof C_cases === 'undefined') return;
-  const activeStatus = typeof C_ACTIVE !== 'undefined' ? C_ACTIVE : ['ongoing','done','report','confirmed'];
-  const list = C_cases.filter(c => activeStatus.includes(c.status) || c.status === 'closed').slice(0, 20);
+  const list = C_cases.filter(c => FEE_inferStage(c) >= 6).slice(0, 20);
   if (!list.length) {
     host.innerHTML = '<div style="padding:16px;color:#aaa;font-size:13px;text-align:center;">사건이 없습니다</div>';
     return;
   }
   host.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #eee;border-radius:8px;overflow:hidden;">
     <thead><tr style="background:#f8f8f8;">
-      <th style="padding:8px 10px;text-align:left;">사건번호</th>
+      <th style="padding:8px 10px;text-align:left;">고객명 / 사건번호</th>
       <th style="padding:8px 10px;text-align:left;">주소</th>
       <th style="padding:8px 10px;text-align:center;">단계</th>
       <th style="padding:8px 10px;text-align:right;">수수료</th>
@@ -13384,8 +13380,9 @@ function DASH_renderCaseList() {
       const f = FEE_calc(c);
       const stage = FEE_inferStage(c);
       const st = STAGES[stage-1];
+      const clientLabel = c.clientName ? `<div style="font-size:12px;font-weight:800;color:#142040;">${c.clientName}</div>` : '';
       return `<tr style="border-top:1px solid #f0f0f0;">
-        <td style="padding:7px 10px;font-family:monospace;vertical-align:middle;">${c.caseNo||'—'}</td>
+        <td style="padding:7px 10px;vertical-align:middle;">${clientLabel}<span style="font-family:monospace;font-size:11px;color:#666;">${c.caseNo||'—'}</span></td>
         <td style="padding:7px 10px;vertical-align:middle;">${c.address ? c.address.substring(0,24) : '—'}</td>
         <td style="padding:6px 8px;text-align:center;vertical-align:middle;">${FEE_stageCell(stage, st)}</td>
         <td style="padding:7px 10px;text-align:right;font-weight:700;vertical-align:middle;">${f.total ? FEE_fmtWon(f.total) : '—'}</td>
