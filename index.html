@@ -5135,6 +5135,18 @@ const C_ACTIVE=['ongoing','done','report','confirmed','balance_wait','lawsuit'],
 const C_AUCTION_BADGE_STATUS=['ongoing','done','report','confirmed','balance_wait','lawsuit'];
 const C_SM={ongoing:{label:'진행',cls:'s-ongoing'},done:{label:'조사완료',cls:'s-done'},report:{label:'보고서완료',cls:'s-report'},confirmed:{label:'입찰확정',cls:'s-confirmed'},balance_wait:{label:'잔금납부대기중',cls:'s-balance-wait'},lawsuit:{label:'소송',cls:'s-lawsuit'},closed:{label:'낙찰',cls:'s-closed'},cancel:{label:'고객변심',cls:'s-cancel'},drop:{label:'기타종료',cls:'s-drop'},changed:{label:'기일변경',cls:'s-changed'},lost:{label:'패찰',cls:'s-lost'}};
 const C_MANAGERS=['손청락','이제훈','장한빛','정은진'];
+// 사건에 특정 이름이 담당자로 배정돼 있는지 확인 (6가지 역할 모두 체크)
+function C_isAssigned(c, name) {
+  if (!name) return true;
+  if (c.manager === name) return true;
+  const tm = c.typeMap || {};
+  if (Object.values(tm).some(v => Array.isArray(v) ? v.includes(name) : v === name)) return true;
+  if (c.evictionStaff === name) return true;
+  if (typeof A_items !== 'undefined') {
+    if (A_items.some(i => i.caseNo === c.caseNo && i.subStaff === name)) return true;
+  }
+  return false;
+}
 let C_cases=[], C_todos=[], C_tab='active', C_filt='all', C_filtArc='all', C_undoStack=[], C_syncTimer=null;
 
 function C_cacheLoad(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
@@ -5287,8 +5299,7 @@ function C_updateStats(){
   const _usAuthRole = sessionStorage.getItem('thefin_auth_role');
   function _usMgrMatch(c) {
     if (_usAuthRole !== 'manager' || !_usAuthName) return true;
-    const tm = c.typeMap || {};
-    return Object.values(tm).some(v => v === _usAuthName);
+    return C_isAssigned(c, _usAuthName);
   }
   const act=C_cases.filter(c=>C_ACTIVE.includes(c.status)&&_usMgrMatch(c));
   const arc=C_cases.filter(c=>C_ARCHIVE.includes(c.status)&&_usMgrMatch(c));
@@ -5403,8 +5414,7 @@ function C_render(){
   const _cMgrFilter = _cAuthRole === 'manager' && _cAuthName;
   function _cMgrMatch(c) {
     if (!_cMgrFilter) return true;
-    const tm = c.typeMap || {};
-    return Object.values(tm).some(v => Array.isArray(v) ? v.includes(_cAuthName) : v === _cAuthName);
+    return C_isAssigned(c, _cAuthName);
   }
 
   let list;
@@ -5492,7 +5502,18 @@ function C_buildTypeCell(c){
     }).join('<span style="color:#e5e7eb;font-size:10px;margin:0 1px;">|</span>')}
   </div>`;
 
-  return`<div style="padding:2px 4px;">${mgrRow}${typeRow}</div>`;
+  // 명도 담당자 행 (낙찰 상태일 때만 표시)
+  const evictionRow = c.status === 'closed' ? `<div style="display:flex;align-items:center;gap:4px;padding-top:3px;margin-top:3px;border-top:1px solid #f0f0f0;" onclick="event.stopPropagation();">
+    <span style="flex-shrink:0;width:7px;height:7px;border-radius:2px;background:${c.evictionStaff?'#059669':'#d1d5db'};display:inline-block;"></span>
+    <span style="flex-shrink:0;font-size:11px;font-weight:700;color:${c.evictionStaff?'#065f46':'#9ca3af'};white-space:nowrap;">명도</span>
+    <select onchange="event.stopPropagation();C_setEvictionStaff('${c.id}',this.value)"
+      style="flex:1;min-width:50px;font-size:11px;font-weight:${c.evictionStaff?'700':'400'};color:${c.evictionStaff?'#065f46':'#9ca3af'};border:1px solid ${c.evictionStaff?'#6ee7b7':'#e5e7eb'};border-radius:6px;padding:1px 4px;background:${c.evictionStaff?'#ecfdf5':'#fafafa'};cursor:pointer;outline:none;">
+      <option value="">미지정</option>
+      ${C_MANAGERS.map(m=>`<option value="${m}"${c.evictionStaff===m?' selected':''}>${m}</option>`).join('')}
+    </select>
+  </div>` : '';
+
+  return`<div style="padding:2px 4px;">${mgrRow}${typeRow}${evictionRow}</div>`;
 }
 
 // 파일 컬럼 렌더러 (시세조사/보고서작성 파일 업로드/다운로드)
@@ -5837,6 +5858,13 @@ function C_setManager(id,mgr){
   C_cacheSave(C_CACHE_CASES,C_cases);
   if(typeof FEE_saveShadow==='function')FEE_saveShadow();
   C_updateStats();
+}
+function C_setEvictionStaff(id,staff){
+  const c=C_cases.find(x=>x.id===id);if(!c)return;
+  c.evictionStaff=staff;
+  C_apiBg('updateCase',{id,status:c.status,caseNo:c.caseNo,address:c.address,court:c.court,auctionDate:c.auctionDate,deadline:c.deadline,note:c.note,manager:c.manager,evictionStaff:staff});
+  C_cacheSave(C_CACHE_CASES,C_cases);
+  C_render();
 }
 function C_getMgrs(c,type){const v=(c.typeMap||{})[type];if(!v)return[];return Array.isArray(v)?v.filter(Boolean):[v];}
 function C_saveMgrs(c,type,arr){c.typeMap=c.typeMap||{};if(!arr||!arr.length)delete c.typeMap[type];else c.typeMap[type]=arr.length===1?arr[0]:arr;}
