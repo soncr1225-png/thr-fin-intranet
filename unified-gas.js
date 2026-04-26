@@ -18,6 +18,9 @@ var SH_MEMBERS       = '회원관리';  // 신규 — 회원 데이터 영구 �
 var SH_PWHASH        = '비번관리';  // 신규 — 비번 해시 동기화 (PC간 공유)
 var SH_FEEDBACK      = '오류제보';  // 신규 — 직원 오류·개선 제보
 var DRIVE_FOLDER_FEEDBACK = '1sY51aSaHZSBh54L8JOlZtZjjs56NXhiJ';  // 04-첨부파일 폴더 (Drive)
+var SH_FEE_DATA      = '수수료데이터'; // 신규 — 7단계·수수료·입찰정보 (기기간 공유)
+var SH_CTR_ARCHIVE   = '약정서보관';  // 신규 — 약정서 보관
+var SH_CTR_ESIGN     = '전자서명보관'; // 신규 — 전자서명 보관
 
 // ── 입찰/명도 시트명 ─────────────────────────────────────────
 var SH_AUCTION    = '입찰진행';
@@ -91,6 +94,11 @@ function doPost(e) {
   if (b.module === 'drive')     return drivePost(b);
   if (b.module === 'beta')      return betaPost(b);
   if (b.module === 'msg')       return msgPost(b);
+  if (b.action === 'setFeeEntries')  return setFeeEntries(b.entries);
+  if (b.action === 'saveCtrArchive') return saveCtrArchive(b.data);
+  if (b.action === 'deleteCtrArchive') return deleteCtrRow(SH_CTR_ARCHIVE, b.id);
+  if (b.action === 'saveCtrEsign')   return saveCtrEsign(b.data);
+  if (b.action === 'deleteCtrEsign') return deleteCtrRow(SH_CTR_ESIGN, b.id);
   return casesPost(b);
 }
 
@@ -108,7 +116,10 @@ function casesGet(p) {
   if (p.action === 'getBulk')     return getBulk(ss);
   if (p.action === 'getMembers')  return json({ data: loadMembers(ss) });
   if (p.action === 'getPwHashes') return json({ data: loadPwHashes(ss) });
-  if (p.action === 'getFeedback') return json({ data: loadFeedback(ss) });
+  if (p.action === 'getFeedback')      return json({ data: loadFeedback(ss) });
+  if (p.action === 'getFeeData')       return json({ data: loadFeeData(ss) });
+  if (p.action === 'getCtrArchives')   return json({ data: loadCtrArchives(ss) });
+  if (p.action === 'getCtrEsign')      return json({ data: loadCtrEsign(ss) });
   return json({ error: 'unknown action' });
 }
 
@@ -122,16 +133,125 @@ function getBulk(ss) {
   var blogL      = loadBlogList(bss);
   var blogA      = loadBlogArchive(bss);
   return json({
-    cases:          loadCases(ss, SH_CASES_ACTIVE),
-    archive:        loadCases(ss, SH_CASES_ARCHIVE),
-    todos:          loadTodos(ss),
-    auction:        aRes.data  || [],
-    myeongdoActive: maRes.data || [],
-    myeongdoDone:   mdRes.data || [],
-    blogList:       blogL.data || [],
-    blogArchive:    blogA.data || [],
-    ts:             new Date().getTime()
+    cases:           loadCases(ss, SH_CASES_ACTIVE),
+    archive:         loadCases(ss, SH_CASES_ARCHIVE),
+    todos:           loadTodos(ss),
+    auction:         aRes.data  || [],
+    myeongdoActive:  maRes.data || [],
+    myeongdoDone:    mdRes.data || [],
+    blogList:        blogL.data || [],
+    blogArchive:     blogA.data || [],
+    feeData:         loadFeeData(ss),
+    ctrArchives:     loadCtrArchives(ss),
+    ctrEsignArchives:loadCtrEsign(ss),
+    ts:              new Date().getTime()
   });
+}
+
+// ============================================================
+// 수수료 데이터 (기기 간 공유) — 시트: 수수료데이터
+// 컬럼: 1:caseId  2:jsonData  3:updatedAt
+// ============================================================
+function loadFeeData(ss) {
+  var sheet = sh(ss, SH_FEE_DATA);
+  var last = sheet.getLastRow();
+  if (last < 2) return {};
+  var vals = sheet.getRange(2, 1, last - 1, 2).getValues();
+  var result = {};
+  vals.forEach(function(r) {
+    if (r[0]) {
+      try { result[String(r[0])] = JSON.parse(r[1]); } catch(e) {}
+    }
+  });
+  return result;
+}
+
+function setFeeEntries(entries) {
+  if (!entries || !entries.length) return json({ ok: true });
+  var ss = casesSS();
+  var sheet = sh(ss, SH_FEE_DATA);
+  var last = sheet.getLastRow();
+  var idMap = {};
+  if (last >= 2) {
+    var ids = sheet.getRange(2, 1, last - 1, 1).getValues();
+    ids.forEach(function(r, i) { if (r[0]) idMap[String(r[0])] = i + 2; });
+  }
+  var now = new Date().toISOString();
+  entries.forEach(function(e) {
+    if (!e.id) return;
+    var row = idMap[e.id];
+    var jsonStr = JSON.stringify(e.data || {});
+    if (row) {
+      sheet.getRange(row, 2, 1, 2).setValues([[jsonStr, now]]);
+    } else {
+      sheet.appendRow([e.id, jsonStr, now]);
+      idMap[e.id] = sheet.getLastRow();
+    }
+  });
+  return json({ ok: true });
+}
+
+// ============================================================
+// 약정서 보관 — 시트: 약정서보관 / 전자서명보관
+// 컬럼: 1:id  2:jsonData  3:savedAt
+// ============================================================
+function loadCtrArchives(ss) {
+  return loadCtrSheet(ss, SH_CTR_ARCHIVE);
+}
+function loadCtrEsign(ss) {
+  return loadCtrSheet(ss, SH_CTR_ESIGN);
+}
+function loadCtrSheet(ss, shName) {
+  var sheet = sh(ss, shName);
+  var last = sheet.getLastRow();
+  if (last < 2) return [];
+  var vals = sheet.getRange(2, 1, last - 1, 2).getValues();
+  var result = [];
+  vals.forEach(function(r) {
+    if (r[0]) {
+      try { result.push(JSON.parse(r[1])); } catch(e) {}
+    }
+  });
+  return result.reverse(); // 최신 순
+}
+
+function saveCtrArchive(data) {
+  return saveCtrRow(SH_CTR_ARCHIVE, data);
+}
+function saveCtrEsign(data) {
+  return saveCtrRow(SH_CTR_ESIGN, data);
+}
+function saveCtrRow(shName, data) {
+  if (!data || !data.id) return json({ ok: false, error: 'no id' });
+  var ss = casesSS();
+  var sheet = sh(ss, shName);
+  var last = sheet.getLastRow();
+  if (last >= 2) {
+    var ids = sheet.getRange(2, 1, last - 1, 1).getValues();
+    for (var i = 0; i < ids.length; i++) {
+      if (String(ids[i][0]) === String(data.id)) {
+        sheet.getRange(i + 2, 2, 1, 2).setValues([[JSON.stringify(data), data.savedAt || new Date().toISOString()]]);
+        return json({ ok: true });
+      }
+    }
+  }
+  sheet.appendRow([data.id, JSON.stringify(data), data.savedAt || new Date().toISOString()]);
+  return json({ ok: true });
+}
+function deleteCtrRow(shName, id) {
+  if (!id) return json({ ok: false });
+  var ss = casesSS();
+  var sheet = sh(ss, shName);
+  var last = sheet.getLastRow();
+  if (last < 2) return json({ ok: true });
+  var ids = sheet.getRange(2, 1, last - 1, 1).getValues();
+  for (var i = ids.length - 1; i >= 0; i--) {
+    if (String(ids[i][0]) === String(id)) {
+      sheet.deleteRow(i + 2);
+      break;
+    }
+  }
+  return json({ ok: true });
 }
 
 // 사건목록/종료사건 컬럼:

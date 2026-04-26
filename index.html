@@ -7513,6 +7513,23 @@ const STAGES = [
 function applyBulkData(d) {
   const allCases = [...(d.cases||[]), ...(d.archive||[])];
 
+  // GAS fee 데이터 → localStorage 동기화 (기기 간 단계·수수료 공유)
+  if (d.feeData && typeof d.feeData === 'object') {
+    try {
+      const local = JSON.parse(localStorage.getItem(FEE_SHADOW_KEY) || '{}');
+      const merged = Object.assign({}, local, d.feeData); // GAS가 최신 소스
+      localStorage.setItem(FEE_SHADOW_KEY, JSON.stringify(merged));
+    } catch(e) {}
+  }
+
+  // GAS 약정서 보관 데이터 동기화
+  if (Array.isArray(d.ctrArchives)) {
+    try { localStorage.setItem('ctr_archives', JSON.stringify(d.ctrArchives)); } catch(e) {}
+  }
+  if (Array.isArray(d.ctrEsignArchives)) {
+    try { localStorage.setItem('ctr_esign_archives', JSON.stringify(d.ctrEsignArchives)); } catch(e) {}
+  }
+
   // 사건 관리 (C_CACHE_CASES/TODOS는 BULK_CACHE에 이미 포함 — 중복 저장 하지 않음)
   C_cases = allCases;
   try { if (typeof FEE_migrate === 'function') FEE_migrate(); } catch(e) {}
@@ -10609,9 +10626,16 @@ function CTR_saveToArchive() {
   const date = document.getElementById('ctr-date').value || '';
   const savedBy = sessionStorage.getItem('thefin_auth_name') || '';
   const id = 'ctr_' + Date.now();
+  const entry = { id, memberName, memberStaff, date, html, savedBy, savedAt: new Date().toISOString() };
   const archives = JSON.parse(localStorage.getItem('ctr_archives') || '[]');
-  archives.unshift({ id, memberName, memberStaff, date, html, savedBy, savedAt: new Date().toISOString() });
+  archives.unshift(entry);
   localStorage.setItem('ctr_archives', JSON.stringify(archives));
+  // GAS 동기화
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'saveCtrArchive', data: entry }),
+  }).catch(() => {});
   CTR_renderArchive();
   alert(`"${memberName}" 약정서를 보관했습니다.`);
 }
@@ -10678,8 +10702,7 @@ function CTR_saveEsign() {
 
   const doSave = (fileData, fileName) => {
     const savedBy = sessionStorage.getItem('thefin_auth_name') || '';
-    const archives = JSON.parse(localStorage.getItem('ctr_esign_archives') || '[]');
-    archives.unshift({
+    const entry = {
       id: 'esign_' + Date.now(),
       name, date, memo,
       staffName: savedBy,
@@ -10687,8 +10710,14 @@ function CTR_saveEsign() {
       fileName: fileName || '',
       fileData: fileData || '',
       savedAt: new Date().toISOString()
-    });
+    };
+    const archives = JSON.parse(localStorage.getItem('ctr_esign_archives') || '[]');
+    archives.unshift(entry);
     localStorage.setItem('ctr_esign_archives', JSON.stringify(archives));
+    // GAS 동기화 (fileData 제외 — 용량 절감)
+    const gasEntry = Object.assign({}, entry, { fileData: '' });
+    fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'saveCtrEsign', data: gasEntry }) }).catch(()=>{});
     CTR_renderEsign();
     document.getElementById('ctr-esign-form').style.display = 'none';
     document.getElementById('ctr-esign-name').value = '';
@@ -10743,6 +10772,8 @@ function CTR_deleteEsign(id) {
   if (!confirm('이 전자약정서를 보관함에서 삭제할까요?')) return;
   const archives = JSON.parse(localStorage.getItem('ctr_esign_archives') || '[]').filter(x => x.id !== id);
   localStorage.setItem('ctr_esign_archives', JSON.stringify(archives));
+  fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
+    body: JSON.stringify({ action:'deleteCtrEsign', id }) }).catch(()=>{});
   CTR_renderEsign();
 }
 
@@ -10757,6 +10788,8 @@ function CTR_deleteArchive(id) {
   if (!confirm('이 약정서를 보관함에서 삭제할까요?')) return;
   const archives = JSON.parse(localStorage.getItem('ctr_archives') || '[]').filter(x => x.id !== id);
   localStorage.setItem('ctr_archives', JSON.stringify(archives));
+  fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
+    body: JSON.stringify({ action:'deleteCtrArchive', id }) }).catch(()=>{});
   CTR_renderArchive();
 }
 
@@ -12975,15 +13008,29 @@ function FEE_loadShadow() {
 function FEE_saveShadow() {
   if (typeof C_cases === 'undefined') return;
   const shadow = FEE_loadShadow();
+  const changed = [];
   C_cases.forEach(c => {
     if (!c.id) return;
     const entry = shadow[c.id] || {};
+    let dirty = false;
     FEE_SHADOW_FIELDS.forEach(f => {
-      if (c[f] !== undefined && c[f] !== null) entry[f] = c[f];
+      if (c[f] !== undefined && c[f] !== null && JSON.stringify(c[f]) !== JSON.stringify(entry[f])) {
+        entry[f] = c[f]; dirty = true;
+      }
     });
     shadow[c.id] = entry;
+    if (dirty) changed.push({ id: c.id, data: entry });
   });
   try { localStorage.setItem(FEE_SHADOW_KEY, JSON.stringify(shadow)); } catch(e) {}
+
+  // GAS 비동기 푸시 (기기 간 동기화)
+  if (changed.length > 0) {
+    fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'setFeeEntries', entries: changed }),
+    }).catch(() => {});
+  }
 }
 // STAGES는 applyBulkData 앞에 선언됨
 const OVERDUE_DAYS = 30;
@@ -13002,20 +13049,20 @@ function FEE_stageCell(stage, st) {
   const sc = STEP_COLORS[stage - 1] || st.color;
   const stageName = STEP_NAMES[stage - 1] || st.name;
 
-  // 이퀄라이저 바: 완료=작은바, 현재=높은바, 미래=낮은바
+  // 이퀄라이저 바 (3배 크기)
   const bars = Array.from({length: MAX}, (_, i) => {
     const n = i + 1;
     const color = STEP_COLORS[i];
-    if (n === stage)  return `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:5px;height:20px;border-radius:2px;background:${color};box-shadow:0 1px 6px ${color}66;"></span>`;
-    if (n < stage)    return `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:5px;height:12px;border-radius:2px;background:${color};opacity:.55;"></span>`;
-    return             `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:5px;height:6px;border-radius:2px;background:#dde3ef;"></span>`;
+    if (n === stage)  return `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:10px;height:44px;border-radius:4px;background:${color};box-shadow:0 2px 10px ${color}77;"></span>`;
+    if (n < stage)    return `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:10px;height:26px;border-radius:4px;background:${color};opacity:.55;"></span>`;
+    return             `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:10px;height:12px;border-radius:4px;background:#dde3ef;"></span>`;
   }).join('');
 
-  return `<div style="display:inline-flex;align-items:center;gap:7px;">
-    <div style="display:inline-flex;align-items:flex-end;gap:2px;">${bars}</div>
-    <div style="display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.2;">
-      <span style="font-size:10px;font-weight:900;color:${sc};">${stage}<span style="font-weight:400;color:#b0b8c4;font-size:9px;">/7</span></span>
-      <span style="font-size:10px;font-weight:700;color:${sc};">${stageName}</span>
+  return `<div style="display:inline-flex;align-items:center;gap:10px;">
+    <div style="display:inline-flex;align-items:flex-end;gap:4px;">${bars}</div>
+    <div style="display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.4;">
+      <span style="font-size:15px;font-weight:900;color:${sc};">${stage}<span style="font-weight:400;color:#b0b8c4;font-size:12px;">/7</span></span>
+      <span style="font-size:13px;font-weight:700;color:${sc};">${stageName}</span>
     </div>
   </div>`;
 }
