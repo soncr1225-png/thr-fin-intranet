@@ -12728,6 +12728,58 @@ function FB_escape(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+// MSG 피드백 메시지를 FB_list에 병합 (시트에 없는 항목만)
+function FB_mergeMsgItems() {
+  const fbMsgTypes = ['오류신고', '수정요청', '기능추가'];
+  const catMap = { '오류신고':'버그', '수정요청':'UI어색', '기능추가':'기능요청' };
+  if (typeof MSG_messages === 'undefined') return;
+  MSG_messages.filter(m => fbMsgTypes.includes(m.type)).forEach(m => {
+    const cleanBody = (m.body || '').replace(/^\[제보함\]\s*/, '');
+    const dup = FB_list.some(f => {
+      const cleanF = (f.text || '').replace(/^\[MSG연동\]\s*/, '');
+      return f.author === m.from && cleanF.slice(0, 30) === cleanBody.slice(0, 30);
+    });
+    if (!dup) {
+      const tsRaw = String(m.time || '');
+      FB_list.push({
+        id: 'msg_' + String(m.id),
+        author: m.from,
+        ts: tsRaw ? tsRaw.replace(' ', 'T') + ':00' : '',
+        category: catMap[m.type] || '기타',
+        text: cleanBody,
+        fileUrl: '', fileName: '',
+        status: m.read ? 'closed' : 'open'
+      });
+    }
+  });
+}
+
+function FB_renderCard(f, setStatusFn) {
+  const catEmoji = { '버그':'🐛', 'UI어색':'🎨', '기능요청':'✨', '기타':'📌' };
+  const isOpen = (f.status || 'open') === 'open';
+  let ts = '';
+  try { ts = f.ts ? new Date(f.ts).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) : ''; } catch(e) { ts = f.ts || ''; }
+  const emoji = catEmoji[f.category] || '📌';
+  const isMsgItem = String(f.id).startsWith('msg_');
+  const fileBlock = f.fileUrl
+    ? '<div style="margin-top:8px;"><a href="' + FB_escape(f.fileUrl) + '" target="_blank" style="font-size:12px;color:#0ea5e9;text-decoration:none;">📎 첨부 보기 — ' + FB_escape(f.fileName) + '</a></div>'
+    : '';
+  const safeId = FB_escape(f.id).replace(/'/g, '\\x27');
+  return '<div style="background:#fff;border:1px solid ' + (isOpen ? '#fed7aa' : '#d1d5db') + ';border-left:3px solid ' + (isMsgItem ? '#6366f1' : '#f97316') + ';border-radius:10px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04);">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap;">' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+        '<span style="font-size:11px;font-weight:700;padding:3px 8px;background:' + (isOpen ? '#fff8f0' : '#f3f4f6') + ';color:' + (isOpen ? '#7c2d12' : '#374151') + ';border-radius:99px;">' + emoji + ' ' + FB_escape(f.category) + '</span>' +
+        (isMsgItem ? '<span style="font-size:9px;font-weight:700;color:#6366f1;background:#eef2ff;border-radius:4px;padding:1px 5px;">💬 MSG</span>' : '') +
+        '<span style="font-size:12px;color:#142040;font-weight:700;">👤 ' + FB_escape(f.author || '?') + '</span>' +
+        '<span style="font-size:11px;color:#9ca3af;">🕐 ' + FB_escape(ts) + '</span>' +
+      '</div>' +
+      '<button onclick="' + setStatusFn + '(\'' + safeId + '\',\'' + (isOpen ? 'closed' : 'open') + '\')" style="padding:5px 12px;background:' + (isOpen ? '#142040' : '#fef3c7') + ';color:' + (isOpen ? '#fff' : '#92400e') + ';border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">' + (isOpen ? '✓ 처리 완료' : '↻ 다시 열기') + '</button>' +
+    '</div>' +
+    '<div style="font-size:13px;color:#374151;white-space:pre-wrap;word-break:break-word;line-height:1.6;">' + FB_escape(f.text) + '</div>' +
+    fileBlock +
+  '</div>';
+}
+
 async function FB_renderInbox() {
   const box = document.getElementById('FB_list');
   if (!box) return;
@@ -12740,9 +12792,9 @@ async function FB_renderInbox() {
     box.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;font-size:13px;">로드 실패: ' + FB_escape(e.message) + '</div>';
     return;
   }
+  FB_mergeMsgItems();
   const filter = (document.getElementById('FB_filter') || {}).value || 'open';
   const items = filter === 'all' ? FB_list : FB_list.filter(f => (f.status || 'open') === filter);
-  // 처리 대기 카운트 뱃지 갱신
   const openCount = FB_list.filter(f => (f.status || 'open') === 'open').length;
   const badge = document.getElementById('mainBadge-feedback');
   if (badge) badge.textContent = openCount;
@@ -12751,30 +12803,25 @@ async function FB_renderInbox() {
       (filter === 'open' ? '처리 대기 중인 제보가 없습니다.' : '제보가 없습니다.') + '</div>';
     return;
   }
-  const catEmoji = { '버그':'🐛', 'UI어색':'🎨', '기능요청':'✨', '기타':'📌' };
-  box.innerHTML = items.map(f => {
-    const isOpen = (f.status || 'open') === 'open';
-    const ts = f.ts ? new Date(f.ts).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) : '';
-    const emoji = catEmoji[f.category] || '📌';
-    const fileBlock = f.fileUrl
-      ? '<div style="margin-top:8px;"><a href="' + FB_escape(f.fileUrl) + '" target="_blank" style="font-size:12px;color:#0ea5e9;text-decoration:none;">📎 첨부 보기 — ' + FB_escape(f.fileName) + '</a></div>'
-      : '';
-    return '<div style="background:#fff;border:1px solid ' + (isOpen ? '#fed7aa' : '#d1d5db') + ';border-radius:10px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04);">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap;">' +
-        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
-          '<span style="font-size:11px;font-weight:700;padding:3px 8px;background:' + (isOpen ? '#fff8f0' : '#f3f4f6') + ';color:' + (isOpen ? '#7c2d12' : '#374151') + ';border-radius:99px;">' + emoji + ' ' + FB_escape(f.category) + '</span>' +
-          '<span style="font-size:12px;color:#142040;font-weight:700;">👤 ' + FB_escape(f.author || '?') + '</span>' +
-          '<span style="font-size:11px;color:#9ca3af;">🕐 ' + FB_escape(ts) + '</span>' +
-        '</div>' +
-        '<button onclick="FB_setStatus(\'' + FB_escape(f.id) + '\',\'' + (isOpen ? 'closed' : 'open') + '\')" style="padding:5px 12px;background:' + (isOpen ? '#142040' : '#fef3c7') + ';color:' + (isOpen ? '#fff' : '#92400e') + ';border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">' + (isOpen ? '✓ 처리 완료' : '↻ 다시 열기') + '</button>' +
-      '</div>' +
-      '<div style="font-size:13px;color:#374151;white-space:pre-wrap;word-break:break-word;line-height:1.6;">' + FB_escape(f.text) + '</div>' +
-      fileBlock +
-    '</div>';
-  }).join('');
+  box.innerHTML = items.map(f => FB_renderCard(f, 'FB_setStatus')).join('');
 }
 
 async function FB_setStatus(id, status) {
+  // MSG에서 온 항목은 MSG markRead로 처리
+  if (String(id).startsWith('msg_')) {
+    const msgId = String(id).replace('msg_', '');
+    if (typeof MSG_messages !== 'undefined') {
+      const m = MSG_messages.find(x => String(x.id) === msgId);
+      if (m) m.read = status === 'closed';
+    }
+    if (status === 'closed') {
+      fetch(GAS_URL, { method:'POST', body: JSON.stringify({ module:'msg', action:'markRead', id: msgId }) }).catch(()=>{});
+    }
+    const fi = FB_list.find(f => f.id === id);
+    if (fi) fi.status = status;
+    FB_renderInbox();
+    return;
+  }
   try {
     const r = await fetch(GAS_URL, {
       method: 'POST', headers: { 'Content-Type': 'text/plain' },
@@ -12924,40 +12971,37 @@ async function MSG_renderFeedback() {
     body.innerHTML = MSG_tabBar('feedback') + '<div class="msg-empty" style="color:#ef4444;">⚠️ 불러오기 실패</div>';
     return;
   }
-  const openItems  = FB_list.filter(f => (f.status||'open') === 'open');
+  FB_mergeMsgItems();
+  const openItems   = FB_list.filter(f => (f.status||'open') === 'open');
   const closedItems = FB_list.filter(f => (f.status||'open') === 'closed');
-  const catEmoji   = { '버그':'🐛', 'UI어색':'🎨', '기능요청':'✨', '기타':'📌' };
-  const renderCard = (f) => {
-    const isOpen = (f.status||'open') === 'open';
-    const ts     = f.ts ? new Date(f.ts).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}) : '';
-    const emoji  = catEmoji[f.category] || '📌';
-    const safeText = (f.text||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    return `<div style="background:#fff;border:1px solid ${isOpen?'#fed7aa':'#e5e7eb'};border-radius:8px;padding:12px 14px;margin-bottom:8px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-          <span style="font-size:10px;font-weight:700;padding:2px 7px;background:${isOpen?'#fff8f0':'#f3f4f6'};color:${isOpen?'#7c2d12':'#6b7280'};border-radius:99px;">${emoji} ${f.category||'기타'}</span>
-          <span style="font-size:11px;font-weight:700;color:#142040;">👤 ${f.author||'?'}</span>
-          <span style="font-size:10px;color:#9ca3af;">🕐 ${ts}</span>
-        </div>
-        <button onclick="MSG_fbSetStatus('${(f.id||'').replace(/'/g,'\\x27')}','${isOpen?'closed':'open'}')" style="padding:4px 10px;background:${isOpen?'#142040':'#fef3c7'};color:${isOpen?'#fff':'#92400e'};border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;">${isOpen?'✓ 처리완료':'↻ 다시열기'}</button>
-      </div>
-      <div style="font-size:12px;color:#374151;white-space:pre-wrap;word-break:break-word;line-height:1.5;">${safeText}</div>
-    </div>`;
-  };
   let html = MSG_tabBar('feedback');
   if (!FB_list.length) {
     html += '<div class="msg-empty">📭 제보가 없습니다</div>';
   } else {
-    if (openItems.length)  html += `<div style="font-size:11px;font-weight:800;color:#dc2626;margin:8px 0 4px;">● 처리 대기 ${openItems.length}건</div>` + openItems.map(renderCard).join('');
-    if (closedItems.length) html += `<div style="font-size:11px;font-weight:700;color:#9ca3af;margin:12px 0 4px;">● 처리 완료 ${closedItems.length}건</div>` + closedItems.map(renderCard).join('');
+    if (openItems.length)   html += `<div style="font-size:11px;font-weight:800;color:#dc2626;margin:8px 0 4px;">● 처리 대기 ${openItems.length}건</div>` + openItems.map(f => FB_renderCard(f, 'MSG_fbSetStatus')).join('');
+    if (closedItems.length) html += `<div style="font-size:11px;font-weight:700;color:#9ca3af;margin:12px 0 4px;">● 처리 완료 ${closedItems.length}건</div>` + closedItems.map(f => FB_renderCard(f, 'MSG_fbSetStatus')).join('');
   }
   body.innerHTML = html;
-  // 제보함 탭 뱃지 갱신
   const badge = document.getElementById('mainBadge-feedback');
   if (badge) badge.textContent = openItems.length || '—';
 }
 
 async function MSG_fbSetStatus(id, status) {
+  // MSG에서 온 항목
+  if (String(id).startsWith('msg_')) {
+    const msgId = String(id).replace('msg_', '');
+    if (typeof MSG_messages !== 'undefined') {
+      const m = MSG_messages.find(x => String(x.id) === msgId);
+      if (m) m.read = status === 'closed';
+    }
+    if (status === 'closed') {
+      fetch(GAS_URL, { method:'POST', body: JSON.stringify({ module:'msg', action:'markRead', id: msgId }) }).catch(()=>{});
+    }
+    const fi = FB_list.find(f => f.id === id);
+    if (fi) fi.status = status;
+    MSG_renderFeedback();
+    return;
+  }
   try {
     const r = await fetch(GAS_URL, {
       method:'POST', headers:{'Content-Type':'text/plain'},
