@@ -2093,22 +2093,6 @@ table.data-table tbody tr:hover,
 </head>
 <body>
 
-<!-- ════ 메시지 버튼 — body 최상단 (position:fixed, 모든 탭 위에 표시) ════ -->
-<button id="MSG_headerBtn" onclick="MSG_open()" title="메시지">
-  💬 <span id="MSG_label">메시지</span>
-  <span id="MSG_unreadBadge">0</span>
-</button>
-<script>
-  (function(){
-    var n=sessionStorage.getItem('thefin_auth_name');
-    var e=sessionStorage.getItem('thefin_auth_expiry');
-    if(n&&e&&Date.now()<+e){
-      var b=document.getElementById('MSG_headerBtn');
-      if(b)b.style.display='flex';
-    }
-  })();
-</script>
-
 <!-- ════ 전역 AI 분석 오버레이 — body 바로 아래 (display:none 패널 밖) ════ -->
 <div id="global-ai-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9500;align-items:center;justify-content:center;flex-direction:column;gap:0;">
   <div style="background:#fff;border-radius:18px;padding:32px 40px;text-align:center;min-width:300px;box-shadow:0 24px 64px rgba(0,0,0,.35);">
@@ -2208,6 +2192,10 @@ table.data-table tbody tr:hover,
   </nav>
 
   <div class="header-right">
+    <button id="MSG_headerBtn" onclick="MSG_open()" title="메시지">
+      💬 <span id="MSG_label">메시지</span>
+      <span id="MSG_unreadBadge">0</span>
+    </button>
     <div id="BETA_badge" style="display:none;align-items:center;gap:4px;padding:2px 8px;background:rgba(251,146,60,.18);border:1px solid rgba(251,146,60,.4);border-radius:20px;cursor:pointer;" onclick="BETA_openReport()" title="버그 신고">
       <span style="font-size:9px;font-weight:800;color:#fb923c;letter-spacing:.05em;">β BETA</span>
     </div>
@@ -11042,6 +11030,8 @@ function AUTH_logout() {
   document.getElementById('auth-err').textContent = '';
   document.getElementById('auth-header-badge').style.display = 'none';
   document.getElementById('auth-admin-btn').style.display = 'none';
+  const _msgBtn = document.getElementById('MSG_headerBtn');
+  if (_msgBtn) _msgBtn.style.display = 'none';
   // 로그아웃 시 숨겼던 요소 복원
   const _dashTab = document.getElementById('mainTab-dashboard');
   if (_dashTab) _dashTab.style.display = '';
@@ -12484,15 +12474,7 @@ document.addEventListener('click', e => {
 
 const MSG_MEMBERS = ['손청락','이제훈','장한빛','정은진'];
 
-function MSG_positionBtn() {
-  const beta = document.getElementById('BETA_badge');
-  const btn  = document.getElementById('MSG_headerBtn');
-  if (!beta || !btn) return;
-  const rect = beta.getBoundingClientRect();
-  if (rect.width > 0) {
-    btn.style.right = (window.innerWidth - rect.left + 8) + 'px';
-  }
-}
+function MSG_positionBtn() { /* 헤더 인라인 배치로 불필요 */ }
 window.addEventListener('resize', MSG_positionBtn);
 
 function MSG_applyRole(name) {
@@ -14113,10 +14095,9 @@ let _MBR_syncTimer = null;
 
 /* ── 메시지/요청 기능 ─────────────────────────────────── */
 #MSG_headerBtn {
-  position:fixed; top:14px; right:260px; z-index:99998;
-  display:none; align-items:center; gap:5px;
+  display:none; align-items:center; gap:5px; flex-shrink:0;
   background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18);
-  border-radius:8px; padding:5px 11px; color:#fff; font-size:12px;
+  border-radius:8px; padding:3px 10px; color:#fff; font-size:12px;
   font-weight:700; cursor:pointer; transition:background .2s; white-space:nowrap;
 }
 #MSG_headerBtn:hover { background:rgba(255,255,255,.2); }
