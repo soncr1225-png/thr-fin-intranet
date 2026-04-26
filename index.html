@@ -2178,6 +2178,9 @@ table.data-table tbody tr:hover,
         <div class="nav-dropdown-item" id="mainTab-guide" onclick="switchMainTab('guide')">
           📋 입찰안내문
         </div>
+        <div class="nav-dropdown-item" id="mainTab-feedback" onclick="switchMainTab('feedback');FB_renderInbox()" style="display:none;">
+          🐛 제보함 <span class="tab-badge" id="mainBadge-feedback">—</span>
+        </div>
       </div>
     </div>
 
@@ -2300,9 +2303,26 @@ table.data-table tbody tr:hover,
     </div>
     <div style="font-size:11px;color:#9ca3af;margin-bottom:18px;">발견한 문제를 설명해주세요 — 대표에게 바로 전달됩니다</div>
     <div id="BETA_autoErr" style="display:none;background:#fff8f0;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#7c2d12;font-family:monospace;word-break:break-all;max-height:100px;overflow-y:auto;"></div>
-    <div style="margin-bottom:12px;">
-      <label style="display:block;font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">어떤 문제인가요?</label>
+    <div style="margin-bottom:10px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">카테고리</label>
+      <select id="BETA_category" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;background:#fff;">
+        <option value="버그">🐛 버그</option>
+        <option value="UI어색">🎨 UI 어색</option>
+        <option value="기능요청">✨ 기능 요청</option>
+        <option value="기타">📌 기타</option>
+      </select>
+    </div>
+    <div style="margin-bottom:10px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">어떤 내용인가요?</label>
       <textarea id="BETA_desc" rows="4" placeholder="예: 블로그 탭에서 저장 버튼을 누르면 오류가 발생합니다. 어떤 화면에서, 어떤 행동을 했을 때 문제가 생겼는지 적어주세요." style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
+    </div>
+    <div style="margin-bottom:12px;" id="BETA_attachWrap">
+      <label style="display:block;font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">스크린샷 (선택, Ctrl+V로 붙여넣기 가능)</label>
+      <input type="file" id="BETA_file" accept="image/*" onchange="BETA_onFileChange(event)" style="font-size:12px;display:block;width:100%;">
+      <div id="BETA_preview" style="margin-top:8px;display:none;">
+        <img id="BETA_previewImg" src="" style="max-width:100%;max-height:160px;border-radius:6px;border:1px solid #e5e7eb;display:block;">
+        <button type="button" onclick="BETA_clearAttach()" style="margin-top:6px;padding:4px 10px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;border-radius:6px;font-size:11px;cursor:pointer;">첨부 제거</button>
+      </div>
     </div>
     <div style="display:flex;gap:8px;margin-top:4px;">
       <button onclick="BETA_sendReport()" style="flex:1;padding:10px;background:#142040;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">📨 대표에게 전송</button>
@@ -4320,6 +4340,31 @@ table.data-table tbody tr:hover,
     <div style="display:flex;gap:8px;justify-content:flex-end;border-top:1px solid #eee;padding-top:14px;">
       <button onclick="CD_close()" style="padding:9px 20px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-weight:700;">닫기</button>
       <button onclick="CD_save(true)" style="padding:9px 22px;background:#142040;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700;">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     탭 11: 제보함 (관리자 전용)
+════════════════════════════════════ -->
+<div class="tab-panel" id="panel-feedback">
+  <div style="max-width:980px;margin:0 auto;padding:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <h2 style="margin:0;font-size:20px;color:#142040;">🐛 제보함</h2>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">직원이 보낸 버그·UI·기능 요청 — 처리 완료 시 상태 토글</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="FB_renderInbox()" style="padding:8px 14px;background:#fff;color:#374151;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;">🔄 새로고침</button>
+        <select id="FB_filter" onchange="FB_renderInbox()" style="padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:12px;background:#fff;">
+          <option value="all">전체</option>
+          <option value="open" selected>처리 대기</option>
+          <option value="closed">처리 완료</option>
+        </select>
+      </div>
+    </div>
+    <div id="FB_list" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="text-align:center;padding:40px;color:#9ca3af;font-size:13px;">로딩 중…</div>
     </div>
   </div>
 </div>
@@ -10970,6 +11015,19 @@ function AUTH_applyRole(name, role, label) {
   const dashTab = document.getElementById('mainTab-dashboard');
   if (dashTab) dashTab.style.display = role === 'manager' ? 'none' : '';
 
+  // 매니저는 제보함 탭 숨김 (관리자만 보임)
+  const fbTab = document.getElementById('mainTab-feedback');
+  if (fbTab) fbTab.style.display = role === 'manager' ? 'none' : '';
+  // 관리자면 처리 대기 개수 뱃지 미리 채움
+  if (role !== 'manager' && typeof FB_renderInbox === 'function') {
+    fetch(GAS_URL + '?action=getFeedback').then(r => r.json()).then(j => {
+      const list = (j && j.data) || [];
+      const cnt = list.filter(f => (f.status || 'open') === 'open').length;
+      const badge = document.getElementById('mainBadge-feedback');
+      if (badge) badge.textContent = cnt;
+    }).catch(() => {});
+  }
+
   // 매니저는 데이터 관리 버튼 숨김 (백업·복원·구글시트·노션)
   const adminDataBtns = document.getElementById('admin-data-btns');
   if (adminDataBtns) adminDataBtns.style.display = role === 'manager' ? 'none' : 'contents';
@@ -12088,6 +12146,8 @@ async function BETA_autoReport(err) {
   BETA_isReporting = false;
 }
 
+let BETA_attachData = null;  // {base64, name, mime}
+
 function BETA_openReport() {
   const modal = document.getElementById('BETA_modal');
   if (!modal) return;
@@ -12100,6 +12160,9 @@ function BETA_openReport() {
   }
   const desc = document.getElementById('BETA_desc');
   if (desc) desc.value = '';
+  const cat = document.getElementById('BETA_category');
+  if (cat) cat.value = BETA_lastAutoErr ? '버그' : '버그';
+  BETA_clearAttach();
   const st = document.getElementById('BETA_modal_status');
   if (st) st.textContent = '';
   modal.style.display = 'flex';
@@ -12109,20 +12172,94 @@ function BETA_closeReport() {
   const modal = document.getElementById('BETA_modal');
   if (modal) modal.style.display = 'none';
   BETA_lastAutoErr = null;
+  BETA_clearAttach();
 }
+
+function BETA_clearAttach() {
+  BETA_attachData = null;
+  const f = document.getElementById('BETA_file');
+  if (f) f.value = '';
+  const p = document.getElementById('BETA_preview');
+  if (p) p.style.display = 'none';
+}
+
+function BETA_onFileChange(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) { BETA_clearAttach(); return; }
+  if (file.size > 5 * 1024 * 1024) {
+    alert('첨부파일이 5MB를 초과합니다. 더 작은 파일로 첨부해주세요.');
+    BETA_clearAttach();
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    const base64 = dataUrl.split(',')[1] || '';
+    BETA_attachData = { base64, name: file.name, mime: file.type || 'application/octet-stream' };
+    const img = document.getElementById('BETA_previewImg');
+    const wrap = document.getElementById('BETA_preview');
+    if (img && wrap && file.type.startsWith('image/')) {
+      img.src = dataUrl;
+      wrap.style.display = 'block';
+    } else if (wrap) {
+      // 이미지 아닌 파일: 파일명만 표시
+      wrap.style.display = 'block';
+      wrap.innerHTML = '<div style="font-size:12px;color:#374151;padding:6px 10px;background:#f3f4f6;border-radius:6px;">📎 ' + file.name + '</div>' +
+        '<button type="button" onclick="BETA_clearAttach()" style="margin-top:6px;padding:4px 10px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;border-radius:6px;font-size:11px;cursor:pointer;">첨부 제거</button>';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+// 모달 열려있을 때 Ctrl+V로 이미지 붙여넣기
+document.addEventListener('paste', e => {
+  const modal = document.getElementById('BETA_modal');
+  if (!modal || modal.style.display !== 'flex') return;
+  const items = (e.clipboardData || {}).items || [];
+  for (const it of items) {
+    if (it.type && it.type.startsWith('image/')) {
+      const blob = it.getAsFile();
+      if (!blob) continue;
+      const file = new File([blob], 'paste-' + Date.now() + '.png', { type: blob.type });
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      const f = document.getElementById('BETA_file');
+      if (f) { f.files = dt.files; BETA_onFileChange({ target: f }); }
+      break;
+    }
+  }
+});
 
 async function BETA_sendReport() {
   const desc = (document.getElementById('BETA_desc') || {}).value || '';
+  const cat  = (document.getElementById('BETA_category') || {}).value || '기타';
   const st = document.getElementById('BETA_modal_status');
-  if (!desc.trim()) { if (st) st.textContent = '문제 설명을 입력해주세요.'; return; }
+  if (!desc.trim() && !BETA_attachData) {
+    if (st) st.textContent = '내용 또는 스크린샷을 입력해주세요.';
+    return;
+  }
   if (st) st.textContent = '전송 중…';
+  const author = sessionStorage.getItem('thefin_auth_name') || '비로그인';
   try {
-    await BETA_send({
-      type: '수동신고', desc,
-      message: BETA_lastAutoErr ? BETA_lastAutoErr.message : '',
-      source:  BETA_lastAutoErr ? BETA_lastAutoErr.source  : '',
-      stack:   BETA_lastAutoErr ? BETA_lastAutoErr.stack   : ''
+    const payload = {
+      action: 'saveFeedback',
+      data: {
+        author,
+        category: cat,
+        text: desc + (BETA_lastAutoErr ? '\n\n[자동 감지 오류]\n' + (BETA_lastAutoErr.message || '') + '\n' + (BETA_lastAutoErr.source || '') : '')
+      }
+    };
+    if (BETA_attachData) {
+      payload.data.attachmentBase64 = BETA_attachData.base64;
+      payload.data.attachmentName   = BETA_attachData.name;
+      payload.data.attachmentMime   = BETA_attachData.mime;
+    }
+    const r = await fetch(GAS_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
     });
+    const j = await r.json();
+    if (j && j.error) throw new Error(j.error);
     if (st) st.textContent = '✅ 전송 완료! 대표에게 전달됩니다.';
     setTimeout(BETA_closeReport, 1800);
     BETA_lastAutoErr = null;
@@ -12149,6 +12286,75 @@ async function BETA_send(payload) {
       url:     location.href
     })
   });
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  FB — 관리자 제보함 (오류제보 시트)
+// ══════════════════════════════════════════════════════════════════
+let FB_list = [];
+
+function FB_escape(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function FB_renderInbox() {
+  const box = document.getElementById('FB_list');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;font-size:13px;">로딩 중…</div>';
+  try {
+    const r = await fetch(GAS_URL + '?action=getFeedback');
+    const j = await r.json();
+    FB_list = (j && j.data) || [];
+  } catch(e) {
+    box.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;font-size:13px;">로드 실패: ' + FB_escape(e.message) + '</div>';
+    return;
+  }
+  const filter = (document.getElementById('FB_filter') || {}).value || 'open';
+  const items = filter === 'all' ? FB_list : FB_list.filter(f => (f.status || 'open') === filter);
+  // 처리 대기 카운트 뱃지 갱신
+  const openCount = FB_list.filter(f => (f.status || 'open') === 'open').length;
+  const badge = document.getElementById('mainBadge-feedback');
+  if (badge) badge.textContent = openCount;
+  if (!items.length) {
+    box.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;font-size:13px;">' +
+      (filter === 'open' ? '처리 대기 중인 제보가 없습니다.' : '제보가 없습니다.') + '</div>';
+    return;
+  }
+  const catEmoji = { '버그':'🐛', 'UI어색':'🎨', '기능요청':'✨', '기타':'📌' };
+  box.innerHTML = items.map(f => {
+    const isOpen = (f.status || 'open') === 'open';
+    const ts = f.ts ? new Date(f.ts).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) : '';
+    const emoji = catEmoji[f.category] || '📌';
+    const fileBlock = f.fileUrl
+      ? '<div style="margin-top:8px;"><a href="' + FB_escape(f.fileUrl) + '" target="_blank" style="font-size:12px;color:#0ea5e9;text-decoration:none;">📎 첨부 보기 — ' + FB_escape(f.fileName) + '</a></div>'
+      : '';
+    return '<div style="background:#fff;border:1px solid ' + (isOpen ? '#fed7aa' : '#d1d5db') + ';border-radius:10px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04);">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap;">' +
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+          '<span style="font-size:11px;font-weight:700;padding:3px 8px;background:' + (isOpen ? '#fff8f0' : '#f3f4f6') + ';color:' + (isOpen ? '#7c2d12' : '#374151') + ';border-radius:99px;">' + emoji + ' ' + FB_escape(f.category) + '</span>' +
+          '<span style="font-size:12px;color:#142040;font-weight:700;">👤 ' + FB_escape(f.author || '?') + '</span>' +
+          '<span style="font-size:11px;color:#9ca3af;">🕐 ' + FB_escape(ts) + '</span>' +
+        '</div>' +
+        '<button onclick="FB_setStatus(\'' + FB_escape(f.id) + '\',\'' + (isOpen ? 'closed' : 'open') + '\')" style="padding:5px 12px;background:' + (isOpen ? '#142040' : '#fef3c7') + ';color:' + (isOpen ? '#fff' : '#92400e') + ';border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">' + (isOpen ? '✓ 처리 완료' : '↻ 다시 열기') + '</button>' +
+      '</div>' +
+      '<div style="font-size:13px;color:#374151;white-space:pre-wrap;word-break:break-word;line-height:1.6;">' + FB_escape(f.text) + '</div>' +
+      fileBlock +
+    '</div>';
+  }).join('');
+}
+
+async function FB_setStatus(id, status) {
+  try {
+    const r = await fetch(GAS_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'updateFeedbackStatus', data: { id, status } })
+    });
+    const j = await r.json();
+    if (j && j.error) throw new Error(j.error);
+    FB_renderInbox();
+  } catch(e) {
+    alert('상태 변경 실패: ' + e.message);
+  }
 }
 
 function SYNC_closeMore() {

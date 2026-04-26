@@ -16,6 +16,8 @@ var SH_CASES_ARCHIVE = '종료사건';
 var SH_TODOS         = 'ToDo';
 var SH_MEMBERS       = '회원관리';  // 신규 — 회원 데이터 영구 저장
 var SH_PWHASH        = '비번관리';  // 신규 — 비번 해시 동기화 (PC간 공유)
+var SH_FEEDBACK      = '오류제보';  // 신규 — 직원 오류·개선 제보
+var DRIVE_FOLDER_FEEDBACK = '1sY51aSaHZSBh54L8JOlZtZjjs56NXhiJ';  // 04-첨부파일 폴더 (Drive)
 
 // ── 입찰/명도 시트명 ─────────────────────────────────────────
 var SH_AUCTION    = '입찰진행';
@@ -106,6 +108,7 @@ function casesGet(p) {
   if (p.action === 'getBulk')     return getBulk(ss);
   if (p.action === 'getMembers')  return json({ data: loadMembers(ss) });
   if (p.action === 'getPwHashes') return json({ data: loadPwHashes(ss) });
+  if (p.action === 'getFeedback') return json({ data: loadFeedback(ss) });
   return json({ error: 'unknown action' });
 }
 
@@ -230,6 +233,8 @@ function casesPost(b) {
     case 'deleteMember':     return json(deleteMember(ss, d));
     case 'setPwHash':        return json(setPwHash(ss, d));
     case 'deletePwHash':     return json(deletePwHash(ss, d));
+    case 'saveFeedback':         return json(saveFeedback(ss, d));
+    case 'updateFeedbackStatus': return json(updateFeedbackStatus(ss, d));
     default:             return json({ error: 'unknown action' });
   }
 }
@@ -396,6 +401,113 @@ function deletePwHash(ss, m) {
     }
   }
   return { ok: true, name: m.name, missing: true };
+}
+
+// ============================================================
+// FEEDBACK — 오류제보 시트 (신규 · 8 컬럼)
+// 직원이 인트라넷에서 버그·개선 사항 텍스트+스크린샷 제보 → 시트 + Drive
+// ============================================================
+function ensureFeedbackHeader(sheet) {
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['ID', '작성자', '작성일시', '카테고리', '내용', '첨부URL', '첨부파일명', '상태']);
+    sheet.getRange(1, 1, 1, 8).setFontWeight('bold');
+  }
+}
+
+function getOrCreateChildFolder(parent, name) {
+  var iter = parent.getFoldersByName(name);
+  if (iter.hasNext()) return iter.next();
+  return parent.createFolder(name);
+}
+
+function loadFeedback(ss) {
+  var sheet = sh(ss, SH_FEEDBACK);
+  ensureFeedbackHeader(sheet);
+  var last = sheet.getLastRow();
+  if (last < 2) return [];
+  var vals = sheet.getRange(2, 1, last - 1, 8).getValues();
+  return vals.map(function(r) {
+    return {
+      id:       String(r[0]),
+      author:   String(r[1] || ''),
+      ts:       r[2] ? new Date(r[2]).toISOString() : '',
+      category: String(r[3] || ''),
+      text:     String(r[4] || ''),
+      fileUrl:  String(r[5] || ''),
+      fileName: String(r[6] || ''),
+      status:   String(r[7] || 'open')
+    };
+  }).reverse();  // 최신순
+}
+
+function saveFeedback(ss, d) {
+  if (!d || (!d.text && !d.attachmentBase64)) return { error: '내용 또는 첨부파일이 필요합니다.' };
+  var sheet = sh(ss, SH_FEEDBACK);
+  ensureFeedbackHeader(sheet);
+  var id = Utilities.getUuid();
+  var fileUrl = '';
+  var fileName = '';
+
+  if (d.attachmentBase64 && d.attachmentName) {
+    try {
+      var rootFolder = DriveApp.getFolderById(DRIVE_FOLDER_FEEDBACK);
+      var feedbackFolder = getOrCreateChildFolder(rootFolder, '오류제보');
+      var bytes = Utilities.base64Decode(d.attachmentBase64);
+      var blob = Utilities.newBlob(
+        bytes,
+        d.attachmentMime || 'application/octet-stream',
+        id + '_' + d.attachmentName
+      );
+      var fileObj = feedbackFolder.createFile(blob);
+      fileObj.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      fileUrl = fileObj.getUrl();
+      fileName = fileObj.getName();
+    } catch(e) {
+      fileName = '[첨부 실패: ' + e.message + ']';
+    }
+  }
+
+  sheet.appendRow([
+    id,
+    d.author || '',
+    new Date(),
+    d.category || '기타',
+    d.text || '',
+    fileUrl,
+    fileName,
+    'open'
+  ]);
+
+  // 텔레그램 전송 (ADMIN_CHAT_ID 설정 시)
+  try {
+    var adminChatId = prop('ADMIN_CHAT_ID');
+    if (adminChatId) {
+      var msg = '🐛 [제보] ' + (d.category || '기타') + '\n' +
+        '───────────────\n' +
+        '👤 ' + (d.author || '?') + '\n' +
+        '🕐 ' + new Date().toLocaleString('ko-KR') + '\n\n' +
+        (d.text ? '📝 ' + String(d.text).substring(0, 400) + '\n\n' : '') +
+        (fileUrl ? '📎 ' + fileUrl : '');
+      sendTelegram(adminChatId, msg.trim());
+    }
+  } catch(e) {}
+
+  return { ok: true, id: id, fileUrl: fileUrl };
+}
+
+function updateFeedbackStatus(ss, d) {
+  if (!d || !d.id || !d.status) return { error: 'id and status required' };
+  var sheet = sh(ss, SH_FEEDBACK);
+  var last = sheet.getLastRow();
+  if (last < 2) return { error: 'no feedback' };
+  var ids = sheet.getRange(2, 1, last - 1, 1).getValues();
+  for (var i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]) === String(d.id)) {
+      sheet.getRange(i + 2, 8).setValue(d.status);
+      return { ok: true, id: d.id, status: d.status };
+    }
+  }
+  return { error: 'not found' };
 }
 
 function addCase(ss, d) {
