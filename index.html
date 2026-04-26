@@ -12485,10 +12485,10 @@ document.addEventListener('click', e => {
 const MSG_MEMBERS = ['손청락','이제훈','장한빛','정은진'];
 
 function MSG_positionBtn() {
-  const badge = document.getElementById('auth-header-badge');
-  const btn   = document.getElementById('MSG_headerBtn');
-  if (!badge || !btn) return;
-  const rect = badge.getBoundingClientRect();
+  const beta = document.getElementById('BETA_badge');
+  const btn  = document.getElementById('MSG_headerBtn');
+  if (!beta || !btn) return;
+  const rect = beta.getBoundingClientRect();
   if (rect.width > 0) {
     btn.style.right = (window.innerWidth - rect.left + 8) + 'px';
   }
