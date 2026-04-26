@@ -5553,21 +5553,26 @@ function C_buildTypeCell(c){
 
 // 파일 컬럼 렌더러 (시세조사/보고서작성 파일 업로드/다운로드)
 function C_buildFileCell(c){
-  const TC={'시세조사':'#2563eb','보고서작성':'#7c3aed'};
-  const LB={'시세조사':'시세','보고서작성':'보고서'};
-  return`<div style="padding:2px 4px;display:flex;flex-direction:column;gap:3px;" onclick="event.stopPropagation();">
-    ${['시세조사','보고서작성'].map(t=>{
-      const col=TC[t]; const lb=LB[t];
+  const TYPES=[{key:'시세조사',label:'시세',col:'#2563eb'},{key:'보고서작성',label:'보고서',col:'#7c3aed'}];
+  const upIcon=col=>`<svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink:0;"><path d="M5 7.5V2" stroke="${col}" stroke-width="1.6" stroke-linecap="round"/><path d="M2.5 4.2L5 1.8l2.5 2.4" stroke="${col}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><line x1="1.5" y1="9" x2="8.5" y2="9" stroke="${col}" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+  const fileIcon=col=>`<svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="flex-shrink:0;"><path d="M2 1h5l2.5 2.5V10H2V1z" fill="${col}18" stroke="${col}" stroke-width="1.1" stroke-linejoin="round"/><path d="M7 1v2.5h2.5" stroke="${col}" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const extLabel=name=>{const e=(name||'').split('.').pop().toLowerCase();return({pdf:'PDF',xlsx:'XLS',xls:'XLS',docx:'DOC',doc:'DOC',hwp:'HWP',jpg:'IMG',jpeg:'IMG',png:'IMG',gif:'IMG',zip:'ZIP'})[e]||'FILE';};
+  return`<div style="padding:3px 4px;display:flex;flex-direction:column;gap:4px;" onclick="event.stopPropagation();">
+    ${TYPES.map(({key:t,label:lb,col})=>{
       const files=(c.driveFiles&&c.driveFiles[t])||[];
       const hasFi=files.length>0;
       const chips=files.map(f=>
         `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" title="${f.name}"
-          style="display:inline-flex;align-items:center;gap:2px;max-width:110px;font-size:10px;font-weight:600;color:${col};text-decoration:none;background:${col}11;border:1px solid ${col}33;border-radius:4px;padding:1px 4px;overflow:hidden;white-space:nowrap;flex-shrink:0;">
-          📎<span style="overflow:hidden;text-overflow:ellipsis;max-width:72px;display:inline-block;">${f.name}</span>
-          <button onclick="event.stopPropagation();C_deleteFile('${c.id}','${t}','${f.id}')" style="background:none;border:none;cursor:pointer;font-size:9px;color:#aaa;padding:0;line-height:1;flex-shrink:0;margin-left:1px;">✕</button>
+          style="display:inline-flex;align-items:center;gap:3px;max-width:130px;font-size:10px;font-weight:600;color:${col};text-decoration:none;background:${col}10;border:1px solid ${col}30;border-radius:7px;padding:2px 6px;overflow:hidden;white-space:nowrap;">
+          ${fileIcon(col)}<span style="font-size:8px;font-weight:900;letter-spacing:.4px;opacity:.65;flex-shrink:0;">${extLabel(f.name)}</span>
+          <span style="overflow:hidden;text-overflow:ellipsis;max-width:60px;display:inline-block;">${f.name}</span>
+          <button onclick="event.stopPropagation();C_deleteFile('${c.id}','${t}','${f.id}')" style="background:none;border:none;cursor:pointer;font-size:11px;color:${col}70;padding:0 0 0 2px;line-height:1;flex-shrink:0;font-weight:400;">×</button>
         </a>`
       ).join('');
-      const upBtn=`<button onclick="event.stopPropagation();C_openFilePicker('${c.id}','${t}')" title="${t} 업로드" style="flex-shrink:0;height:16px;padding:0 5px;border-radius:7px;border:1.5px solid ${hasFi?col:'#d1d5db'};background:${hasFi?col+'14':'#f9fafb'};cursor:pointer;font-size:10px;font-weight:700;color:${hasFi?col:'#9ca3af'};line-height:1;display:inline-flex;align-items:center;gap:1px;white-space:nowrap;">↑${lb}</button>`;
+      const upBtn=`<button onclick="event.stopPropagation();C_openFilePicker('${c.id}','${t}')" title="${t} 파일 업로드"
+        style="flex-shrink:0;display:inline-flex;align-items:center;gap:3px;padding:2px 8px 2px 6px;border-radius:8px;border:1.5px solid ${hasFi?col+'55':'#e2e8f0'};background:${hasFi?col+'0d':'#f8fafc'};cursor:pointer;font-size:10px;font-weight:700;color:${hasFi?col:'#94a3b8'};white-space:nowrap;line-height:1.5;">
+        ${upIcon(hasFi?col:'#94a3b8')}${lb}
+      </button>`;
       return`<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;">${upBtn}${chips}</div>`;
     }).join('')}
   </div>`;
