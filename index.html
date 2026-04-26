@@ -13113,13 +13113,13 @@ function FEE_stageCell(stage, st) {
   const bars = Array.from({length: MAX}, (_, i) => {
     const n = i + 1;
     const color = STEP_COLORS[i];
-    if (n === stage)  return `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:10px;height:44px;border-radius:4px;background:${color};box-shadow:0 2px 10px ${color}77;"></span>`;
-    if (n < stage)    return `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:10px;height:26px;border-radius:4px;background:${color};opacity:.55;"></span>`;
-    return             `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:10px;height:12px;border-radius:4px;background:#dde3ef;"></span>`;
+    if (n === stage)  return `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:14px;height:36px;border-radius:4px;background:${color};box-shadow:0 2px 10px ${color}77;"></span>`;
+    if (n < stage)    return `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:14px;height:21px;border-radius:4px;background:${color};opacity:.55;"></span>`;
+    return             `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:14px;height:10px;border-radius:4px;background:#dde3ef;"></span>`;
   }).join('');
 
   return `<div style="display:inline-flex;align-items:center;gap:10px;">
-    <div style="display:inline-flex;align-items:flex-end;gap:4px;">${bars}</div>
+    <div style="display:inline-flex;align-items:flex-end;gap:5px;">${bars}</div>
     <div style="display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.4;">
       <span style="font-size:15px;font-weight:900;color:${sc};">${stage}<span style="font-weight:400;color:#b0b8c4;font-size:12px;">/7</span></span>
       <span style="font-size:13px;font-weight:700;color:${sc};">${stageName}</span>
