@@ -1479,14 +1479,17 @@ function auctionGet(p) {
 function loadAuction(ss, shName) {
   var sheet = sh(ss, shName);
   if (sheet.getLastRow() < 2) return { ok: true, data: [] };
-  // 기존 12열 시트에 13열(잔금납부확정) 헤더가 없으면 추가
-  if (sheet.getLastColumn() < 13) {
-    sheet.getRange(1, 13).setValue('잔금납부확정')
+  var hdrStyle = function(col, label, width) {
+    sheet.getRange(1, col).setValue(label)
          .setBackground('#1a1a2e').setFontColor('#ffffff').setFontWeight('bold').setFontSize(10)
          .setHorizontalAlignment('center').setVerticalAlignment('middle');
-    sheet.setColumnWidth(13, 70);
-  }
-  var vals = sheet.getRange(2, 1, sheet.getLastRow() - 1, 13).getValues();
+    sheet.setColumnWidth(col, width);
+  };
+  if (sheet.getLastColumn() < 13) hdrStyle(13, '잔금납부확정', 70);
+  if (sheet.getLastColumn() < 14) hdrStyle(14, '서브여부', 60);
+  if (sheet.getLastColumn() < 15) hdrStyle(15, '서브담당자', 70);
+  var cols = Math.min(sheet.getLastColumn(), 15);
+  var vals = sheet.getRange(2, 1, sheet.getLastRow() - 1, cols).getValues();
   return { ok: true, data: vals.map(mapAuctionRow) };
 }
 
@@ -1504,7 +1507,9 @@ function mapAuctionRow(r) {
     note:             String(r[9]  || ''),
     status:           String(r[10] || 'ongoing'),
     createdAt:        r[11] ? kstDate(r[11]) : '',
-    balanceOk:        String(r[12] || '')
+    balanceOk:        String(r[12] || ''),
+    isSub:            r[13] === true || r[13] === 'TRUE' || r[13] === 'true',
+    subStaff:         String(r[14] || '')
   };
 }
 
@@ -1539,7 +1544,9 @@ function addAuction(ss, d) {
     d.note             || '',
     d.status           || 'ongoing',
     new Date(),
-    d.balanceOk        || ''
+    d.balanceOk        || '',
+    d.isSub            || false,
+    d.subStaff         || ''
   ]);
   return { ok: true, id: id };
 }
@@ -1558,6 +1565,8 @@ function updateAuction(ss, d) {
   if (d.balanceDate !== undefined) sv(9, d.balanceDate ? new Date(d.balanceDate) : '');
   sv(10, d.note); sv(11, d.status);
   sv(13, d.balanceOk);
+  if (d.isSub !== undefined) sv(14, d.isSub);
+  if (d.subStaff !== undefined) sv(15, d.subStaff);
   return { ok: true };
 }
 
@@ -1734,7 +1743,7 @@ function statsGet(p) {
   var aData = [];
   var aSheet = sh(ss, SH_AUCTION);
   if (aSheet.getLastRow() > 1)
-    aData = aSheet.getRange(2,1,aSheet.getLastRow()-1,Math.min(aSheet.getLastColumn(),13)).getValues().map(mapAuctionRow);
+    aData = aSheet.getRange(2,1,aSheet.getLastRow()-1,Math.min(aSheet.getLastColumn(),15)).getValues().map(mapAuctionRow);
 
   // 사건목록(active+archived)에서 해당 월 auctionDate 사건번호 수집
   var allCases = loadCases(ss, SH_CASES_ACTIVE).concat(loadCases(ss, SH_CASES_ARCHIVE));

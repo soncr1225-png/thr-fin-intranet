@@ -5093,6 +5093,14 @@ function switchMainTab(t) {
   if(zoneMap[t]){setTimeout(()=>{const z=document.getElementById(zoneMap[t]);if(z){z.focus({preventScroll:true});photoMode=(t==='photo'?'cases':'');}},50);}
   // 물건조사요청표 진입 시 진행중 탭 기본 표시
   if(t==='cases') C_switchTab('active');
+  // 더핀 일정표 진입 시 진행중 탭으로 초기화
+  if(t==='auction'){
+    A_filtStatus='active';
+    document.querySelectorAll('#A_filterRow .filter-btn').forEach(b=>b.classList.remove('active'));
+    const _ab=document.querySelector("#A_filterRow .filter-btn[onclick*=\"'active'\"]");
+    if(_ab) _ab.classList.add('active');
+    if(typeof A_render==='function') A_render();
+  }
   // 블로그 탭 진입 시 sticky 헤더 top 값 재계산 (panel이 visible 된 후 측정)
   if(t==='blog') requestAnimationFrame(B_updateTheadTop);
 }
@@ -7810,6 +7818,20 @@ let CAL_year = new Date().getFullYear();
 let CAL_month = new Date().getMonth();
 
 loadBulk();
+
+// 백그라운드 자동 동기화 — 60초마다 조용히 갱신 (배너 없이, 기존 캐시 유지)
+async function _quietSync() {
+  try {
+    const r = await fetch(`${GAS_URL}?action=getBulk`);
+    const d = await r.json();
+    if (d && Array.isArray(d.cases) && (d.cases.length > 0 || (d.archive||[]).length > 0)) {
+      _bulkSave(d);
+      applyBulkData(d, false);
+    }
+  } catch(e) { /* 네트워크 오류 시 조용히 무시 */ }
+}
+setInterval(_quietSync, 60000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') _quietSync(); });
 
 document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='z'){
