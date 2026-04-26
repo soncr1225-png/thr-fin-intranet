@@ -5378,8 +5378,8 @@ function C_switchTab(t){
 function C_setFilter(f,b){C_filt=f;document.querySelectorAll('#C_filterRow .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');C_render();}
 function C_setFilterArc(f,b){C_filtArc=f;document.querySelectorAll('#C_filterRowArchive .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');C_render();}
 
-const C_AH=`<tr><th style="width:130px;">고객</th><th style="width:104px;">상태</th><th style="width:118px;">사건번호</th><th style="width:130px;">주소지</th><th style="width:130px;">법원</th><th style="width:86px;">경매기일</th><th style="width:88px;">마감요청일</th><th style="width:248px;">조사유형 (담당자)</th><th style="min-width:220px;">기타요청</th><th style="width:62px;"></th></tr>`;
-const C_ZH=`<tr><th style="width:130px;">고객</th><th style="width:88px;">종료사유</th><th style="width:118px;">사건번호</th><th style="width:140px;">주소지</th><th style="width:75px;">법원</th><th style="width:85px;">경매기일</th><th style="width:245px;">조사유형 (담당자)</th><th>비고</th><th style="width:75px;">종료일</th><th style="width:140px;"></th></tr>`;
+const C_AH=`<tr><th style="width:110px;">고객</th><th style="width:100px;">상태</th><th style="width:112px;">사건번호</th><th style="width:120px;">주소지</th><th style="width:110px;">법원</th><th style="width:76px;">경매기일</th><th style="width:80px;">마감요청일</th><th style="width:190px;">조사유형 (담당자)</th><th style="width:130px;">파일</th><th style="min-width:160px;">기타요청</th><th style="width:62px;"></th></tr>`;
+const C_ZH=`<tr><th style="width:110px;">고객</th><th style="width:84px;">종료사유</th><th style="width:112px;">사건번호</th><th style="width:120px;">주소지</th><th style="width:72px;">법원</th><th style="width:76px;">경매기일</th><th style="width:190px;">조사유형 (담당자)</th><th style="width:130px;">파일</th><th>비고</th><th style="width:72px;">종료일</th><th style="width:140px;"></th></tr>`;
 
 function C_archiveTags(typeMap){
   if(!typeMap)return '—';
@@ -5456,52 +5456,65 @@ function C_render(){
 
 function C_buildTypeCell(c){
   const TC={'시세조사':'#2563eb','현장조사':'#16a34a','보고서작성':'#7c3aed'};
-  const ROW='display:flex;align-items:center;gap:5px;min-height:22px;padding:1px 0;flex-wrap:wrap;';
+  const SH={'시세조사':'시세','현장조사':'현장','보고서작성':'보고서'};
   const DOT=(on,col)=>`<span style="flex-shrink:0;width:7px;height:7px;border-radius:50%;border:2px solid ${on?col:'#d1d5db'};background:${on?col:'transparent'};display:inline-block;"></span>`;
-  const LBL=(txt,col)=>`<span style="flex-shrink:0;font-size:11px;font-weight:700;color:${col};white-space:nowrap;min-width:48px;">${txt}</span>`;
 
-  const mgrRow=`<div style="${ROW}padding-bottom:3px;margin-bottom:3px;border-bottom:1px solid #f0f0f0;">
+  // 총괄 행 (1줄)
+  const mgrRow=`<div style="display:flex;align-items:center;gap:4px;padding-bottom:3px;margin-bottom:3px;border-bottom:1px solid #f0f0f0;" onclick="event.stopPropagation();">
     <span style="flex-shrink:0;width:7px;height:7px;border-radius:2px;background:${c.manager?'#1e3a5f':'#d1d5db'};display:inline-block;"></span>
-    ${LBL('총괄',c.manager?'#1e3a5f':'#9ca3af')}
+    <span style="flex-shrink:0;font-size:11px;font-weight:700;color:${c.manager?'#1e3a5f':'#9ca3af'};white-space:nowrap;">총괄</span>
     <select onchange="event.stopPropagation();C_setManager('${c.id}',this.value)"
-      style="flex:1;min-width:56px;font-size:11px;font-weight:${c.manager?'700':'400'};color:${c.manager?'#1e3a5f':'#9ca3af'};border:1px solid ${c.manager?'#bfdbfe':'#e5e7eb'};border-radius:6px;padding:1px 4px;background:${c.manager?'#eff6ff':'#fafafa'};cursor:pointer;outline:none;">
+      style="flex:1;min-width:50px;font-size:11px;font-weight:${c.manager?'700':'400'};color:${c.manager?'#1e3a5f':'#9ca3af'};border:1px solid ${c.manager?'#bfdbfe':'#e5e7eb'};border-radius:6px;padding:1px 4px;background:${c.manager?'#eff6ff':'#fafafa'};cursor:pointer;outline:none;">
       <option value="">미지정</option>
       ${C_MANAGERS.map(m=>`<option value="${m}"${c.manager===m?' selected':''}>${m}</option>`).join('')}
     </select>
   </div>`;
 
-  const UPLOADABLE = new Set(['시세조사','보고서작성']);
-  const typeRows=['시세조사','현장조사','보고서작성'].map(t=>{
-    const col=TC[t];
-    const mgrs=C_getMgrs(c,t);
-    const isOn=mgrs.length>0;
-    const sid=`${c.id}_${t.replace(/\s/g,'_')}`;
-    const names=mgrs.map(m=>
-      `<span style="font-size:11px;font-weight:600;color:#374151;white-space:nowrap;">${m}<button onclick="event.stopPropagation();C_removeTypeMgr('${c.id}','${t}','${m}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:#bbb;padding:0 0 0 1px;line-height:1;">×</button></span>`
-    ).join('<span style="color:#e5e7eb;margin:0 1px;">·</span>');
-    const addable=C_MANAGERS.filter(m=>!mgrs.includes(m));
-    const plusBtn=addable.length>0
-      ?`<button onclick="event.stopPropagation();C_showAddMgrSel('${sid}')" style="flex-shrink:0;width:15px;height:15px;border-radius:50%;border:1.5px solid ${isOn?col+'66':'#e5e7eb'};background:transparent;cursor:pointer;font-size:10px;font-weight:700;color:${isOn?col:'#d1d5db'};padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;">+</button>
-        <select id="C_addsel_${sid}" onchange="C_addTypeMgr('${c.id}','${t}',this.value);this.style.display='none';this.value='';" style="display:none;font-size:10px;border:1px solid #d1d5db;border-radius:4px;padding:1px 4px;max-width:72px;"><option value="">선택</option>${addable.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>`
-      :'';
+  // 3가지 조사유형 한 줄에 나란히
+  const typeRow=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;" onclick="event.stopPropagation();">
+    ${['시세조사','현장조사','보고서작성'].map(t=>{
+      const col=TC[t]; const sh=SH[t];
+      const mgrs=C_getMgrs(c,t); const isOn=mgrs.length>0;
+      const sid=`${c.id}_${t.replace(/\s/g,'_')}`;
+      const names=mgrs.map(m=>
+        `<span style="font-size:11px;font-weight:600;color:#374151;white-space:nowrap;">${m}<button onclick="event.stopPropagation();C_removeTypeMgr('${c.id}','${t}','${m}')" style="background:none;border:none;cursor:pointer;font-size:9px;color:#bbb;padding:0 0 0 1px;line-height:1;">×</button></span>`
+      ).join('');
+      const addable=C_MANAGERS.filter(m=>!mgrs.includes(m));
+      const plusBtn=addable.length>0
+        ?`<button onclick="event.stopPropagation();C_showAddMgrSel('${sid}')" style="width:14px;height:14px;border-radius:50%;border:1.5px solid ${isOn?col+'66':'#e5e7eb'};background:transparent;cursor:pointer;font-size:9px;font-weight:700;color:${isOn?col:'#d1d5db'};padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">+</button>
+          <select id="C_addsel_${sid}" onchange="C_addTypeMgr('${c.id}','${t}',this.value);this.style.display='none';this.value='';" style="display:none;font-size:10px;border:1px solid #d1d5db;border-radius:4px;padding:1px 3px;max-width:64px;"><option value="">선택</option>${addable.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>`
+        :'';
+      return`<div style="display:inline-flex;align-items:center;gap:2px;">
+        <button onclick="C_toggleType('${c.id}','${t}')" style="background:none;border:none;cursor:pointer;padding:0;flex-shrink:0;line-height:1;">${DOT(isOn,col)}</button>
+        <span onclick="C_toggleType('${c.id}','${t}')" style="font-size:11px;font-weight:700;color:${isOn?col:'#cbd5e1'};cursor:pointer;white-space:nowrap;">${sh}</span>
+        ${names}${plusBtn}
+      </div>`;
+    }).join('<span style="color:#e5e7eb;font-size:10px;margin:0 1px;">|</span>')}
+  </div>`;
 
-    let uploadBtn='', inlineChips='';
-    if(UPLOADABLE.has(t)){
+  return`<div style="padding:2px 4px;">${mgrRow}${typeRow}</div>`;
+}
+
+// 파일 컬럼 렌더러 (시세조사/보고서작성 파일 업로드/다운로드)
+function C_buildFileCell(c){
+  const TC={'시세조사':'#2563eb','보고서작성':'#7c3aed'};
+  const LB={'시세조사':'시세','보고서작성':'보고서'};
+  return`<div style="padding:2px 4px;display:flex;flex-direction:column;gap:3px;" onclick="event.stopPropagation();">
+    ${['시세조사','보고서작성'].map(t=>{
+      const col=TC[t]; const lb=LB[t];
       const files=(c.driveFiles&&c.driveFiles[t])||[];
       const hasFi=files.length>0;
-      uploadBtn=`<button onclick="event.stopPropagation();C_openFilePicker('${c.id}','${t}')" title="파일 업로드" style="flex-shrink:0;height:16px;padding:0 5px;border-radius:8px;border:1.5px solid ${hasFi?col:'#d1d5db'};background:${hasFi?col+'18':'#f9fafb'};cursor:pointer;font-size:10px;font-weight:700;color:${hasFi?col:'#9ca3af'};line-height:1;display:inline-flex;align-items:center;gap:1px;white-space:nowrap;">⬆업로드</button>`;
-      if(hasFi){
-        inlineChips=files.map(f=>`<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" title="${f.name}" style="display:inline-flex;align-items:center;gap:2px;max-width:130px;font-size:10px;font-weight:600;color:#2563eb;text-decoration:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:1px 4px;overflow:hidden;white-space:nowrap;flex-shrink:0;">📎<span style="overflow:hidden;text-overflow:ellipsis;max-width:90px;display:inline-block;">${f.name}</span><button onclick="event.stopPropagation();C_deleteFile('${c.id}','${t}','${f.id}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:#93c5fd;padding:0;line-height:1;flex-shrink:0;margin-left:1px;">✕</button></a>`).join('');
-      }
-    }
-    return`<div onclick="event.stopPropagation();" style="${ROW}">
-      <button onclick="C_toggleType('${c.id}','${t}')" style="background:none;border:none;cursor:pointer;padding:0;flex-shrink:0;display:flex;align-items:center;">${DOT(isOn,col)}</button>
-      <span onclick="C_toggleType('${c.id}','${t}')" style="flex-shrink:0;font-size:11px;font-weight:700;color:${isOn?col:'#cbd5e1'};cursor:pointer;white-space:nowrap;min-width:50px;">${t}</span>
-      <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;">${names}${plusBtn}${uploadBtn}${inlineChips}</div>
-    </div>`;
-  }).join('');
-
-  return`<div style="min-width:220px;padding:2px 4px;">${mgrRow}${typeRows}</div>`;
+      const chips=files.map(f=>
+        `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" title="${f.name}"
+          style="display:inline-flex;align-items:center;gap:2px;max-width:110px;font-size:10px;font-weight:600;color:${col};text-decoration:none;background:${col}11;border:1px solid ${col}33;border-radius:4px;padding:1px 4px;overflow:hidden;white-space:nowrap;flex-shrink:0;">
+          📎<span style="overflow:hidden;text-overflow:ellipsis;max-width:72px;display:inline-block;">${f.name}</span>
+          <button onclick="event.stopPropagation();C_deleteFile('${c.id}','${t}','${f.id}')" style="background:none;border:none;cursor:pointer;font-size:9px;color:#aaa;padding:0;line-height:1;flex-shrink:0;margin-left:1px;">✕</button>
+        </a>`
+      ).join('');
+      const upBtn=`<button onclick="event.stopPropagation();C_openFilePicker('${c.id}','${t}')" title="${t} 업로드" style="flex-shrink:0;height:16px;padding:0 5px;border-radius:7px;border:1.5px solid ${hasFi?col:'#d1d5db'};background:${hasFi?col+'14':'#f9fafb'};cursor:pointer;font-size:10px;font-weight:700;color:${hasFi?col:'#9ca3af'};line-height:1;display:inline-flex;align-items:center;gap:1px;white-space:nowrap;">↑${lb}</button>`;
+      return`<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;">${upBtn}${chips}</div>`;
+    }).join('')}
+  </div>`;
 }
 
 function C_openFilePicker(caseId, typeName) {
@@ -5613,6 +5626,7 @@ function C_activeRow(c){
 <td style="font-size:12px;color:#888;white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','auctionDate','${c.auctionDate||''}')">${C_fmt(c.auctionDate)}</span>${db}</td>
 <td class="${C_dlCls(c.deadline)}" style="white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','deadline','${c.deadline||''}')">${C_fmt(c.deadline)}</span></td>
 <td style="overflow:visible;position:relative;">${C_buildTypeCell(c)}</td>
+<td style="overflow:visible;position:relative;">${C_buildFileCell(c)}</td>
 <td><span class="editable note-cell" title="${c.note||''}" onclick="C_startEdit(this,'${c.id}','note','${(c.note||'').replace(/'/g,"&#39;")}')">${c.note||'—'}</span></td>
 <td style="white-space:nowrap;"><button class="row-btn" onclick="CD_open('${c.id}')" style="background:#fff8e1;color:#8a5a00;border-color:#f2d67a;margin-right:3px;" title="수수료·낙찰·7단계 관리">💰</button><button class="row-btn del" onclick="C_delCase('${c.id}')">삭제</button></td></tr>`;
 }
@@ -5641,6 +5655,7 @@ function C_archiveRow(c, compact=false){
 <td style="font-size:12px;color:#aaa;white-space:nowrap;"><span class="editable" onclick="C_startEditDate(this,'${c.id}','auctionDate','${c.auctionDate||''}')">${C_fmt(c.auctionDate)||'—'}</span></td>
 ${deadlineTd}
 <td style="overflow:visible;position:relative;">${C_buildTypeCell(c)}</td>
+<td style="overflow:visible;position:relative;">${C_buildFileCell(c)}</td>
 <td><div class="note-cell" title="${c.note||''}">${c.note||'—'}</div></td>
 ${closedAtTd}
 <td style="white-space:nowrap;"><button class="row-btn" onclick="CD_open('${c.id}')" style="background:#fff8e1;color:#8a5a00;border-color:#f2d67a;margin-right:3px;" title="수수료·낙찰·7단계 관리">💰</button><button class="row-btn restore" onclick="C_restoreToActive('${c.id}')" style="white-space:nowrap;">↩ 복원</button><button class="row-btn del" onclick="C_delCase('${c.id}')">삭제</button></td></tr>`;
@@ -5709,10 +5724,7 @@ function C_clientCell(c) {
       style="display:inline-flex;align-items:center;background:#e8f0fe;color:#1a56db;border:1px solid #c7d8fc;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;gap:4px;transition:background .12s;"
       onmouseover="this.style.background='#c7d8fc'" onmouseout="this.style.background='#e8f0fe'">${ci.clientName}</span>`;
   }).join('');
-  const addBtn = `<button onclick="C_addClient('${c.id}','${(c.caseNo||'').replace(/'/g,"&#39;")}')"
-    style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#f3f4f6;border:1px solid #d1d5db;cursor:pointer;font-size:13px;color:#6b7280;line-height:1;padding:0;flex-shrink:0;"
-    title="고객 추가">+</button>`;
-  return `<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;min-height:24px;">${chips}${addBtn}</div>`;
+  return `<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;min-height:20px;">${chips}</div>`;
 }
 
 // 더핀 일정표(A탭)로 이동 + 해당 고객 하이라이트
