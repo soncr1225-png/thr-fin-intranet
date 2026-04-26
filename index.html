@@ -13764,18 +13764,22 @@ function GCAL_syncByCaseNo(caseNo, cBase) {
   let shadow = {};
   try { shadow = (JSON.parse(localStorage.getItem('thefin_fee_shadow_v1') || '{}'))[c.id] || {}; } catch(e) {}
 
-  // A_items에서 날짜 가져오기
-  const aItem = (typeof A_items !== 'undefined') && A_items.find(i => i.caseNo === caseNo);
+  // A_items에서 날짜 + 이름 가져오기 (같은 사건번호 중 clientName 있는 것 우선)
+  const aItems = (typeof A_items !== 'undefined') ? A_items.filter(i => i.caseNo === caseNo) : [];
+  const aItem = aItems.find(i => i.clientName) || aItems[0] || null;
 
   // M_active에서 이사날짜 가져오기
-  const mItem = (typeof M_active !== 'undefined') && M_active.find(m => {
-    const aI = (typeof A_items !== 'undefined') && A_items.find(i => i.caseNo === caseNo);
-    return aI && m.caseNo === caseNo;
-  });
+  const mItem = (typeof M_active !== 'undefined')
+    ? M_active.find(m => m.caseNo === caseNo) || null
+    : null;
+
+  // clientName 우선순위: shadow(관리모달) > A_items > 빈값
+  // 어디서 등록했든 가장 먼저 값이 있는 출처를 사용
+  const clientName = shadow.clientName || (aItem && aItem.clientName) || '';
 
   const payload = {
     caseNo:          caseNo,
-    clientName:      shadow.clientName || c.clientName || (aItem && aItem.clientName) || '',
+    clientName,
     court:           c.court || (aItem && aItem.court) || '',
     address:         c.address || '',
     staff:           shadow.manager || c.manager || '',
