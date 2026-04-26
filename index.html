@@ -5420,8 +5420,8 @@ function C_switchTab(t){
 function C_setFilter(f,b){C_filt=f;document.querySelectorAll('#C_filterRow .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');C_render();}
 function C_setFilterArc(f,b){C_filtArc=f;document.querySelectorAll('#C_filterRowArchive .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');C_render();}
 
-const C_AH=`<tr><th style="width:110px;">고객명</th><th style="width:100px;">상태</th><th style="width:112px;">사건번호</th><th style="width:120px;">주소지</th><th style="width:110px;">법원</th><th style="width:76px;">경매기일</th><th style="width:80px;">마감요청일</th><th style="width:190px;">조사유형 (담당자)</th><th style="width:130px;">파일</th><th style="min-width:160px;">기타요청</th><th style="width:62px;"></th></tr>`;
-const C_ZH=`<tr><th style="width:110px;">고객명</th><th style="width:84px;">종료사유</th><th style="width:112px;">사건번호</th><th style="width:120px;">주소지</th><th style="width:72px;">법원</th><th style="width:76px;">경매기일</th><th style="width:190px;">조사유형 (담당자)</th><th style="width:130px;">파일</th><th>비고</th><th style="width:72px;">종료일</th><th style="width:140px;"></th></tr>`;
+const C_AH=`<tr><th style="width:110px;">고객명</th><th style="width:100px;">상태</th><th style="width:112px;">사건번호</th><th style="width:120px;">주소지</th><th style="width:110px;">법원</th><th style="width:76px;">경매기일</th><th style="width:80px;">마감요청일</th><th style="width:190px;">조사유형 (담당자)</th><th style="width:200px;">파일</th><th style="min-width:160px;">기타요청</th><th style="width:62px;"></th></tr>`;
+const C_ZH=`<tr><th style="width:110px;">고객명</th><th style="width:84px;">종료사유</th><th style="width:112px;">사건번호</th><th style="width:120px;">주소지</th><th style="width:72px;">법원</th><th style="width:76px;">경매기일</th><th style="width:190px;">조사유형 (담당자)</th><th style="width:200px;">파일</th><th>비고</th><th style="width:72px;">종료일</th><th style="width:140px;"></th></tr>`;
 
 function C_archiveTags(typeMap){
   if(!typeMap)return '—';
@@ -5572,7 +5572,7 @@ function C_buildFileCell(c){
         style="flex-shrink:0;display:inline-flex;align-items:center;gap:3px;padding:2px 8px 2px 6px;border-radius:8px;border:1.5px solid ${hasFi?col+'55':'#e2e8f0'};background:${hasFi?col+'0d':'#f8fafc'};cursor:pointer;font-size:10px;font-weight:700;color:${hasFi?col:'#94a3b8'};white-space:nowrap;line-height:1.5;">
         ${upIcon(hasFi?col:'#94a3b8')}${lb}
       </button>`;
-      return`<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;">${upBtn}${chips}</div>`;
+      return`<div style="display:flex;align-items:center;gap:3px;flex-wrap:nowrap;">${upBtn}${chips}</div>`;
     }).join('')}
   </div>`;
 }
