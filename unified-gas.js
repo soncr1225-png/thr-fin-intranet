@@ -1610,7 +1610,15 @@ function myeongdoGet(p) {
 function loadMyeongdo(ss, shName) {
   var sheet = sh(ss, shName);
   if (sheet.getLastRow() < 2) return { ok: true, data: [] };
-  var vals = sheet.getRange(2, 1, sheet.getLastRow() - 1, 15).getValues();
+  // 16열(담당자) 자동 추가
+  if (sheet.getLastColumn() < 16) {
+    sheet.getRange(1, 16).setValue('담당자')
+         .setBackground('#1a1a2e').setFontColor('#ffffff').setFontWeight('bold').setFontSize(10)
+         .setHorizontalAlignment('center').setVerticalAlignment('middle');
+    sheet.setColumnWidth(16, 100);
+  }
+  var cols = Math.min(sheet.getLastColumn(), 16);
+  var vals = sheet.getRange(2, 1, sheet.getLastRow() - 1, cols).getValues();
   return { ok: true, data: vals.map(mapMyeongdoRow) };
 }
 
@@ -1630,7 +1638,8 @@ function mapMyeongdoRow(r) {
     moveDate:        r[11] ? kstDate(r[11]) : '',
     note:            String(r[12] || ''),
     status:          String(r[13] || 'active'),
-    createdAt:       r[14] ? kstDate(r[14]) : ''
+    createdAt:       r[14] ? kstDate(r[14]) : '',
+    staffList:       String(r[15] || '')
   };
 }
 
@@ -1661,7 +1670,7 @@ function addMyeongdo(ss, d) {
     d.enforcementDate ? new Date(d.enforcementDate) : '',
     d.warningDate     ? new Date(d.warningDate)     : '',
     d.moveDate        ? new Date(d.moveDate)        : '',
-    d.note || '', 'active', new Date()
+    d.note || '', 'active', new Date(), d.staffList || ''
   ]);
   return { ok: true, id: id };
 }
@@ -1682,6 +1691,7 @@ function updateMyeongdo(ss, d) {
   if (d.warningDate     !== undefined) sv(11, d.warningDate     ? new Date(d.warningDate)     : '');
   if (d.moveDate        !== undefined) sv(12, d.moveDate        ? new Date(d.moveDate)        : '');
   sv(13, d.note); sv(14, d.status);
+  if (d.staffList !== undefined) sv(16, d.staffList);
   return { ok: true };
 }
 
