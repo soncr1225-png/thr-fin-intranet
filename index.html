@@ -7574,6 +7574,9 @@ async function loadBulk() {
     if (bannerMsg) bannerMsg.textContent = `캐시 데이터 표시 중 (${ageMin}분 전) — 최신 데이터를 불러오는 중...`;
   } else {
     C_renderSkeleton();
+    // 캐시 없으면 캘린더 사이드바에 로딩 상태 표시
+    const sb = document.getElementById('CAL_sidebar');
+    if (sb) sb.innerHTML = '<div class="cal-sb-empty" style="color:#888;">일정 데이터를<br>불러오는 중...</div>';
   }
 
   // ② GAS 1회 fetch
@@ -7589,10 +7592,14 @@ async function loadBulk() {
     } else {
       console.error('[loadBulk] 응답 형식 오류:', d);
       setSync('err');
+      const sb = document.getElementById('CAL_sidebar');
+      if (sb && sb.innerHTML.includes('불러오는 중')) sb.innerHTML = '<div class="cal-sb-empty" style="color:#ef4444;">데이터 로드 실패<br><small style="font-size:10px;">새로고침 후 다시 시도해주세요</small></div>';
     }
   } catch(e) {
     console.error('[loadBulk] fetch 실패:', e);
     setSync('err');
+    const sb = document.getElementById('CAL_sidebar');
+    if (sb && sb.innerHTML.includes('불러오는 중')) sb.innerHTML = '<div class="cal-sb-empty" style="color:#ef4444;">GAS 연결 실패<br><small style="font-size:10px;">인터넷 연결을 확인하거나<br>새로고침 후 다시 시도해주세요</small></div>';
   }
 }
 
@@ -11013,6 +11020,16 @@ async function AUTH_login() {
   // 로그인 후 항상 캘린더 탭으로 이동
   switchMainTab('cal');
   if (typeof CAL_init === 'function') CAL_init();
+  // GAS가 아직 로드 중이면 완료 후 사이드바 재렌더 보장 (캐시 없는 첫 로그인 대응)
+  if (C_cases.length === 0) {
+    const _calPoll = setInterval(() => {
+      if (C_cases.length > 0) {
+        clearInterval(_calPoll);
+        if (document.getElementById('panel-cal')?.classList.contains('active') && typeof CAL_renderSidebar === 'function') CAL_renderSidebar();
+      }
+    }, 300);
+    setTimeout(() => clearInterval(_calPoll), 15000); // 15초 후 포기
+  }
 
   // 초기 비밀번호 그대로면 강제 변경
   if (!storedHash || storedHash === defaultHash) {
@@ -11361,8 +11378,31 @@ function LIB2_select(cat, name, el) {
   const empty = document.getElementById('lib2-empty-' + cat);
   const iframe = document.getElementById('lib2-iframe-' + cat);
   if (iframe) {
-    iframe.src = paths.pdf + encodeURIComponent(name) + '.pdf';
     iframe.style.display = '';
+    iframe.src = '';
+    iframe.onerror = null;
+    // onerror는 크로스오리진 iframe에선 안 터질 수 있어 load 후 contentDocument 확인
+    iframe.onload = function() {
+      try {
+        if (!this.contentDocument || !this.contentWindow) throw new Error();
+        // file:// 차단 시 contentDocument.body가 없거나 빈 경우 있음
+        const body = this.contentDocument.body;
+        if (body && body.children.length === 0 && !body.textContent.trim()) throw new Error();
+      } catch(e) {
+        LIB2_showPdfError(cat, name, paths);
+      }
+    };
+    // 일정 시간 후에도 로드 안 되면 에러 처리 (Chrome 파일 차단 대응)
+    const checkTimer = setTimeout(() => {
+      try {
+        const doc = iframe.contentDocument;
+        if (!doc || (doc.body && doc.body.children.length === 0 && !doc.body.textContent.trim())) {
+          LIB2_showPdfError(cat, name, paths);
+        }
+      } catch(e) { LIB2_showPdfError(cat, name, paths); }
+    }, 2000);
+    iframe._checkTimer = checkTimer;
+    iframe.src = paths.pdf + encodeURIComponent(name) + '.pdf';
   }
   if (empty) empty.style.display = 'none';
 
@@ -11378,6 +11418,27 @@ function LIB2_select(cat, name, el) {
     hwpBtn.href = paths.hwp + encodeURIComponent(name) + '.hwp';
     hwpBtn.download = name + '.hwp';
     hwpBtn.classList.add('lib2-dl-on');
+  }
+}
+
+function LIB2_showPdfError(cat, name, paths) {
+  const iframe = document.getElementById('lib2-iframe-' + cat);
+  if (iframe) { clearTimeout(iframe._checkTimer); iframe.style.display = 'none'; iframe.src = ''; }
+  const empty = document.getElementById('lib2-empty-' + cat);
+  if (empty) {
+    empty.style.display = '';
+    empty.innerHTML = `<div class="lib2-viewer-empty-box">
+      <div class="lib2-viewer-empty-icon">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><rect x="8" y="6" width="34" height="44" rx="4" fill="#fee2e2"/><path d="M20 22l16 12M36 22L20 34" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </div>
+      <div class="lib2-viewer-empty-title" style="color:#b91c1c;font-size:16px;">PDF를 불러올 수 없습니다</div>
+      <div class="lib2-viewer-empty-tips" style="color:#666;">
+        이 컴퓨터에 파일이 없거나 브라우저가 로컬 PDF를 차단했습니다.<br><br>
+        <strong>해결 방법:</strong><br>
+        • <strong>OneDrive 동기화 확인</strong> — 탐색기에서 docs/자료실/pdf 폴더를<br>&nbsp;&nbsp;우클릭 → "항상 이 장치에 보관"을 선택하세요<br>
+        • 또는 <strong>아래 MS워드 / 한글워드 버튼</strong>으로 직접 다운로드하세요
+      </div>
+    </div>`;
   }
 }
 
