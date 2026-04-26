@@ -2088,26 +2088,51 @@ function markMsgRead(ss, id) {
 //      구글 캘린더 앱 → 다른 캘린더 → 해당 캘린더 → 사람 추가
 // ============================================================
 
+// 사용할 캘린더 이름 — 구글 캘린더에 이미 있는 이름과 정확히 일치해야 함
+var GCAL_TARGET_NAME = '더핀(the fin) 통합 업무표';
+
 function GCAL_init() {
+  // 저장된 ID 초기화 후 재탐색
+  PropertiesService.getScriptProperties().deleteProperty('THEFIN_CALENDAR_ID');
   var cal = gcalGetOrCreate();
-  Logger.log('캘린더 생성/확인 완료: ' + cal.getId());
+  Logger.log('캘린더 연결 완료: ' + cal.getName() + ' (' + cal.getId() + ')');
   return cal.getId();
+}
+
+// 잘못 생성된 캘린더 ID를 리셋할 때 사용
+function GCAL_reset() {
+  PropertiesService.getScriptProperties().deleteProperty('THEFIN_CALENDAR_ID');
+  Logger.log('캘린더 ID 초기화 완료. GCAL_init()을 다시 실행하세요.');
 }
 
 function gcalGetOrCreate() {
   var props = PropertiesService.getScriptProperties();
   var calId = props.getProperty('THEFIN_CALENDAR_ID');
+
+  // 저장된 ID가 있으면 먼저 확인
   if (calId) {
     try {
       var existing = CalendarApp.getCalendarById(calId);
-      if (existing) return existing;
+      if (existing && existing.getName() === GCAL_TARGET_NAME) return existing;
     } catch(e) {}
+    // 이름이 다르거나 찾을 수 없으면 ID 삭제 후 재탐색
+    props.deleteProperty('THEFIN_CALENDAR_ID');
   }
-  var cal = CalendarApp.createCalendar('THE FIN 인트라넷', {
-    color: CalendarApp.Color.CYAN,
-    summary: 'THE FIN 인트라넷 — 경매 일정 자동 동기화'
-  });
+
+  // 이름으로 기존 캘린더 검색
+  var allCals = CalendarApp.getAllCalendars();
+  for (var i = 0; i < allCals.length; i++) {
+    if (allCals[i].getName() === GCAL_TARGET_NAME) {
+      props.setProperty('THEFIN_CALENDAR_ID', allCals[i].getId());
+      Logger.log('기존 캘린더 연결: ' + GCAL_TARGET_NAME);
+      return allCals[i];
+    }
+  }
+
+  // 없으면 새로 생성
+  var cal = CalendarApp.createCalendar(GCAL_TARGET_NAME, { color: CalendarApp.Color.TEAL });
   props.setProperty('THEFIN_CALENDAR_ID', cal.getId());
+  Logger.log('새 캘린더 생성: ' + GCAL_TARGET_NAME);
   return cal;
 }
 
