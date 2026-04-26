@@ -7946,7 +7946,10 @@ function AG_generate() {
   document.getElementById('ag-out-closetime').textContent = closeTime ? AG_fmtTime(closeTime) : '—';
   document.getElementById('ag-out-court-big').textContent = court;
   document.getElementById('ag-out-addr-big').textContent = addr || '';
-  document.getElementById('ag-out-room-big').textContent = room || '';
+  // 주소 끝 건물번호(예: 101)가 법정 호수 앞에 중복될 경우 자동 제거
+  const addrEndNum = (addr || '').match(/\s(\d+)$/)?.[1];
+  const cleanRoom = addrEndNum && room.startsWith(addrEndNum + ' ') ? room.slice(addrEndNum.length + 1) : room;
+  document.getElementById('ag-out-room-big').textContent = cleanRoom || '';
 
   const caseRow = document.getElementById('ag-out-caseno-row');
   if (caseno) { document.getElementById('ag-out-caseno').textContent = caseno; caseRow.style.display=''; }
@@ -7969,7 +7972,7 @@ function AG_generate() {
   document.getElementById('mob-closetime').textContent  = closeTime ? AG_fmtTime(closeTime) : '—';
   document.getElementById('mob-court').textContent      = court;
   document.getElementById('mob-addr').textContent       = addr || '';
-  document.getElementById('mob-room').textContent       = room || '';
+  document.getElementById('mob-room').textContent       = cleanRoom || '';
   document.getElementById('mob-minprice').textContent   = minprice ? minprice + '원' : '—';
   document.getElementById('mob-deposit').textContent    = deposit ? deposit + '원' : '—';
   document.getElementById('mob-staff').textContent      = staff;
@@ -8021,7 +8024,7 @@ function AG_clear() {
 }
 
 async function AG_capture(btn) {
-  const card = document.getElementById('ag-mobile-card');
+  const card = document.getElementById('ag-card');
   const orig = btn.textContent;
   btn.textContent = '캡처 중...';
   btn.disabled = true;
@@ -8044,7 +8047,7 @@ async function AG_capture(btn) {
       setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 3000);
       return;
     } catch(_) {
-      const court = (document.getElementById('mob-court').textContent || '입찰안내').replace(/\s/g,'');
+      const court = (document.getElementById('ag-out-court-big').textContent || '입찰안내').replace(/\s/g,'');
       const date = document.getElementById('ag-date').value || '';
       const link = document.createElement('a');
       link.download = `더핀_입찰안내_${court}_${date}.png`;
