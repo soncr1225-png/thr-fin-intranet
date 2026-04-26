@@ -2476,6 +2476,7 @@ table.data-table tbody tr:hover,
   <!-- 서브 탭 -->
   <div id="C_cacheBanner" style="display:none;" class="cache-banner">
     <span>⏳</span><span>캐시 데이터 표시 중 — 서버에서 최신 데이터를 불러오고 있습니다...</span>
+    <button id="C_recoverBtn" onclick="C_forceRecover()" style="display:none;margin-left:10px;padding:3px 10px;border-radius:6px;border:1.5px solid #dc2626;background:#fef2f2;color:#dc2626;font-size:12px;font-weight:700;cursor:pointer;">🔄 구글 시트에서 데이터 복구</button>
   </div>
   <div class="sheet-tabs">
     <div class="sheet-tab" id="C_tab-all" onclick="C_switchTab('all')">전체사건 <span class="tab-count" id="C_tc-all">—</span></div>
@@ -5196,6 +5197,36 @@ async function C_loadAll(){
   }catch(e){setSync('err');document.getElementById('C_cacheBanner').style.display='none';}
 }
 
+// 구글 시트에서 전체 사건 데이터 강제 재로드 (데이터 복구용)
+async function C_forceRecover() {
+  const btn = document.getElementById('C_recoverBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 복구 중...'; }
+  try {
+    const r = await fetch(`${GAS_URL}?action=getCasesAll`);
+    const data = await r.json();
+    if (Array.isArray(data) && data.length > 0) {
+      C_cases = data;
+      C_cacheSave(C_CACHE_CASES, C_cases);
+      // bulk 캐시도 갱신
+      const bulkCached = _bulkLoad() || {};
+      const active = data.filter(c => !['closed','cancel','drop','changed','lost'].includes(c.status));
+      const archive = data.filter(c => ['closed','cancel','drop','changed','lost'].includes(c.status));
+      _bulkSave({ ...bulkCached, cases: active, archive });
+      C_render(); A_allCases = C_cases; A_render();
+      const banner = document.getElementById('C_cacheBanner');
+      if (banner) { banner.style.display = 'none'; banner.style.background = ''; banner.style.borderColor = ''; }
+      if (typeof v3Toast === 'function') v3Toast(`✅ 복구 완료: 사건 ${data.length}건 로드됨`, 4000);
+      setSync('ok');
+    } else {
+      alert(`구글 시트에서 데이터를 찾지 못했습니다.\n\n직접 확인: https://docs.google.com/spreadsheets/d/${CASES_SS_ID || '1Mmo3giibc9m3tNa-dRuzsgemytl-2DYMjc7zCC4SI-4'}\n\n"사건목록" 및 "종료사건" 시트에 데이터가 있는지 확인해주세요.`);
+      if (btn) { btn.disabled = false; btn.textContent = '🔄 구글 시트에서 데이터 복구'; }
+    }
+  } catch(e) {
+    alert('복구 실패: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 구글 시트에서 데이터 복구'; }
+  }
+}
+
 function C_renderSkeleton(){
   document.getElementById('C_tHead').innerHTML=C_AH;
   document.getElementById('C_tBody').innerHTML=Array(3).fill(0).map(()=>`<tr><td><div class="sk-block skeleton" style="width:60px;height:22px;border-radius:99px;"></div></td><td><div class="sk-block skeleton" style="width:90px;"></div></td><td><div class="sk-block skeleton" style="width:110px;"></div></td><td><div class="sk-block skeleton" style="width:60px;"></div></td><td><div class="sk-block skeleton" style="width:70px;"></div></td><td><div class="sk-block skeleton" style="width:180px;height:38px;"></div></td><td><div class="sk-block skeleton" style="width:80px;"></div></td><td></td></tr>`).join('');
@@ -7598,6 +7629,9 @@ function _bulkLoad() {
   try { const v = localStorage.getItem(BULK_CACHE_KEY); return v ? JSON.parse(v) : null; } catch(e) { return null; }
 }
 function _bulkSave(d) {
+  // 빈 사건 데이터는 저장하지 않음 (GAS 오류/쿼터 초과로 인한 빈 응답이 캐시를 덮어쓰는 것 방지)
+  const hasData = (d.cases && d.cases.length > 0) || (d.archive && d.archive.length > 0);
+  if (!hasData) { console.warn('[_bulkSave] 사건 데이터 없음 — 캐시 저장 건너뜀'); return; }
   try {
     localStorage.setItem(BULK_CACHE_KEY, JSON.stringify(d));
     localStorage.setItem(BULK_CACHE_AGE, String(Date.now()));
@@ -7623,8 +7657,24 @@ const STAGES = [
   { n:9, name:'기타',        color:'#9ca3af' },
 ];
 
-function applyBulkData(d) {
+function applyBulkData(d, isFromCache) {
   const allCases = [...(d.cases||[]), ...(d.archive||[])];
+  // 서버 응답이 빈 배열인데 기존에 데이터가 있으면 덮어쓰지 않음
+  if (!isFromCache && allCases.length === 0 && C_cases.length > 0) {
+    console.warn('[applyBulkData] 서버 빈 응답 무시 — 기존 캐시 데이터 유지');
+    const banner = document.getElementById('C_cacheBanner');
+    if (banner) {
+      banner.style.display = 'flex';
+      banner.style.background = '#fef2f2';
+      banner.style.borderColor = '#fca5a5';
+      const spans = banner.querySelectorAll('span');
+      const msg = spans[spans.length - 1];
+      if (msg) msg.textContent = '⚠️ 서버에서 사건 데이터를 불러오지 못했습니다. 캐시 데이터를 표시 중입니다.';
+      const btn = document.getElementById('C_recoverBtn');
+      if (btn) btn.style.display = 'inline-block';
+    }
+    return;
+  }
 
   // GAS fee 데이터 → localStorage 동기화 (기기 간 단계·수수료 공유)
   if (d.feeData && typeof d.feeData === 'object') {
@@ -7679,7 +7729,7 @@ async function loadBulk() {
   // ① 캐시 즉시 렌더 (있으면)
   const cached = _bulkLoad();
   if (cached) {
-    applyBulkData(cached);
+    applyBulkData(cached, true);
     const ageMin = Math.round(_bulkAge() / 60000);
     document.getElementById('C_cacheBanner').style.display = 'flex';
     const bannerSpans = document.getElementById('C_cacheBanner').querySelectorAll('span');
@@ -7698,7 +7748,7 @@ async function loadBulk() {
     const d = await r.json();
     if (d && Array.isArray(d.cases)) {
       _bulkSave(d);
-      applyBulkData(d);
+      applyBulkData(d, false);
       const banner = document.getElementById('C_cacheBanner');
       if (banner) banner.style.display = 'none';
       setSync('ok');
