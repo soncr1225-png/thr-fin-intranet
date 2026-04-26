@@ -7763,7 +7763,7 @@ function _bulkAge() {
 // FEE_ consts declared here (before applyBulkData) to avoid TDZ when FEE_migrate is called on cached data load
 const FEE_SHADOW_KEY = 'thefin_fee_shadow_v1';
 const FEE_RATES = { '아파트':1, '다가구':2, '빌딩':2, '공장':2, '토지':2, '특수물건':3 };
-const FEE_SHADOW_FIELDS = ['currentStage','stageNote','propertyType','feeRate','bidPrice','bidDate','fee1Received','fee1Date','fee2Received','fee2Date','staffShares','feeNote','clientName','manager','driveFiles','manualFee'];
+const FEE_SHADOW_FIELDS = ['currentStage','stageNote','propertyType','feeRate','bidPrice','bidDate','fee1Received','fee1Date','fee2Received','fee2Date','staffShares','feeNote','clientName','manager','driveFiles','manualFee','blogStaff'];
 const STAGES = [
   { n:1, name:'블로그 홍보', color:'#0891b2' },
   { n:2, name:'상담',        color:'#2563eb' },
@@ -13584,6 +13584,7 @@ function FEE_migrate() {
     if (c.manager    == null)   c.manager      = s.manager    || '';
     if (c.driveFiles == null)   c.driveFiles   = s.driveFiles  || {};
     if (c.manualFee  == null)   c.manualFee    = s.manualFee   || 0;
+    if (c.blogStaff  == null)   c.blogStaff    = s.blogStaff   || '';
   });
 }
 
@@ -13615,10 +13616,11 @@ function FEE_fmtWon(n) {
   return n.toLocaleString('ko-KR') + '원';
 }
 
-// 담당자 목록 추출 (manager·typeMap·서브·명도 포함)
+// 담당자 목록 추출 (manager·typeMap·블로그·서브·명도 포함)
 function FEE_getAllStaff(c) {
   const set = new Set();
   if (c.manager) set.add(c.manager);
+  if (c.blogStaff) set.add(c.blogStaff);
   const tm = c.typeMap || {};
   Object.values(tm).forEach(v => {
     if (Array.isArray(v)) v.forEach(x => { if (x) set.add(x); });
@@ -13628,6 +13630,11 @@ function FEE_getAllStaff(c) {
   if (typeof A_items !== 'undefined') {
     A_items.filter(i => i.caseNo === c.caseNo && i.subStaff).forEach(i => set.add(i.subStaff));
   }
+  // 명도 탭 staffList
+  const mAll = [...(typeof M_active !== 'undefined' ? M_active : []), ...(typeof M_done !== 'undefined' ? M_done : [])];
+  mAll.filter(m => m.caseNo === c.caseNo).forEach(m => {
+    (m.staffList || '').split(',').filter(Boolean).forEach(s => set.add(s));
+  });
   return [...set].filter(Boolean);
 }
 
@@ -13854,32 +13861,62 @@ function PART_render(c) {
   const tm = c.typeMap || {};
   const getFirst = v => Array.isArray(v) ? (v[0] || '') : (v || '');
 
+  // 더핀 일정표에서 서브 담당자 연결
   const aItem = (typeof A_items !== 'undefined')
     ? (A_items.find(i => i.caseNo === c.caseNo && i.status === 'ongoing') || A_items.find(i => i.caseNo === c.caseNo))
     : null;
   const subStaff = aItem ? (aItem.subStaff || '') : '';
 
+  // 명도 탭에서 배정된 담당자 목록 (read-only)
+  const mAll = [...(typeof M_active !== 'undefined' ? M_active : []), ...(typeof M_done !== 'undefined' ? M_done : [])];
+  const mStaffSet = new Set();
+  mAll.filter(m => m.caseNo === c.caseNo).forEach(m => {
+    (m.staffList || '').split(',').filter(Boolean).forEach(s => mStaffSet.add(s));
+  });
+  const mStaff = [...mStaffSet];
+
+  // 블로그 게시 현황 (B_items에서 caseNum으로 매칭, read-only)
+  const B_BLOG_ACCOUNTS = [
+    { key:'blogA', name:'자스크' }, { key:'blogB', name:'더퀸' },
+    { key:'blogC', name:'인스톨' }, { key:'blogD', name:'연예인' },
+  ];
+  const blogItem = (typeof B_items !== 'undefined') ? B_items.find(b => b.caseNum === c.caseNo) : null;
+  const blogStatusHtml = blogItem
+    ? B_BLOG_ACCOUNTS.map(b => {
+        const posted = blogItem[b.key];
+        return `<span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;border:1px solid ${posted?'#16a34a40':'#e5e7eb'};background:${posted?'#dcfce7':'#f9fafb'};color:${posted?'#15803d':'#9ca3af'};">${b.name}${posted?' ✓':''}</span>`;
+      }).join('')
+    : '<span style="font-size:10px;color:#bbb;">블로그 탭에 등록 없음</span>';
+
+  // 명도 탭 담당자 칩 (read-only)
+  const mStaffHtml = mStaff.length
+    ? mStaff.map(s => { const col = _PART_COL[s]||'#dc2626'; return PART_chip(s); }).join('')
+    : '';
+
   const rows = [
-    { label:'총괄 담당자', desc:'블로그·상담·입찰·대출 담당', color:'#7c3aed',
+    { label:'총괄 담당자', desc:'상담·입찰·대출 담당', color:'#7c3aed',
       value: c.manager,
-      sel: PART_sel(`PART_save('manager',this.value)`, c.manager) },
+      content: PART_sel(`PART_save('manager',this.value)`, c.manager) },
+    { label:'블로그 작성', desc:'블로그 포스팅 담당', color:'#0891b2',
+      value: c.blogStaff,
+      content: `${PART_sel(`PART_saveBlogStaff('${c.id}',this.value)`, c.blogStaff)}<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;">${blogStatusHtml}</div>` },
     { label:'시세조사', desc:'시세 분석 담당', color:'#0891b2',
       value: getFirst(tm['시세조사']),
-      sel: PART_sel(`PART_save('시세조사',this.value)`, getFirst(tm['시세조사'])) },
+      content: PART_sel(`PART_save('시세조사',this.value)`, getFirst(tm['시세조사'])) },
     { label:'현장조사', desc:'현장 실사 담당', color:'#1e40af',
       value: getFirst(tm['현장조사']),
-      sel: PART_sel(`PART_save('현장조사',this.value)`, getFirst(tm['현장조사'])) },
+      content: PART_sel(`PART_save('현장조사',this.value)`, getFirst(tm['현장조사'])) },
     { label:'보고서작성', desc:'분석 보고서 작성', color:'#7c3aed',
       value: getFirst(tm['보고서작성']),
-      sel: PART_sel(`PART_save('보고서작성',this.value)`, getFirst(tm['보고서작성'])) },
+      content: PART_sel(`PART_save('보고서작성',this.value)`, getFirst(tm['보고서작성'])) },
     { label:'서브 (입찰)', desc: aItem ? '서브 입찰 담당' : '더핀 일정표에서 설정', color:'#c8a44a',
       value: subStaff,
-      sel: aItem
+      content: aItem
         ? PART_sel(`PART_saveSubStaff('${aItem.id}',this.value)`, subStaff)
         : '<span style="font-size:11px;color:#bbb;">더핀 일정표에서 설정</span>' },
     { label:'명도 담당자', desc:'명도 절차 담당', color:'#dc2626',
       value: c.evictionStaff,
-      sel: PART_sel(`PART_save('eviction',this.value)`, c.evictionStaff) },
+      content: `${PART_sel(`PART_save('eviction',this.value)`, c.evictionStaff)}${mStaff.length ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;align-items:center;"><span style="font-size:10px;color:#aaa;">명도탭:</span>${mStaffHtml}</div>` : ''}` },
   ];
 
   const feeResult = FEE_calc(c);
@@ -13900,14 +13937,16 @@ function PART_render(c) {
   document.getElementById('PART_body').innerHTML = `
     <div style="margin-bottom:18px;">
       ${rows.map(row => `
-        <div style="display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #f5f5f5;">
-          <div>
+        <div style="display:grid;grid-template-columns:100px 1fr;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f5f5f5;">
+          <div style="padding-top:4px;">
             <div style="font-size:12px;font-weight:800;color:${row.color};">${row.label}</div>
             <div style="font-size:10px;color:#aaa;margin-top:2px;">${row.desc}</div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            ${PART_chip(row.value)}
-            ${row.sel}
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              ${PART_chip(row.value)}
+              ${row.content}
+            </div>
           </div>
         </div>
       `).join('')}
@@ -13944,6 +13983,16 @@ function PART_save(field, val) {
     if (c) PART_render(c);
     DASH_render();
   }, 150);
+}
+
+function PART_saveBlogStaff(id, val) {
+  const c = C_cases.find(x => x.id === id);
+  if (!c) return;
+  c.blogStaff = val;
+  FEE_saveShadow();
+  if (typeof C_cacheSave === 'function') C_cacheSave(C_CACHE_CASES, C_cases);
+  PART_render(c);
+  DASH_render();
 }
 
 function PART_saveSubStaff(aItemId, val) {
