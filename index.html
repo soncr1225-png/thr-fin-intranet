@@ -11379,13 +11379,13 @@ function AUTH_applyRole(name, role, label) {
   const fbTab = document.getElementById('mainTab-feedback');
   if (fbTab) fbTab.style.display = role === 'manager' ? 'none' : '';
   // 관리자면 처리 대기 개수 뱃지 미리 채움
-  if (role !== 'manager' && typeof FB_renderInbox === 'function') {
-    fetch(GAS_URL + '?action=getFeedback').then(r => r.json()).then(j => {
-      const list = (j && j.data) || [];
-      const cnt = list.filter(f => (f.status || 'open') === 'open').length;
+  if (role !== 'manager' && typeof FB_fetchSheet === 'function') {
+    FB_fetchSheet().then(() => {
+      FB_mergeMsgItems();
+      const cnt = FB_list.filter(f => (f.status||'open') === 'open').length;
       const badge = document.getElementById('mainBadge-feedback');
       if (badge) badge.textContent = cnt;
-    }).catch(() => {});
+    });
   }
 
   // 매니저는 데이터 관리 버튼 숨김 (백업·복원·구글시트·노션)
@@ -12728,30 +12728,65 @@ function FB_escape(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// MSG 피드백 메시지를 FB_list에 병합 (시트에 없는 항목만)
+// MSG 피드백 메시지를 FB_list에 병합 (ID 기반 중복 제거 — 멱등)
 function FB_mergeMsgItems() {
   const fbMsgTypes = ['오류신고', '수정요청', '기능추가'];
   const catMap = { '오류신고':'버그', '수정요청':'UI어색', '기능추가':'기능요청' };
   if (typeof MSG_messages === 'undefined') return;
+  const existingIds = new Set(FB_list.map(f => String(f.id)));
   MSG_messages.filter(m => fbMsgTypes.includes(m.type)).forEach(m => {
+    const msgFbId = 'msg_' + String(m.id);
+    if (existingIds.has(msgFbId)) return;
     const cleanBody = (m.body || '').replace(/^\[제보함\]\s*/, '');
-    const dup = FB_list.some(f => {
+    const textDup = FB_list.some(f => {
       const cleanF = (f.text || '').replace(/^\[MSG연동\]\s*/, '');
       return f.author === m.from && cleanF.slice(0, 30) === cleanBody.slice(0, 30);
     });
-    if (!dup) {
-      const tsRaw = String(m.time || '');
-      FB_list.push({
-        id: 'msg_' + String(m.id),
-        author: m.from,
-        ts: tsRaw ? tsRaw.replace(' ', 'T') + ':00' : '',
-        category: catMap[m.type] || '기타',
-        text: cleanBody,
-        fileUrl: '', fileName: '',
-        status: m.read ? 'closed' : 'open'
-      });
-    }
+    if (textDup) return;
+    const tsRaw = String(m.time || '');
+    FB_list.push({
+      id: msgFbId, author: m.from,
+      ts: tsRaw ? tsRaw.replace(' ', 'T') + ':00' : '',
+      category: catMap[m.type] || '기타',
+      text: cleanBody, fileUrl: '', fileName: '',
+      status: m.read ? 'closed' : 'open'
+    });
+    existingIds.add(msgFbId);
   });
+}
+
+// 시트 데이터만 fetch, msg_ 항목은 보존 — changed 여부 반환
+let FB_isFetching = false;
+async function FB_fetchSheet() {
+  if (FB_isFetching) return false;
+  FB_isFetching = true;
+  try {
+    const r = await fetch(GAS_URL + '?action=getFeedback', { cache: 'no-store' });
+    const j = await r.json();
+    const fresh = (j && j.data) || [];
+    const oldSig = FB_list.filter(f => !String(f.id).startsWith('msg_')).map(f => f.id + (f.status||'')).join(',');
+    const newSig = fresh.map(f => f.id + (f.status||'')).join(',');
+    const msgItems = FB_list.filter(f => String(f.id).startsWith('msg_'));
+    FB_list = [...fresh, ...msgItems];
+    return oldSig !== newSig;
+  } catch(e) { return false; } finally { FB_isFetching = false; }
+}
+
+// 순수 렌더 (fetch 없음 — 즉시 실행)
+function FB_paint(box, setFn) {
+  if (!box) return;
+  FB_mergeMsgItems();
+  const filter = (document.getElementById('FB_filter') || {}).value || 'open';
+  const items = filter === 'all' ? FB_list : FB_list.filter(f => (f.status||'open') === filter);
+  const openCount = FB_list.filter(f => (f.status||'open') === 'open').length;
+  const badge = document.getElementById('mainBadge-feedback');
+  if (badge) badge.textContent = openCount;
+  if (!items.length) {
+    box.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;font-size:13px;">' +
+      (filter === 'open' ? '처리 대기 중인 제보가 없습니다.' : '제보가 없습니다.') + '</div>';
+    return;
+  }
+  box.innerHTML = items.map(f => FB_renderCard(f, setFn)).join('');
 }
 
 function FB_renderCard(f, setStatusFn) {
@@ -12783,31 +12818,15 @@ function FB_renderCard(f, setStatusFn) {
 async function FB_renderInbox() {
   const box = document.getElementById('FB_list');
   if (!box) return;
-  box.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;font-size:13px;">로딩 중…</div>';
-  try {
-    const r = await fetch(GAS_URL + '?action=getFeedback');
-    const j = await r.json();
-    FB_list = (j && j.data) || [];
-  } catch(e) {
-    box.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;font-size:13px;">로드 실패: ' + FB_escape(e.message) + '</div>';
-    return;
-  }
-  FB_mergeMsgItems();
-  const filter = (document.getElementById('FB_filter') || {}).value || 'open';
-  const items = filter === 'all' ? FB_list : FB_list.filter(f => (f.status || 'open') === filter);
-  const openCount = FB_list.filter(f => (f.status || 'open') === 'open').length;
-  const badge = document.getElementById('mainBadge-feedback');
-  if (badge) badge.textContent = openCount;
-  if (!items.length) {
-    box.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;font-size:13px;">' +
-      (filter === 'open' ? '처리 대기 중인 제보가 없습니다.' : '제보가 없습니다.') + '</div>';
-    return;
-  }
-  box.innerHTML = items.map(f => FB_renderCard(f, 'FB_setStatus')).join('');
+  // Phase 1: 캐시 + MSG 즉시 표시 (스피너 없음)
+  FB_paint(box, 'FB_setStatus');
+  // Phase 2: 백그라운드 시트 갱신 → 변경 시에만 재렌더
+  const changed = await FB_fetchSheet();
+  if (changed) FB_paint(box, 'FB_setStatus');
 }
 
 async function FB_setStatus(id, status) {
-  // MSG에서 온 항목은 MSG markRead로 처리
+  const box = document.getElementById('FB_list');
   if (String(id).startsWith('msg_')) {
     const msgId = String(id).replace('msg_', '');
     if (typeof MSG_messages !== 'undefined') {
@@ -12819,7 +12838,7 @@ async function FB_setStatus(id, status) {
     }
     const fi = FB_list.find(f => f.id === id);
     if (fi) fi.status = status;
-    FB_renderInbox();
+    FB_paint(box, 'FB_setStatus');
     return;
   }
   try {
@@ -12829,7 +12848,10 @@ async function FB_setStatus(id, status) {
     });
     const j = await r.json();
     if (j && j.error) throw new Error(j.error);
-    FB_renderInbox();
+    // 로컬 상태 즉시 반영 후 paint (fetch 없이)
+    const fi = FB_list.find(f => f.id === id);
+    if (fi) fi.status = status;
+    FB_paint(box, 'FB_setStatus');
   } catch(e) {
     alert('상태 변경 실패: ' + e.message);
   }
@@ -12962,32 +12984,29 @@ function MSG_switchView(v) {
 async function MSG_renderFeedback() {
   document.getElementById('MSG_modalTitle').textContent = '제보함';
   const body = document.getElementById('MSG_modalBody');
-  body.innerHTML = MSG_tabBar('feedback') + '<div class="msg-empty" style="color:#999;">⏳ 불러오는 중...</div>';
-  try {
-    const r = await fetch(GAS_URL + '?action=getFeedback');
-    const j = await r.json();
-    FB_list = (j && j.data) || [];
-  } catch(e) {
-    body.innerHTML = MSG_tabBar('feedback') + '<div class="msg-empty" style="color:#ef4444;">⚠️ 불러오기 실패</div>';
-    return;
+  // Phase 1: 캐시 즉시 표시
+  function _msgFbPaint() {
+    FB_mergeMsgItems();
+    const openItems   = FB_list.filter(f => (f.status||'open') === 'open');
+    const closedItems = FB_list.filter(f => (f.status||'open') === 'closed');
+    let html = MSG_tabBar('feedback');
+    if (!FB_list.length) {
+      html += '<div class="msg-empty">📭 제보가 없습니다</div>';
+    } else {
+      if (openItems.length)   html += `<div style="font-size:11px;font-weight:800;color:#dc2626;margin:8px 0 4px;">● 처리 대기 ${openItems.length}건</div>` + openItems.map(f => FB_renderCard(f, 'MSG_fbSetStatus')).join('');
+      if (closedItems.length) html += `<div style="font-size:11px;font-weight:700;color:#9ca3af;margin:12px 0 4px;">● 처리 완료 ${closedItems.length}건</div>` + closedItems.map(f => FB_renderCard(f, 'MSG_fbSetStatus')).join('');
+    }
+    body.innerHTML = html;
+    const badge = document.getElementById('mainBadge-feedback');
+    if (badge) badge.textContent = openItems.length || '—';
   }
-  FB_mergeMsgItems();
-  const openItems   = FB_list.filter(f => (f.status||'open') === 'open');
-  const closedItems = FB_list.filter(f => (f.status||'open') === 'closed');
-  let html = MSG_tabBar('feedback');
-  if (!FB_list.length) {
-    html += '<div class="msg-empty">📭 제보가 없습니다</div>';
-  } else {
-    if (openItems.length)   html += `<div style="font-size:11px;font-weight:800;color:#dc2626;margin:8px 0 4px;">● 처리 대기 ${openItems.length}건</div>` + openItems.map(f => FB_renderCard(f, 'MSG_fbSetStatus')).join('');
-    if (closedItems.length) html += `<div style="font-size:11px;font-weight:700;color:#9ca3af;margin:12px 0 4px;">● 처리 완료 ${closedItems.length}건</div>` + closedItems.map(f => FB_renderCard(f, 'MSG_fbSetStatus')).join('');
-  }
-  body.innerHTML = html;
-  const badge = document.getElementById('mainBadge-feedback');
-  if (badge) badge.textContent = openItems.length || '—';
+  _msgFbPaint();
+  // Phase 2: 백그라운드 갱신
+  const changed = await FB_fetchSheet();
+  if (changed) _msgFbPaint();
 }
 
 async function MSG_fbSetStatus(id, status) {
-  // MSG에서 온 항목
   if (String(id).startsWith('msg_')) {
     const msgId = String(id).replace('msg_', '');
     if (typeof MSG_messages !== 'undefined') {
@@ -13009,6 +13028,8 @@ async function MSG_fbSetStatus(id, status) {
     });
     const j = await r.json();
     if (j && j.error) throw new Error(j.error);
+    const fi = FB_list.find(f => f.id === id);
+    if (fi) fi.status = status;
     MSG_renderFeedback();
   } catch(e) { alert('상태 변경 실패: ' + e.message); }
 }
