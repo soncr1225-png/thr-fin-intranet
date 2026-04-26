@@ -7424,10 +7424,12 @@ function M_render() {
   const _mAuthRole = sessionStorage.getItem('thefin_auth_role');
   function _mMgrMatch(item) {
     if (_mAuthRole !== 'manager' || !_mAuthName) return true;
+    // 명도 담당자 직접 배정된 경우
+    if ((item.staffList||'').split(',').filter(Boolean).includes(_mAuthName)) return true;
+    // 사건 typeMap/manager/evictionStaff 기반 체크 (C_isAssigned 재사용)
     const cas = (A_allCases || []).find(c => c.caseNo === item.caseNo);
     if (!cas) return false;
-    const tm = cas.typeMap || {};
-    return Object.values(tm).some(v => v === _mAuthName);
+    return typeof C_isAssigned === 'function' ? C_isAssigned(cas, _mAuthName) : false;
   }
 
   const activeFiltered = M_active.filter(_mMgrMatch);
@@ -7439,6 +7441,7 @@ function M_render() {
     <th style="min-width:110px;">고객명 / 사건번호</th>
     <th style="min-width:80px;text-align:center;">입찰기일</th>
     <th style="min-width:160px;">물건명 / 인도번호</th>
+    <th style="min-width:110px;">담당자</th>
     <th style="min-width:80px;">피신청인</th>
     <th style="min-width:80px;text-align:center;">송달일</th>
     <th style="min-width:90px;text-align:center;">강제집행신청</th>
@@ -7493,6 +7496,7 @@ function M_row(item) {
         ${item.injunctionNo ? `📋 ${item.injunctionNo}` : '<span style="color:#ccc;">인도번호 입력</span>'}
       </div>
     </td>
+    <td style="vertical-align:middle;${rowBg}" onclick="event.stopPropagation();">${M_staffCell(item)}</td>
     <td id="M_ic_${item.id}_respondent" class="a-editable" onclick="M_inlineEdit('${item.id}','respondent','${M_esc(item.respondent||'')}',false)"
       style="${eStyle}">${item.respondent||'<span style="color:#ccc;">—</span>'}</td>
     ${eDateTd('serviceDate', item.serviceDate)}
@@ -7510,6 +7514,53 @@ function M_row(item) {
 }
 
 function M_esc(s) { return String(s).replace(/'/g,"&#39;").replace(/"/g,"&quot;"); }
+
+function M_staffCell(item) {
+  const arr = (item.staffList||'').split(',').filter(Boolean);
+  const chips = arr.map(s => {
+    const se = M_esc(s);
+    return `<span style="display:inline-flex;align-items:center;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;white-space:nowrap;gap:2px;">
+      ${s}<button onclick="event.stopPropagation();M_removeStaff('${item.id}','${se}')" style="background:none;border:none;cursor:pointer;font-size:9px;color:#94a3b8;padding:0 0 0 2px;line-height:1;">×</button>
+    </span>`;
+  }).join('');
+  const addable = C_MANAGERS.filter(m => !arr.includes(m));
+  if (arr.length === 0) {
+    return `<select onchange="event.stopPropagation();M_addStaff('${item.id}',this.value);this.value='';"
+      style="font-size:11px;border:1px solid #e5e7eb;border-radius:6px;padding:2px 6px;background:#fafafa;cursor:pointer;color:#9ca3af;min-width:80px;">
+      <option value="">담당자 선택...</option>
+      ${C_MANAGERS.map(m=>`<option value="${m}">${m}</option>`).join('')}
+    </select>`;
+  }
+  const plusPart = addable.length > 0 ? `
+    <button onclick="event.stopPropagation();document.getElementById('M_staffSel_${item.id}').style.display='inline-block';"
+      style="width:16px;height:16px;border-radius:50%;border:1.5px solid #bae6fd;background:transparent;cursor:pointer;font-size:10px;font-weight:700;color:#0369a1;padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">+</button>
+    <select id="M_staffSel_${item.id}" onchange="event.stopPropagation();M_addStaff('${item.id}',this.value);this.style.display='none';this.value='';"
+      style="display:none;font-size:10px;border:1px solid #d1d5db;border-radius:4px;padding:1px 3px;max-width:70px;">
+      <option value="">선택</option>${addable.map(m=>`<option value="${m}">${m}</option>`).join('')}
+    </select>` : '';
+  return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:3px;">${chips}${plusPart}</div>`;
+}
+
+async function M_addStaff(id, staff) {
+  if (!staff) return;
+  const item = [...M_active, ...M_done].find(i => i.id === id); if (!item) return;
+  const arr = (item.staffList||'').split(',').filter(Boolean);
+  if (arr.includes(staff)) return;
+  arr.push(staff);
+  item.staffList = arr.join(',');
+  M_render(); setSync('loading');
+  const r = await M_gasPost('update', { id, staffList: item.staffList });
+  setSync(r && r.ok ? 'ok' : 'err');
+}
+
+async function M_removeStaff(id, staff) {
+  const item = [...M_active, ...M_done].find(i => i.id === id); if (!item) return;
+  const arr = (item.staffList||'').split(',').filter(Boolean).filter(s => s !== staff);
+  item.staffList = arr.join(',');
+  M_render(); setSync('loading');
+  const r = await M_gasPost('update', { id, staffList: item.staffList });
+  setSync(r && r.ok ? 'ok' : 'err');
+}
 
 function M_inlineEdit(id, field, curVal, isDate) {
   const cell = document.getElementById(`M_ic_${id}_${field}`);
