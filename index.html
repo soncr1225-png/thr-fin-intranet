@@ -12544,6 +12544,7 @@ async function MSG_fetchInbox() {
 function MSG_open() {
   const overlay = document.getElementById('MSG_overlay');
   if (!overlay) return;
+  document.body.appendChild(overlay);        // 항상 body 마지막으로 이동 (stacking 보장)
   overlay.classList.remove('hidden');
   MSG_view = 'inbox';
   MSG_renderInbox();                          // 즉시 현재 캐시 데이터로 렌더
@@ -12726,7 +12727,7 @@ async function MSG_showDetail(idx) {
 }
 
 // 초기화
-document.addEventListener('DOMContentLoaded', () => { LIB2_init(); CAL_init(); SYNC_autoStart(); BETA_init(); });
+document.addEventListener('DOMContentLoaded', () => { LIB2_init(); CAL_init(); SYNC_autoStart(); BETA_init(); MSG_positionBtn(); });
 window.addEventListener('resize', B_updateTheadTop);
 
 // ══════════════════════════════════════════════════════════════════
@@ -14125,7 +14126,7 @@ let _MBR_syncTimer = null;
   font-weight:800; padding:1px 6px; min-width:16px; text-align:center; display:none;
 }
 .msg-overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:99999;
+  position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:2147483647;
   display:flex; align-items:center; justify-content:center;
 }
 .msg-overlay.hidden { display:none; }
