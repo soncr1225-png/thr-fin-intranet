@@ -4097,6 +4097,7 @@ table.data-table tbody tr:hover,
     <button class="cal-nav-btn" onclick="CAL_nextMonth()">›</button>
     <button class="cal-today-btn" onclick="CAL_goToday()" style="margin-left:auto;">오늘</button>
     <button id="CAL_icsBtn" class="cal-today-btn" onclick="ICS_export()" style="display:none;margin-left:6px;background:#0f7b3b;color:#fff;border-color:#0f7b3b;" title="모든 일정을 구글/애플 캘린더용 파일로 내보냅니다">📥 .ics 내보내기</button>
+    <button id="GCAL_syncAllBtn" class="cal-today-btn" onclick="GCAL_syncAll()" style="display:none;margin-left:6px;background:#1a73e8;color:#fff;border-color:#1a73e8;" title="모든 활성 사건을 구글 캘린더에 동기화합니다">☁ 전체 동기화</button>
     <div class="cal-legend">
       <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#c9a84c;"></span>경매기일</div>
       <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#e05454;"></span>마감요청일</div>
@@ -5679,6 +5680,7 @@ function C_editField(id,field,value){
   if(field==='auctionDate'){const newDL=C_calcDL(value);c.deadline=newDL;C_apiBg('updateCase',{id,status:c.status,auctionDate:value,deadline:newDL});}
   else{C_apiBg('updateCase',{id,status:c.status,caseNo:c.caseNo,address:c.address,court:c.court,auctionDate:c.auctionDate,deadline:c.deadline,note:c.note});}
   C_cacheSave(C_CACHE_CASES,C_cases);C_updateStats();
+  if(field==='auctionDate'||field==='deadline') GCAL_syncFromCaseId(id);
   A_render();
 }
 // ── 담당자 헬퍼 ──────────────────────────────────────────
@@ -6905,6 +6907,8 @@ async function A_editAuctionDate(casId, caseNo, newDate) {
     A_gasPost('update', { id: item.id, saleDecisionDate, appealDate, balanceDate })
   ));
   setSync(results.every(r => r && r.ok) ? 'ok' : 'err');
+  // 날짜 저장 후 구글 캘린더 동기화
+  if (cas) GCAL_syncByCaseNo(cas.caseNo, cas);
 }
 
 // ── 사건 상태 버튼 팝업 (C_ 탭과 동일한 상태 체계, 쌍방향 연동)
@@ -7180,6 +7184,9 @@ async function A_saveForm() {
     const targetBtn = document.querySelector(`#A_filterRow [onclick*="'${A_filtStatus}'"]`);
     if (targetBtn) targetBtn.classList.add('active');
     A_render();
+    // 구글 캘린더 동기화
+    const _gcalCas = A_allCases.find(c => c.caseNo === caseNo);
+    if (_gcalCas) GCAL_syncByCaseNo(caseNo, _gcalCas);
   } else alert('저장 실패: ' + (r && r.error || '오류'));
 }
 
@@ -7339,6 +7346,8 @@ function M_inlineEdit(id, field, curVal, isDate) {
       setSync('loading');
       const r = await M_gasPost('update', { id, [field]: nv });
       setSync(r && r.ok ? 'ok' : 'err');
+      // 이사날짜 변경 시 구글 캘린더 동기화
+      if (field === 'moveDate' && item.caseNo) GCAL_syncByCaseNo(item.caseNo);
     }
     M_render();
   };
@@ -11086,9 +11095,11 @@ function AUTH_applyRole(name, role, label) {
   const adminDataBtns = document.getElementById('admin-data-btns');
   if (adminDataBtns) adminDataBtns.style.display = role === 'manager' ? 'none' : 'contents';
 
-  // .ics 내보내기는 관리자만 표시
+  // .ics 내보내기 + 구글 캘린더 동기화는 관리자만 표시
   const icsBtn = document.getElementById('CAL_icsBtn');
   if (icsBtn) icsBtn.style.display = role === 'admin' ? '' : 'none';
+  const gcalBtn = document.getElementById('GCAL_syncAllBtn');
+  if (gcalBtn) gcalBtn.style.display = role === 'admin' ? '' : 'none';
 
   if (role === 'manager') {
     const mbrSel = document.getElementById('mbr-current-user');
@@ -13700,6 +13711,7 @@ function CD_save(showAlert) {
   if (_snEl) c.stageNote = _snEl.value;
 
   FEE_saveShadow();
+  GCAL_syncFromCaseId(CD_currentId);
   // 법원 변경 시 API 반영
   if (typeof C_apiBg === 'function') {
     C_apiBg('updateCase', {id: CD_currentId, status: c.status, caseNo: c.caseNo,
@@ -13717,6 +13729,113 @@ function CD_save(showAlert) {
     alert('저장되었습니다.');
     CD_close();
   }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  📅 GCAL — 구글 캘린더 자동 동기화
+// ══════════════════════════════════════════════════════════════════
+const GCAL_STORE_KEY = 'thefin_cal_events_v1';
+
+function GCAL_getIds(caseNo) {
+  try { return (JSON.parse(localStorage.getItem(GCAL_STORE_KEY) || '{}'))[caseNo] || {}; }
+  catch(e) { return {}; }
+}
+function GCAL_setIds(caseNo, ids) {
+  try {
+    const store = JSON.parse(localStorage.getItem(GCAL_STORE_KEY) || '{}');
+    store[caseNo] = ids;
+    localStorage.setItem(GCAL_STORE_KEY, JSON.stringify(store));
+  } catch(e) {}
+}
+
+// caseId 기준으로 C_cases + A_items + M_active를 조합해 캘린더 동기화
+function GCAL_syncFromCaseId(caseId) {
+  const c = (typeof C_cases !== 'undefined') && C_cases.find(x => x.id === caseId);
+  if (!c) return;
+  GCAL_syncByCaseNo(c.caseNo, c);
+}
+
+function GCAL_syncByCaseNo(caseNo, cBase) {
+  if (!caseNo) return;
+  const c = cBase || (typeof C_cases !== 'undefined' && C_cases.find(x => x.caseNo === caseNo));
+  if (!c) return;
+
+  // shadow에서 clientName, manager 가져오기
+  let shadow = {};
+  try { shadow = (JSON.parse(localStorage.getItem('thefin_fee_shadow_v1') || '{}'))[c.id] || {}; } catch(e) {}
+
+  // A_items에서 날짜 가져오기
+  const aItem = (typeof A_items !== 'undefined') && A_items.find(i => i.caseNo === caseNo);
+
+  // M_active에서 이사날짜 가져오기
+  const mItem = (typeof M_active !== 'undefined') && M_active.find(m => {
+    const aI = (typeof A_items !== 'undefined') && A_items.find(i => i.caseNo === caseNo);
+    return aI && m.caseNo === caseNo;
+  });
+
+  const payload = {
+    caseNo:          caseNo,
+    clientName:      shadow.clientName || c.clientName || (aItem && aItem.clientName) || '',
+    court:           c.court || (aItem && aItem.court) || '',
+    address:         c.address || '',
+    staff:           shadow.manager || c.manager || '',
+    auctionDate:     c.auctionDate || (aItem && aItem.auctionDate) || '',
+    deadline:        c.deadline || '',
+    saleDecisionDate: (aItem && aItem.saleDecisionDate) || '',
+    balanceDate:     (aItem && aItem.balanceDate) || '',
+    moveDate:        (mItem && mItem.moveDate) || '',
+    existingIds:     GCAL_getIds(caseNo)
+  };
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ module: 'calendar', action: 'syncEvents', data: payload })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.ok && res.ids) {
+      GCAL_setIds(caseNo, res.ids);
+      GCAL_showToast('✓ 구글 캘린더 동기화 완료');
+    }
+  })
+  .catch(() => {});
+}
+
+// 전체 활성 사건 일괄 동기화 (캘린더 탭 "전체 동기화" 버튼용)
+function GCAL_syncAll() {
+  if (typeof C_cases === 'undefined') { alert('사건 데이터가 로드되지 않았습니다.'); return; }
+  const btn = document.getElementById('GCAL_syncAllBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '동기화 중...'; }
+  const active = C_cases.filter(c => !['closed','lost','cancel','drop','changed'].includes(c.status));
+  let done = 0;
+  active.forEach(c => {
+    // 딜레이를 줘서 GAS rate limit 회피
+    setTimeout(() => {
+      GCAL_syncByCaseNo(c.caseNo, c);
+      done++;
+      if (done === active.length && btn) {
+        btn.disabled = false;
+        btn.textContent = '☁ 전체 동기화';
+        GCAL_showToast('✓ ' + active.length + '건 구글 캘린더 동기화 완료');
+      }
+    }, done * 300);
+  });
+  if (active.length === 0 && btn) { btn.disabled = false; btn.textContent = '☁ 전체 동기화'; }
+}
+
+function GCAL_showToast(msg) {
+  let t = document.getElementById('GCAL_toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'GCAL_toast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0f7b3b;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
 }
 
 // ══════════════════════════════════════════════════════════════════
