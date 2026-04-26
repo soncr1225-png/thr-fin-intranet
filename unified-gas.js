@@ -283,24 +283,31 @@ function loadCases(ss, shName) {
   var last    = sheet.getLastRow();
   if (last < 2) return [];
   var isArc = (shName === SH_CASES_ARCHIVE);
-  var cols  = isArc ? 13 : 12;
+  // cols: active=14(+manager,evictionStaff), archive=15(+manager,evictionStaff,closedAt)
+  var cols  = isArc ? 15 : 14;
+  var hdr   = sheet.getRange(1, 1, 1, cols).getValues()[0];
+  if (!hdr[12]) sheet.getRange(1, 13).setValue('담당자');
+  if (!hdr[13]) sheet.getRange(1, 14).setValue('명도담당자');
+  if (isArc && !hdr[14]) sheet.getRange(1, 15).setValue('종료일');
   var vals  = sheet.getRange(2, 1, last - 1, cols).getValues();
   return vals.map(function(r) {
     return {
-      id:          String(r[0]),
-      status:      normalizeStatus(r[1]),
-      caseNo:      String(r[2]),
-      address:     String(r[3]),
-      court:       String(r[4]),
-      auctionDate: r[5] ? kstDate(r[5]) : '',
-      deadline:    r[6] ? kstDate(r[6]) : '',
+      id:            String(r[0]),
+      status:        normalizeStatus(r[1]),
+      caseNo:        String(r[2]),
+      address:       String(r[3]),
+      court:         String(r[4]),
+      auctionDate:   r[5] ? kstDate(r[5]) : '',
+      deadline:      r[6] ? kstDate(r[6]) : '',
       typeMap: {
         '시세조사':   String(r[7]  || ''),
         '현장조사':   String(r[8]  || ''),
         '보고서작성': String(r[9]  || '')
       },
-      note:     String(r[10] || ''),
-      closedAt: isArc && r[12] ? kstDate(r[12]) : ''
+      note:          String(r[10] || ''),
+      manager:       String(r[12] || ''),
+      evictionStaff: String(r[13] || ''),
+      closedAt:      isArc && r[14] ? kstDate(r[14]) : ''
     };
   });
 }
@@ -640,17 +647,19 @@ function addCase(ss, d) {
 
   sheet.appendRow([
     id,
-    d.status       || 'ongoing',
-    d.caseNo       || '',
-    d.address      || '',
-    d.court        || '',
-    d.auctionDate  ? new Date(d.auctionDate) : '',
-    d.deadline     ? new Date(d.deadline)    : '',
-    tm['시세조사']   || '',
-    tm['현장조사']   || '',
-    tm['보고서작성'] || '',
-    d.note         || '',
-    new Date()
+    d.status        || 'ongoing',
+    d.caseNo        || '',
+    d.address       || '',
+    d.court         || '',
+    d.auctionDate   ? new Date(d.auctionDate) : '',
+    d.deadline      ? new Date(d.deadline)    : '',
+    tm['시세조사']    || '',
+    tm['현장조사']    || '',
+    tm['보고서작성']  || '',
+    d.note          || '',
+    new Date(),
+    d.manager       || '',
+    d.evictionStaff || ''
   ]);
   return { ok: true, id: id };
 }
@@ -658,12 +667,12 @@ function addCase(ss, d) {
 function updateCase(ss, d) {
   var activeSheet  = sh(ss, SH_CASES_ACTIVE);
   var archiveSheet = sh(ss, SH_CASES_ARCHIVE);
-  var rowInfo = findRowById(activeSheet, d.id, 12);
+  var rowInfo = findRowById(activeSheet, d.id, 14);
   var sheet;
   if (rowInfo) {
     sheet = activeSheet;
   } else {
-    rowInfo = findRowById(archiveSheet, d.id, 13);
+    rowInfo = findRowById(archiveSheet, d.id, 15);
     sheet   = archiveSheet;
   }
   if (!rowInfo) return { ok: false, error: '사건을 찾을 수 없습니다.' };
@@ -673,30 +682,32 @@ function updateCase(ss, d) {
   types.forEach(function(t) { if (t.manager) tm[t.type] = t.manager; });
 
   var r = rowInfo.row;
-  if (d.status)                sheet.getRange(r, 2).setValue(d.status);
-  if (d.caseNo)                sheet.getRange(r, 3).setValue(d.caseNo);
-  if (d.address)               sheet.getRange(r, 4).setValue(d.address);
-  if (d.court)                 sheet.getRange(r, 5).setValue(d.court);
-  if (d.auctionDate !== undefined) sheet.getRange(r, 6).setValue(d.auctionDate ? new Date(d.auctionDate) : '');
-  if (d.deadline    !== undefined) sheet.getRange(r, 7).setValue(d.deadline    ? new Date(d.deadline)    : '');
+  if (d.status)                    sheet.getRange(r,  2).setValue(d.status);
+  if (d.caseNo)                    sheet.getRange(r,  3).setValue(d.caseNo);
+  if (d.address)                   sheet.getRange(r,  4).setValue(d.address);
+  if (d.court)                     sheet.getRange(r,  5).setValue(d.court);
+  if (d.auctionDate !== undefined) sheet.getRange(r,  6).setValue(d.auctionDate ? new Date(d.auctionDate) : '');
+  if (d.deadline    !== undefined) sheet.getRange(r,  7).setValue(d.deadline    ? new Date(d.deadline)    : '');
   if (types.length) {
-    sheet.getRange(r, 8).setValue(tm['시세조사']   || '');
-    sheet.getRange(r, 9).setValue(tm['현장조사']   || '');
-    sheet.getRange(r,10).setValue(tm['보고서작성'] || '');
+    sheet.getRange(r,  8).setValue(tm['시세조사']   || '');
+    sheet.getRange(r,  9).setValue(tm['현장조사']   || '');
+    sheet.getRange(r, 10).setValue(tm['보고서작성'] || '');
   }
-  if (d.note !== undefined) sheet.getRange(r, 11).setValue(d.note);
+  if (d.note          !== undefined) sheet.getRange(r, 11).setValue(d.note);
+  if (d.manager       !== undefined) sheet.getRange(r, 13).setValue(d.manager);
+  if (d.evictionStaff !== undefined) sheet.getRange(r, 14).setValue(d.evictionStaff);
   return { ok: true };
 }
 
 function archiveCase(ss, d) {
   var active  = sh(ss, SH_CASES_ACTIVE);
   var archive = sh(ss, SH_CASES_ARCHIVE);
-  var rowInfo = findRowById(active, d.id, 12);
+  var rowInfo = findRowById(active, d.id, 14);
   if (!rowInfo) return { ok: false, error: '사건을 찾을 수 없습니다.' };
 
   var vals = rowInfo.vals.slice();
   vals[1]  = d.status;       // 종료 사유로 상태 업데이트
-  vals.push(new Date());     // col 13: 종료일
+  vals.push(new Date());     // col 15: 종료일
   archive.appendRow(vals);
   active.deleteRow(rowInfo.row);
   return { ok: true };
@@ -705,7 +716,7 @@ function archiveCase(ss, d) {
 function deleteCase(ss, d) {
   var active  = sh(ss, SH_CASES_ACTIVE);
   var archive = sh(ss, SH_CASES_ARCHIVE);
-  var rowInfo = findRowById(active, d.id, 12) || findRowById(archive, d.id, 13);
+  var rowInfo = findRowById(active, d.id, 14) || findRowById(archive, d.id, 15);
   if (!rowInfo) return { ok: false, error: '사건을 찾을 수 없습니다.' };
   rowInfo.sheet.deleteRow(rowInfo.row);
   return { ok: true };
@@ -714,10 +725,10 @@ function deleteCase(ss, d) {
 function restoreCase(ss, d) {
   var active  = sh(ss, SH_CASES_ACTIVE);
   var archive = sh(ss, SH_CASES_ARCHIVE);
-  var rowInfo = findRowById(archive, d.id, 13);
+  var rowInfo = findRowById(archive, d.id, 15);
   if (!rowInfo) return { ok: false, error: '사건을 찾을 수 없습니다.' };
 
-  var vals = rowInfo.vals.slice(0, 12);
+  var vals = rowInfo.vals.slice(0, 14);  // strip closedAt (col 15)
   vals[1]  = 'ongoing';
   active.appendRow(vals);
   archive.deleteRow(rowInfo.row);
