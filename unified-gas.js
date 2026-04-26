@@ -94,6 +94,7 @@ function doPost(e) {
   if (b.module === 'drive')     return drivePost(b);
   if (b.module === 'beta')      return betaPost(b);
   if (b.module === 'msg')       return msgPost(b);
+  if (b.module === 'calendar')  return calendarPost(b);
   if (b.action === 'setFeeEntries')  return setFeeEntries(b.entries);
   if (b.action === 'saveCtrArchive') return saveCtrArchive(b.data);
   if (b.action === 'deleteCtrArchive') return deleteCtrRow(SH_CTR_ARCHIVE, b.id);
@@ -2072,4 +2073,114 @@ function markMsgRead(ss, id) {
     if (data[i][0] === id) { sheet.getRange(i + 2, readCol).setValue(true); return json({ ok: true }); }
   }
   return json({ ok: false, error: 'not found' });
+}
+
+// ============================================================
+// CALENDAR — 구글 캘린더 자동 동기화
+// ============================================================
+// 스크립트 속성 'THEFIN_CALENDAR_ID' 에 캘린더 ID 자동 저장
+// (첫 syncEvents 호출 시 "THE FIN 인트라넷" 캘린더 자동 생성)
+//
+// 사용 전 1회 설정:
+//   1. Google Apps Script 편집기 → 실행 → GCAL_init() 실행
+//      (또는 첫 syncEvents 호출 시 자동 생성)
+//   2. 생성된 "THE FIN 인트라넷" 캘린더를 직원들에게 공유
+//      구글 캘린더 앱 → 다른 캘린더 → 해당 캘린더 → 사람 추가
+// ============================================================
+
+function GCAL_init() {
+  var cal = gcalGetOrCreate();
+  Logger.log('캘린더 생성/확인 완료: ' + cal.getId());
+  return cal.getId();
+}
+
+function gcalGetOrCreate() {
+  var props = PropertiesService.getScriptProperties();
+  var calId = props.getProperty('THEFIN_CALENDAR_ID');
+  if (calId) {
+    try {
+      var existing = CalendarApp.getCalendarById(calId);
+      if (existing) return existing;
+    } catch(e) {}
+  }
+  var cal = CalendarApp.createCalendar('THE FIN 인트라넷', {
+    color: CalendarApp.Color.CYAN,
+    summary: 'THE FIN 인트라넷 — 경매 일정 자동 동기화'
+  });
+  props.setProperty('THEFIN_CALENDAR_ID', cal.getId());
+  return cal;
+}
+
+function calendarPost(b) {
+  if (b.action === 'syncEvents')    return gcalSyncEvents(b.data);
+  if (b.action === 'deleteEvents')  return gcalDeleteEvents(b.ids);
+  if (b.action === 'getCalId')      return json({ ok: true, calId: gcalGetOrCreate().getId() });
+  return json({ error: 'unknown calendar action' });
+}
+
+// d = {
+//   caseNo, clientName, court, address, staff,
+//   auctionDate, deadline, saleDecisionDate, balanceDate, moveDate,
+//   existingIds: { auction, deadline, saleDecision, balance, moveDate }
+// }
+function gcalSyncEvents(d) {
+  try {
+    var cal = gcalGetOrCreate();
+    var ex  = d.existingIds || {};
+    var prefix = '[더핀] ' + (d.clientName || d.caseNo || '');
+    var desc = [
+      '사건번호: ' + (d.caseNo || ''),
+      '법원: '    + (d.court   || ''),
+      '주소: '    + (d.address || ''),
+      '담당: '    + (d.staff   || '')
+    ].filter(function(s){ return s.split(': ')[1]; }).join('\n');
+
+    var ids = {};
+    ids.auction      = gcalUpsert(cal, ex.auction,      d.auctionDate,      prefix + ' 경매기일',    desc);
+    ids.deadline     = gcalUpsert(cal, ex.deadline,     d.deadline,         prefix + ' 마감요청일',  desc);
+    ids.saleDecision = gcalUpsert(cal, ex.saleDecision, d.saleDecisionDate, prefix + ' 매각결정기일', desc);
+    ids.balance      = gcalUpsert(cal, ex.balance,      d.balanceDate,      prefix + ' 잔금납부기일', desc);
+    ids.moveDate     = gcalUpsert(cal, ex.moveDate,     d.moveDate,         prefix + ' 이사날짜',    desc);
+
+    return json({ ok: true, ids: ids });
+  } catch(err) {
+    return json({ ok: false, error: err.toString() });
+  }
+}
+
+// 이벤트 upsert — 날짜 없으면 기존 이벤트 삭제 후 null 반환
+function gcalUpsert(cal, existingId, dateStr, title, desc) {
+  if (!dateStr) {
+    if (existingId) {
+      try { cal.getEventById(existingId).deleteEvent(); } catch(e) {}
+    }
+    return null;
+  }
+  var d = new Date(dateStr + 'T00:00:00+09:00');
+  if (isNaN(d.getTime())) return existingId || null;
+
+  if (existingId) {
+    try {
+      var ev = cal.getEventById(existingId);
+      if (ev) {
+        ev.setTitle(title);
+        ev.setDescription(desc);
+        ev.setAllDayDate(d);
+        return existingId;
+      }
+    } catch(e) {}
+  }
+  var newEv = cal.createAllDayEvent(title, d, { description: desc });
+  return newEv.getId();
+}
+
+function gcalDeleteEvents(ids) {
+  if (!ids) return json({ ok: true });
+  var cal = gcalGetOrCreate();
+  var deleted = 0;
+  Object.keys(ids).forEach(function(k) {
+    if (!ids[k]) return;
+    try { cal.getEventById(ids[k]).deleteEvent(); deleted++; } catch(e) {}
+  });
+  return json({ ok: true, deleted: deleted });
 }
