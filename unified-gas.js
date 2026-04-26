@@ -15,6 +15,7 @@ var SH_CASES_ACTIVE  = '사건목록';
 var SH_CASES_ARCHIVE = '종료사건';
 var SH_TODOS         = 'ToDo';
 var SH_MEMBERS       = '회원관리';  // 신규 — 회원 데이터 영구 저장
+var SH_PWHASH        = '비번관리';  // 신규 — 비번 해시 동기화 (PC간 공유)
 
 // ── 입찰/명도 시트명 ─────────────────────────────────────────
 var SH_AUCTION    = '입찰진행';
@@ -104,6 +105,7 @@ function casesGet(p) {
   }
   if (p.action === 'getBulk')     return getBulk(ss);
   if (p.action === 'getMembers')  return json({ data: loadMembers(ss) });
+  if (p.action === 'getPwHashes') return json({ data: loadPwHashes(ss) });
   return json({ error: 'unknown action' });
 }
 
@@ -226,6 +228,8 @@ function casesPost(b) {
     case 'addMember':        return json(addMember(ss, d));
     case 'updateMember':     return json(updateMember(ss, d));
     case 'deleteMember':     return json(deleteMember(ss, d));
+    case 'setPwHash':        return json(setPwHash(ss, d));
+    case 'deletePwHash':     return json(deletePwHash(ss, d));
     default:             return json({ error: 'unknown action' });
   }
 }
@@ -335,6 +339,63 @@ function deleteMember(ss, m) {
     }
   }
   return { error: 'not found' };
+}
+
+// ============================================================
+// PASSWORD HASH — 비번관리 시트 (신규 · 3 컬럼: 이름, 해시, 갱신시각)
+// PC간 비밀번호 동기화. localStorage 대신 GAS에 저장.
+// ============================================================
+function ensurePwHashHeader(sheet) {
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['이름', '비번해시', '갱신시각']);
+    sheet.getRange(1, 1, 1, 3).setFontWeight('bold');
+  }
+}
+
+function loadPwHashes(ss) {
+  var sheet = sh(ss, SH_PWHASH);
+  ensurePwHashHeader(sheet);
+  var last = sheet.getLastRow();
+  if (last < 2) return {};
+  var vals = sheet.getRange(2, 1, last - 1, 2).getValues();
+  var map = {};
+  vals.forEach(function(r) {
+    if (r[0]) map[String(r[0])] = String(r[1] || '');
+  });
+  return map;
+}
+
+function setPwHash(ss, m) {
+  if (!m || !m.name || !m.hash) return { error: 'name and hash required' };
+  var sheet = sh(ss, SH_PWHASH);
+  ensurePwHashHeader(sheet);
+  var last = sheet.getLastRow();
+  if (last >= 2) {
+    var names = sheet.getRange(2, 1, last - 1, 1).getValues();
+    for (var i = 0; i < names.length; i++) {
+      if (String(names[i][0]) === String(m.name)) {
+        sheet.getRange(i + 2, 1, 1, 3).setValues([[m.name, m.hash, new Date()]]);
+        return { ok: true, name: m.name, updated: true };
+      }
+    }
+  }
+  sheet.appendRow([m.name, m.hash, new Date()]);
+  return { ok: true, name: m.name, added: true };
+}
+
+function deletePwHash(ss, m) {
+  if (!m || !m.name) return { error: 'name required' };
+  var sheet = sh(ss, SH_PWHASH);
+  var last = sheet.getLastRow();
+  if (last < 2) return { ok: true, name: m.name, missing: true };
+  var names = sheet.getRange(2, 1, last - 1, 1).getValues();
+  for (var i = 0; i < names.length; i++) {
+    if (String(names[i][0]) === String(m.name)) {
+      sheet.deleteRow(i + 2);
+      return { ok: true, name: m.name, deleted: true };
+    }
+  }
+  return { ok: true, name: m.name, missing: true };
 }
 
 function addCase(ss, d) {
