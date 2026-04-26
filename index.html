@@ -12996,40 +12996,26 @@ function FEE_stageCell(stage, st) {
   const isSpecial = stage > 7;
 
   if (isSpecial) {
-    return `<div style="display:inline-flex;align-items:center;gap:8px;">
-      <span style="display:inline-block;padding:5px 14px;border-radius:20px;background:${st.color}15;border:1.5px solid ${st.color}66;font-size:12px;font-weight:800;color:${st.color};">${st.name}</span>
-    </div>`;
+    return `<span style="display:inline-block;padding:2px 8px;border-radius:4px;background:${st.color}15;border:1px solid ${st.color}44;font-size:11px;font-weight:800;color:${st.color};">${st.name}</span>`;
   }
 
-  const dots = [];
-  for (let i = 0; i < MAX; i++) {
-    const n = i + 1;
-    const sc = STEP_COLORS[i];
-    if (i > 0) {
-      const done = n <= stage;
-      dots.push(`<span style="flex:1;height:3px;border-radius:2px;background:${done ? sc+'99' : '#e2e8f0'};min-width:5px;max-width:18px;"></span>`);
-    }
-    if (n === stage) {
-      // 현재 단계: 32px 원형, 부드러운 링 효과
-      dots.push(`<span title="${n}. ${STEP_NAMES[i]}" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,${sc},${sc}cc);box-shadow:0 2px 8px ${sc}55,0 0 0 3px #fff,0 0 0 5px ${sc}44;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;">${n}</span>`);
-    } else if (n < stage) {
-      // 완료: 16px 컬러 점 + 체크 느낌의 opacity
-      dots.push(`<span title="${n}. ${STEP_NAMES[i]}" style="width:16px;height:16px;border-radius:50%;background:${sc};flex-shrink:0;display:inline-block;opacity:0.8;"></span>`);
-    } else {
-      // 미래: 8px 연한 점
-      dots.push(`<span title="${n}. ${STEP_NAMES[i]}" style="width:8px;height:8px;border-radius:50%;background:#dde3ef;flex-shrink:0;display:inline-block;"></span>`);
-    }
-  }
-
-  const stageName = STEP_NAMES[stage - 1] || st.name;
   const sc = STEP_COLORS[stage - 1] || st.color;
-  // 도식화(점) + 오른쪽에 단계 뱃지
-  return `<div style="display:inline-flex;align-items:center;gap:10px;padding:3px 0;">
-    <div style="display:flex;align-items:center;gap:3px;">${dots.join('')}</div>
-    <div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 8px;background:${sc}0f;border-radius:20px;border:1px solid ${sc}33;flex-shrink:0;">
-      <span style="font-size:12px;font-weight:900;color:${sc};letter-spacing:-.01em;">${stage}<span style="font-size:10px;font-weight:400;color:#b0b8c4;letter-spacing:0;">/7</span></span>
-      <span style="width:1px;height:10px;background:${sc}33;display:inline-block;"></span>
-      <span style="font-size:11px;font-weight:700;color:${sc};">${stageName}</span>
+  const stageName = STEP_NAMES[stage - 1] || st.name;
+
+  // 이퀄라이저 바: 완료=작은바, 현재=높은바, 미래=낮은바
+  const bars = Array.from({length: MAX}, (_, i) => {
+    const n = i + 1;
+    const color = STEP_COLORS[i];
+    if (n === stage)  return `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:5px;height:20px;border-radius:2px;background:${color};box-shadow:0 1px 6px ${color}66;"></span>`;
+    if (n < stage)    return `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:5px;height:12px;border-radius:2px;background:${color};opacity:.55;"></span>`;
+    return             `<span title="${n}.${STEP_NAMES[i]}" style="display:inline-block;width:5px;height:6px;border-radius:2px;background:#dde3ef;"></span>`;
+  }).join('');
+
+  return `<div style="display:inline-flex;align-items:center;gap:7px;">
+    <div style="display:inline-flex;align-items:flex-end;gap:2px;">${bars}</div>
+    <div style="display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.2;">
+      <span style="font-size:10px;font-weight:900;color:${sc};">${stage}<span style="font-weight:400;color:#b0b8c4;font-size:9px;">/7</span></span>
+      <span style="font-size:10px;font-weight:700;color:${sc};">${stageName}</span>
     </div>
   </div>`;
 }
@@ -13264,13 +13250,13 @@ function DASH_renderCaseList() {
       const stage = FEE_inferStage(c);
       const st = STAGES[stage-1];
       return `<tr style="border-top:1px solid #f0f0f0;">
-        <td style="padding:7px 10px;font-family:monospace;">${c.caseNo||'—'}</td>
-        <td style="padding:7px 10px;">${c.address ? c.address.substring(0,24) : '—'}</td>
-        <td style="padding:8px 6px;text-align:center;">${FEE_stageCell(stage, st)}</td>
-        <td style="padding:7px 10px;text-align:right;font-weight:700;">${f.total ? FEE_fmtWon(f.total) : '—'}</td>
-        <td style="padding:7px 10px;text-align:center;">${c.fee1Received?'<span style="color:#0f7b3b;">✓</span>':'<span style="color:#ddd;">○</span>'}</td>
-        <td style="padding:7px 10px;text-align:center;">${c.fee2Received?'<span style="color:#0f7b3b;">✓</span>':'<span style="color:#ddd;">○</span>'}</td>
-        <td style="padding:7px 10px;text-align:center;"><button onclick="CD_open('${c.id}')" style="padding:3px 9px;border:1px solid #c8a44a;background:#fff8e1;color:#8a5a00;border-radius:5px;cursor:pointer;font-size:11px;">💰 관리</button></td>
+        <td style="padding:7px 10px;font-family:monospace;vertical-align:middle;">${c.caseNo||'—'}</td>
+        <td style="padding:7px 10px;vertical-align:middle;">${c.address ? c.address.substring(0,24) : '—'}</td>
+        <td style="padding:6px 8px;text-align:center;vertical-align:middle;">${FEE_stageCell(stage, st)}</td>
+        <td style="padding:7px 10px;text-align:right;font-weight:700;vertical-align:middle;">${f.total ? FEE_fmtWon(f.total) : '—'}</td>
+        <td style="padding:7px 10px;text-align:center;vertical-align:middle;">${c.fee1Received?'<span style="color:#0f7b3b;font-size:13px;">✓</span>':'<span style="color:#ddd;">○</span>'}</td>
+        <td style="padding:7px 10px;text-align:center;vertical-align:middle;">${c.fee2Received?'<span style="color:#0f7b3b;font-size:13px;">✓</span>':'<span style="color:#ddd;">○</span>'}</td>
+        <td style="padding:7px 10px;text-align:center;vertical-align:middle;"><button onclick="CD_open('${c.id}')" style="padding:3px 9px;border:1px solid #c8a44a;background:#fff8e1;color:#8a5a00;border-radius:5px;cursor:pointer;font-size:11px;">💰 관리</button></td>
       </tr>`;
     }).join('')}
     </tbody>
