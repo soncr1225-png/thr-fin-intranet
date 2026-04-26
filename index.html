@@ -12985,7 +12985,7 @@ function FEE_saveShadow() {
 // STAGES는 applyBulkData 앞에 선언됨
 const OVERDUE_DAYS = 30;
 
-// 7단계 진행 표시 셀 (도트 스텝 + 진행 숫자)
+// 7단계 진행 표시 셀 (도트 스텝 + 진행 숫자) — 3배 크기
 function FEE_stageCell(stage, st) {
   const STEP_COLORS = ['#0891b2','#2563eb','#1e40af','#7c3aed','#c8a44a','#d97706','#dc2626'];
   const STEP_NAMES  = ['블로그','상담','조사','보고','입찰','대출','명도'];
@@ -12993,8 +12993,8 @@ function FEE_stageCell(stage, st) {
   const isSpecial = stage > 7;
 
   if (isSpecial) {
-    return `<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;">
-      <span style="display:inline-block;padding:3px 10px;border-radius:20px;background:${st.color}22;border:1.5px solid ${st.color};font-size:11px;font-weight:800;color:${st.color};">${st.name}</span>
+    return `<div style="display:inline-flex;flex-direction:column;align-items:center;gap:6px;">
+      <span style="display:inline-block;padding:8px 20px;border-radius:24px;background:${st.color}22;border:2px solid ${st.color};font-size:15px;font-weight:800;color:${st.color};">${st.name}</span>
     </div>`;
   }
 
@@ -13004,24 +13004,24 @@ function FEE_stageCell(stage, st) {
     const sc = STEP_COLORS[i];
     if (i > 0) {
       const done = n <= stage;
-      dots.push(`<span style="flex:1;height:3px;border-radius:2px;background:${done ? sc+'bb' : '#e5e7eb'};min-width:4px;max-width:12px;"></span>`);
+      dots.push(`<span style="flex:1;height:7px;border-radius:4px;background:${done ? sc+'bb' : '#e5e7eb'};min-width:8px;max-width:28px;"></span>`);
     }
     if (n === stage) {
-      dots.push(`<span title="${n}. ${STAGES[i].name}" style="position:relative;width:20px;height:20px;border-radius:50%;background:${sc};box-shadow:0 0 0 3px #fff,0 0 0 5px ${sc};flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#fff;letter-spacing:0;">${n}</span>`);
+      dots.push(`<span title="${n}. ${STAGES[i].name}" style="position:relative;width:48px;height:48px;border-radius:50%;background:${sc};box-shadow:0 0 0 4px #fff,0 0 0 8px ${sc};flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;letter-spacing:0;">${n}</span>`);
     } else if (n < stage) {
-      dots.push(`<span title="${n}. ${STAGES[i].name}" style="width:10px;height:10px;border-radius:50%;background:${sc};flex-shrink:0;display:inline-block;opacity:0.9;"></span>`);
+      dots.push(`<span title="${n}. ${STAGES[i].name}" style="width:24px;height:24px;border-radius:50%;background:${sc};flex-shrink:0;display:inline-block;opacity:0.9;"></span>`);
     } else {
-      dots.push(`<span title="${n}. ${STAGES[i].name}" style="width:10px;height:10px;border-radius:50%;background:#e5e7eb;flex-shrink:0;display:inline-block;"></span>`);
+      dots.push(`<span title="${n}. ${STAGES[i].name}" style="width:24px;height:24px;border-radius:50%;background:#e5e7eb;flex-shrink:0;display:inline-block;"></span>`);
     }
   }
 
   const stageName = STEP_NAMES[stage - 1] || st.name;
-  return `<div style="display:inline-flex;flex-direction:column;align-items:center;gap:6px;">
-    <div style="display:flex;align-items:center;gap:0;padding:0 4px;">${dots.join('')}</div>
-    <div style="display:flex;align-items:center;gap:4px;">
-      <span style="font-size:11px;font-weight:900;color:${st.color};letter-spacing:-.02em;">${stage}<span style="font-size:10px;font-weight:400;color:#b0b8c4;">/7</span></span>
-      <span style="width:1px;height:10px;background:#e2e8f0;display:inline-block;"></span>
-      <span style="font-size:11px;font-weight:700;color:${st.color};">${stageName}</span>
+  return `<div style="display:inline-flex;flex-direction:column;align-items:center;gap:10px;padding:4px 0;">
+    <div style="display:flex;align-items:center;gap:2px;padding:0 6px;">${dots.join('')}</div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:16px;font-weight:900;color:${st.color};letter-spacing:-.02em;">${stage}<span style="font-size:13px;font-weight:400;color:#b0b8c4;">/7</span></span>
+      <span style="width:1px;height:14px;background:#e2e8f0;display:inline-block;"></span>
+      <span style="font-size:14px;font-weight:700;color:${st.color};">${stageName}</span>
     </div>
   </div>`;
 }
