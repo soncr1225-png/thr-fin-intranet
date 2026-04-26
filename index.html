@@ -12379,6 +12379,13 @@ async function BETA_sendReport() {
     if (j && j.error) throw new Error(j.error);
     if (st) st.textContent = '✅ 전송 완료! 대표에게 전달됩니다.';
     setTimeout(BETA_closeReport, 1800);
+    // 제보 내용을 MSG 수신함에도 동시 전달 (대표가 💬 뱃지로 즉시 확인)
+    const _catTypeMap = { '버그':'오류신고', 'UI어색':'수정요청', '기능요청':'기능추가', '기타':'기타' };
+    const _fbText = payload.data.text;
+    fetch(GAS_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ module:'msg', action:'sendMessage', from: author, to:'손청락', type: _catTypeMap[cat] || '기타', body: '[제보함] ' + _fbText })
+    }).catch(() => {});
     BETA_lastAutoErr = null;
   } catch(e) {
     if (st) st.textContent = '전송 실패: ' + e.message;
@@ -12576,19 +12583,82 @@ function MSG_close() {
 /* ── 탭 바 ── */
 function MSG_tabBar(active) {
   const tabs = [
-    { id:'inbox',   icon:'📥', label:`수신함${MSG_messages.filter(m=>!m.read).length > 0 ? ' <span class="msg-unread-dot" style="display:inline-block;"></span>' : ''}` },
-    { id:'compose', icon:'✏️', label:'메시지 작성' },
-    { id:'sent',    icon:'📤', label:'보낸 메시지' },
+    { id:'inbox',    icon:'📥', label:`수신함${MSG_messages.filter(m=>!m.read).length > 0 ? ' <span class="msg-unread-dot" style="display:inline-block;"></span>' : ''}` },
+    { id:'compose',  icon:'✏️', label:'메시지 작성' },
+    { id:'sent',     icon:'📤', label:'보낸 메시지' },
   ];
+  if (MSG_isAdmin) {
+    const fbOpen = (typeof FB_list !== 'undefined') ? FB_list.filter(f => (f.status||'open') === 'open').length : 0;
+    tabs.push({ id:'feedback', icon:'🐛', label:`제보함${fbOpen > 0 ? ` <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#ef4444;color:#fff;font-size:9px;font-weight:800;">${fbOpen}</span>` : ''}` });
+  }
   return `<div class="msg-tabs">${tabs.map(t =>
     `<button class="msg-tab${active===t.id?' active':''}" onclick="MSG_view='${t.id}';MSG_switchView('${t.id}')">${t.icon} ${t.label}</button>`
   ).join('')}</div>`;
 }
 
 function MSG_switchView(v) {
-  if (v === 'inbox')   MSG_renderInbox();
-  if (v === 'compose') MSG_renderCompose();
-  if (v === 'sent')    MSG_renderSent();
+  if (v === 'inbox')    MSG_renderInbox();
+  if (v === 'compose')  MSG_renderCompose();
+  if (v === 'sent')     MSG_renderSent();
+  if (v === 'feedback') MSG_renderFeedback();
+}
+
+/* ── MSG 모달 내 제보함 뷰 (관리자 전용) ── */
+async function MSG_renderFeedback() {
+  document.getElementById('MSG_modalTitle').textContent = '제보함';
+  const body = document.getElementById('MSG_modalBody');
+  body.innerHTML = MSG_tabBar('feedback') + '<div class="msg-empty" style="color:#999;">⏳ 불러오는 중...</div>';
+  try {
+    const r = await fetch(GAS_URL + '?action=getFeedback');
+    const j = await r.json();
+    FB_list = (j && j.data) || [];
+  } catch(e) {
+    body.innerHTML = MSG_tabBar('feedback') + '<div class="msg-empty" style="color:#ef4444;">⚠️ 불러오기 실패</div>';
+    return;
+  }
+  const openItems  = FB_list.filter(f => (f.status||'open') === 'open');
+  const closedItems = FB_list.filter(f => (f.status||'open') === 'closed');
+  const catEmoji   = { '버그':'🐛', 'UI어색':'🎨', '기능요청':'✨', '기타':'📌' };
+  const renderCard = (f) => {
+    const isOpen = (f.status||'open') === 'open';
+    const ts     = f.ts ? new Date(f.ts).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}) : '';
+    const emoji  = catEmoji[f.category] || '📌';
+    const safeText = (f.text||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<div style="background:#fff;border:1px solid ${isOpen?'#fed7aa':'#e5e7eb'};border-radius:8px;padding:12px 14px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:10px;font-weight:700;padding:2px 7px;background:${isOpen?'#fff8f0':'#f3f4f6'};color:${isOpen?'#7c2d12':'#6b7280'};border-radius:99px;">${emoji} ${f.category||'기타'}</span>
+          <span style="font-size:11px;font-weight:700;color:#142040;">👤 ${f.author||'?'}</span>
+          <span style="font-size:10px;color:#9ca3af;">🕐 ${ts}</span>
+        </div>
+        <button onclick="MSG_fbSetStatus('${(f.id||'').replace(/'/g,'\\x27')}','${isOpen?'closed':'open'}')" style="padding:4px 10px;background:${isOpen?'#142040':'#fef3c7'};color:${isOpen?'#fff':'#92400e'};border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;">${isOpen?'✓ 처리완료':'↻ 다시열기'}</button>
+      </div>
+      <div style="font-size:12px;color:#374151;white-space:pre-wrap;word-break:break-word;line-height:1.5;">${safeText}</div>
+    </div>`;
+  };
+  let html = MSG_tabBar('feedback');
+  if (!FB_list.length) {
+    html += '<div class="msg-empty">📭 제보가 없습니다</div>';
+  } else {
+    if (openItems.length)  html += `<div style="font-size:11px;font-weight:800;color:#dc2626;margin:8px 0 4px;">● 처리 대기 ${openItems.length}건</div>` + openItems.map(renderCard).join('');
+    if (closedItems.length) html += `<div style="font-size:11px;font-weight:700;color:#9ca3af;margin:12px 0 4px;">● 처리 완료 ${closedItems.length}건</div>` + closedItems.map(renderCard).join('');
+  }
+  body.innerHTML = html;
+  // 제보함 탭 뱃지 갱신
+  const badge = document.getElementById('mainBadge-feedback');
+  if (badge) badge.textContent = openItems.length || '—';
+}
+
+async function MSG_fbSetStatus(id, status) {
+  try {
+    const r = await fetch(GAS_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'updateFeedbackStatus', data:{ id, status } })
+    });
+    const j = await r.json();
+    if (j && j.error) throw new Error(j.error);
+    MSG_renderFeedback();
+  } catch(e) { alert('상태 변경 실패: ' + e.message); }
 }
 
 /* ── 수신함 ── */
@@ -12702,6 +12772,15 @@ async function MSG_send() {
       result.textContent = `✓ ${to}에게 전송 완료!`;
       btn.textContent = '전송 완료 ✓';
       document.getElementById('MSG_body').value = '';
+      // 피드백 타입(오류신고·수정요청·기능추가)을 대표에게 보낸 경우 제보함에도 저장
+      const _fbTypes = ['오류신고','수정요청','기능추가'];
+      if (_fbTypes.includes(type) && to === '손청락') {
+        const _catMap = { '오류신고':'버그', '수정요청':'UI어색', '기능추가':'기능요청' };
+        fetch(GAS_URL, {
+          method: 'POST', headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action:'saveFeedback', data: { author: MSG_myName, category: _catMap[type] || '기타', text: '[MSG연동] ' + body } })
+        }).catch(() => {});
+      }
       setTimeout(() => { MSG_view = 'inbox'; MSG_fetchInbox().then(MSG_renderInbox); }, 600);
     } else { throw new Error(); }
   } catch(e) {
