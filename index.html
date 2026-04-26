@@ -4266,8 +4266,18 @@ table.data-table tbody tr:hover,
 
     <!-- 수수료 요약 -->
     <div style="background:#f8f7f2;border:1px solid #e8e3d3;border-radius:10px;padding:14px 18px;margin-bottom:18px;">
-      <div style="font-size:11px;color:#888;margin-bottom:6px;">총 수수료 <span id="CD_rateLabel" style="color:#c8a44a;font-weight:700;"></span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:11px;color:#888;">총 수수료 <span id="CD_rateLabel" style="color:#c8a44a;font-weight:700;"></span></div>
+        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#666;cursor:pointer;user-select:none;">
+          <input type="checkbox" id="CD_manualFeeToggle" onchange="CD_toggleManualFee()" style="cursor:pointer;width:14px;height:14px;">
+          수기 직접 입력
+        </label>
+      </div>
       <div id="CD_totalFee" style="font-size:22px;font-weight:900;color:#142040;">—</div>
+      <div id="CD_manualFeeRow" style="display:none;margin-top:10px;">
+        <input type="text" id="CD_manualFee" oninput="CD_onManualFeeInput()" placeholder="수수료 금액 직접 입력 (예: 8,500,000)" style="width:100%;padding:9px 12px;border:2px solid #c8a44a;border-radius:7px;font-size:15px;font-family:inherit;font-weight:700;color:#142040;box-sizing:border-box;background:#fffdf5;">
+        <div style="font-size:10px;color:#a08030;margin-top:4px;">※ 입력 시 낙찰가 계산을 무시하고 이 금액을 수수료로 사용합니다.</div>
+      </div>
     </div>
 
     <!-- 1차/2차 수령 -->
@@ -7488,7 +7498,7 @@ function _bulkAge() {
 // FEE_ consts declared here (before applyBulkData) to avoid TDZ when FEE_migrate is called on cached data load
 const FEE_SHADOW_KEY = 'thefin_fee_shadow_v1';
 const FEE_RATES = { '아파트':1, '다가구':2, '빌딩':2, '공장':2, '토지':2, '특수물건':3 };
-const FEE_SHADOW_FIELDS = ['currentStage','stageNote','propertyType','feeRate','bidPrice','bidDate','fee1Received','fee1Date','fee2Received','fee2Date','staffShares','feeNote','clientName','manager','driveFiles'];
+const FEE_SHADOW_FIELDS = ['currentStage','stageNote','propertyType','feeRate','bidPrice','bidDate','fee1Received','fee1Date','fee2Received','fee2Date','staffShares','feeNote','clientName','manager','driveFiles','manualFee'];
 const STAGES = [
   { n:1, name:'블로그 홍보', color:'#0891b2' },
   { n:2, name:'상담',        color:'#2563eb' },
@@ -13197,6 +13207,7 @@ function FEE_migrate() {
     if (c.clientName == null)   c.clientName   = s.clientName || '';
     if (c.manager    == null)   c.manager      = s.manager    || '';
     if (c.driveFiles == null)   c.driveFiles   = s.driveFiles  || {};
+    if (c.manualFee  == null)   c.manualFee    = s.manualFee   || 0;
   });
 }
 
@@ -13402,7 +13413,7 @@ function DASH_renderCaseList() {
         <td style="padding:8px 10px;vertical-align:middle;">${clientLabel}<span style="font-family:monospace;font-size:11px;color:#666;">${c.caseNo||'—'}</span></td>
         <td style="padding:8px 10px;vertical-align:middle;font-size:12px;">${c.address ? c.address.substring(0,24) : '—'}</td>
         <td style="padding:8px 10px;text-align:center;vertical-align:middle;">${FEE_stageCell(stage, st)}</td>
-        <td style="padding:8px 10px;text-align:right;vertical-align:middle;"><span style="font-size:13px;font-weight:800;color:#142040;">${f.total ? FEE_fmtWon(f.total) : '<span style="color:#ccc;font-weight:400;">—</span>'}</span></td>
+        <td style="padding:8px 10px;text-align:right;vertical-align:middle;"><span style="font-size:13px;font-weight:800;color:#142040;">${(c.manualFee > 0) ? FEE_fmtWon(c.manualFee) : f.total ? FEE_fmtWon(f.total) : '<span style=\\"color:#ccc;font-weight:400;\\">—</span>'}</span></td>
         <td style="padding:8px 10px;text-align:center;vertical-align:middle;">${fee1Badge}</td>
         <td style="padding:8px 10px;text-align:center;vertical-align:middle;">${fee2Badge}</td>
         <td style="padding:8px 10px;text-align:center;vertical-align:middle;"><button onclick="CD_open('${c.id}')" style="padding:4px 10px;border:1px solid #c8a44a;background:#fff8e1;color:#8a5a00;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">💰 관리</button></td>
@@ -13550,10 +13561,41 @@ function CD_updateFeeDisplay() {
   const c = C_cases.find(x => x.id === CD_currentId);
   if (!c) return;
   const f = FEE_calc(c);
-  document.getElementById('CD_rateLabel').textContent = `(요율 ${f.rate}%)`;
-  document.getElementById('CD_totalFee').textContent = f.total ? FEE_fmtWon(f.total) : '—';
-  document.getElementById('CD_fee1Amount').textContent = f.fee1 ? FEE_fmtWon(f.fee1) : '—';
-  document.getElementById('CD_fee2Amount').textContent = f.fee2 ? FEE_fmtWon(f.fee2) : '—';
+  const manualRaw = (document.getElementById('CD_manualFee')?.value || '').replace(/[^0-9]/g,'');
+  const manualFee = Number(manualRaw) || 0;
+  const useManual = manualFee > 0;
+  const total  = useManual ? manualFee : f.total;
+  const fee1   = Math.floor(total / 2);
+  const fee2   = total - fee1;
+  document.getElementById('CD_rateLabel').textContent = useManual ? '(직접 입력)' : `(요율 ${f.rate}%)`;
+  document.getElementById('CD_totalFee').textContent  = total  ? FEE_fmtWon(total)  : '—';
+  document.getElementById('CD_fee1Amount').textContent = fee1  ? FEE_fmtWon(fee1)  : '—';
+  document.getElementById('CD_fee2Amount').textContent = fee2  ? FEE_fmtWon(fee2)  : '—';
+}
+
+function CD_toggleManualFee() {
+  const checked = document.getElementById('CD_manualFeeToggle').checked;
+  document.getElementById('CD_manualFeeRow').style.display = checked ? 'block' : 'none';
+  if (!checked) {
+    document.getElementById('CD_manualFee').value = '';
+    if (CD_currentId) {
+      const c = C_cases.find(x => x.id === CD_currentId);
+      if (c) c.manualFee = 0;
+    }
+    CD_updateFeeDisplay();
+  } else {
+    document.getElementById('CD_manualFee').focus();
+  }
+}
+
+function CD_onManualFeeInput() {
+  const raw = (document.getElementById('CD_manualFee')?.value || '').replace(/[^0-9]/g,'');
+  if (raw) document.getElementById('CD_manualFee').value = Number(raw).toLocaleString('ko-KR');
+  if (!CD_currentId) return;
+  const c = C_cases.find(x => x.id === CD_currentId);
+  if (!c) return;
+  c.manualFee = Number(raw) || 0;
+  CD_updateFeeDisplay();
 }
 
 function CD_save(showAlert) {
@@ -13573,6 +13615,8 @@ function CD_save(showAlert) {
   c.fee2Received    = document.getElementById('CD_fee2Received').checked;
   c.fee2Date        = document.getElementById('CD_fee2Date').value;
   c.feeNote         = document.getElementById('CD_feeNote').value;
+  const _mfRaw = (document.getElementById('CD_manualFee')?.value || '').replace(/[^0-9]/g,'');
+  c.manualFee = Number(_mfRaw) || 0;
   const _snEl = document.getElementById('CD_stageNote');
   if (_snEl) c.stageNote = _snEl.value;
 
@@ -13871,6 +13915,20 @@ function CD_refreshClientList() {
     const c = C_cases.find(x => x.id === caseId);
     const el = document.getElementById('CD_clientName');
     if (el && c) el.value = c.clientName || '';
+    // manualFee 복원
+    const mfEl  = document.getElementById('CD_manualFee');
+    const mfTog = document.getElementById('CD_manualFeeToggle');
+    const mfRow = document.getElementById('CD_manualFeeRow');
+    if (c && c.manualFee > 0) {
+      if (mfEl)  mfEl.value  = Number(c.manualFee).toLocaleString('ko-KR');
+      if (mfTog) mfTog.checked = true;
+      if (mfRow) mfRow.style.display = 'block';
+    } else {
+      if (mfEl)  mfEl.value  = '';
+      if (mfTog) mfTog.checked = false;
+      if (mfRow) mfRow.style.display = 'none';
+    }
+    CD_updateFeeDisplay();
   };
 
   window.CD_save = function(showAlert) {
