@@ -11259,14 +11259,16 @@ function AUTH_addMember() {
 }
 
 // ── 메시지·제보함 변수 선언 (AUTH_init 이전 초기화 필수) ──────────
-let MSG_messages  = [];
-let MSG_sent      = [];
-let MSG_isAdmin   = false;
-let MSG_myName    = '';
-let MSG_pollTimer = null;
-let MSG_view      = 'inbox';
-let MSG_loaded    = false;
-let FB_list       = [];
+let MSG_messages        = [];
+let MSG_sent            = [];
+let MSG_isAdmin         = false;
+let MSG_myName          = '';
+let MSG_pollTimer       = null;
+let MSG_activePollTimer = null;  // 모달 열린 동안 빠른 폴링
+let MSG_isFetching      = false; // 중복 요청 방지
+let MSG_view            = 'inbox';
+let MSG_loaded          = false;
+let FB_list             = [];
 
 // ── 페이지 로드 시 세션 확인 ──────────────────────────────────────
 (function AUTH_init() {
@@ -12487,14 +12489,19 @@ function MSG_applyRole(name) {
   MSG_positionBtn();
   MSG_fetchInbox();
   if (MSG_pollTimer) clearInterval(MSG_pollTimer);
-  MSG_pollTimer = setInterval(MSG_fetchInbox, 2 * 60 * 1000);
+  MSG_pollTimer = setInterval(MSG_fetchInbox, 30 * 1000);
 }
 
 async function MSG_fetchInbox() {
+  if (MSG_isFetching) return;
+  MSG_isFetching = true;
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), 8000);
   try {
-    const r = await fetch(`${GAS_URL}?module=msg&action=getMessages&user=${encodeURIComponent(MSG_myName)}&admin=${MSG_isAdmin?'1':'0'}`, { signal: ctrl.signal });
+    const r = await fetch(
+      `${GAS_URL}?module=msg&action=getMessages&user=${encodeURIComponent(MSG_myName)}&admin=${MSG_isAdmin?'1':'0'}&_t=${Date.now()}`,
+      { signal: ctrl.signal, cache: 'no-store' }
+    );
     clearTimeout(tid);
     const d = await r.json();
     if (d && d.ok) {
@@ -12506,10 +12513,15 @@ async function MSG_fetchInbox() {
       if (hBadge) { hBadge.textContent = unread; hBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
       const mBadge = document.getElementById('MBR_msgBadge');
       if (mBadge) { mBadge.textContent = unread; mBadge.style.display = unread > 0 ? 'inline-block' : 'none'; }
+      // 모달이 열려있으면 현재 뷰 자동 갱신
+      const overlay = document.getElementById('MSG_overlay');
+      if (overlay && !overlay.classList.contains('hidden')) {
+        if (MSG_view === 'inbox') MSG_renderInbox();
+        else if (MSG_view === 'sent') MSG_renderSent();
+      }
     }
   } catch(e) {
     clearTimeout(tid);
-    // 모달이 열려있고 아직 로드 전이면 연결 오류 표시
     const overlay = document.getElementById('MSG_overlay');
     if (overlay && !overlay.classList.contains('hidden') && !MSG_loaded) {
       const body = document.getElementById('MSG_modalBody');
@@ -12520,6 +12532,8 @@ async function MSG_fetchInbox() {
         );
       }
     }
+  } finally {
+    MSG_isFetching = false;
   }
 }
 
@@ -12530,11 +12544,15 @@ function MSG_open() {
   overlay.classList.remove('hidden');
   MSG_view = 'inbox';
   MSG_renderInbox();                          // 즉시 현재 캐시 데이터로 렌더
-  MSG_fetchInbox().then(MSG_renderInbox);     // 백그라운드 갱신
+  MSG_fetchInbox().then(MSG_renderInbox);     // 즉시 서버 갱신
+  // 모달 열려있는 동안 15초마다 자동 갱신
+  if (MSG_activePollTimer) clearInterval(MSG_activePollTimer);
+  MSG_activePollTimer = setInterval(MSG_fetchInbox, 15 * 1000);
 }
 
 function MSG_close() {
   document.getElementById('MSG_overlay').classList.add('hidden');
+  if (MSG_activePollTimer) { clearInterval(MSG_activePollTimer); MSG_activePollTimer = null; }
 }
 
 /* ── 탭 바 ── */
@@ -12651,23 +12669,30 @@ async function MSG_send() {
   const btn    = document.getElementById('MSG_sendBtn');
   if (!body) { result.style.color = '#ef4444'; result.textContent = '내용을 입력해주세요.'; return; }
   btn.disabled = true; btn.textContent = '전송 중...'; result.textContent = '';
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), 12000);
   try {
     const r = await fetch(GAS_URL, {
       method: 'POST',
-      body: JSON.stringify({ module:'msg', action:'sendMessage', from:MSG_myName, to, type, body })
+      body: JSON.stringify({ module:'msg', action:'sendMessage', from:MSG_myName, to, type, body }),
+      signal: ctrl.signal
     });
+    clearTimeout(tid);
     const d = await r.json();
     if (d && d.ok) {
       result.style.color = '#16a34a';
       result.textContent = `✓ ${to}에게 전송 완료!`;
       btn.textContent = '전송 완료 ✓';
       document.getElementById('MSG_body').value = '';
-      setTimeout(() => { MSG_view = 'inbox'; MSG_fetchInbox().then(MSG_renderInbox); }, 1800);
+      setTimeout(() => { MSG_view = 'inbox'; MSG_fetchInbox().then(MSG_renderInbox); }, 600);
     } else { throw new Error(); }
   } catch(e) {
+    clearTimeout(tid);
     btn.disabled = false; btn.textContent = '전송하기';
     result.style.color = '#ef4444';
-    result.textContent = '전송 실패. 네트워크 확인 후 다시 시도해주세요.';
+    result.textContent = e.name === 'AbortError'
+      ? '전송 시간 초과. 다시 시도해주세요.'
+      : '전송 실패. 네트워크 확인 후 다시 시도해주세요.';
   }
 }
 
