@@ -2076,10 +2076,15 @@ function getMsgs(ss, p) {
   data.forEach(function(r) {
     // 구형(6열) 호환: to 없으면 '전체'로 간주
     var id, from, to, body, type, time, read;
+    var fmtT = function(v) {
+      if (!v) return '';
+      if (v instanceof Date) return Utilities.formatDate(v, 'Asia/Seoul', 'yyyy-MM-dd HH:mm');
+      return String(v);
+    };
     if (numCols >= 7) {
-      id = r[0]; from = r[1]; to = r[2]; body = r[3]; type = r[4]; time = r[5]; read = r[6] === true;
+      id = r[0]; from = r[1]; to = r[2]; body = r[3]; type = r[4]; time = fmtT(r[5]); read = r[6] === true;
     } else {
-      id = r[0]; from = r[1]; to = '전체'; body = r[2]; type = r[3]; time = r[4]; read = r[5] === true;
+      id = r[0]; from = r[1]; to = '전체'; body = r[2]; type = r[3]; time = fmtT(r[4]); read = r[5] === true;
     }
     var obj = { id: id, from: from, to: to, body: body, type: type, time: time, read: read };
     // 수신함: 나에게 온 메시지 (to == user 또는 to == '전체') 또는 관리자는 전체

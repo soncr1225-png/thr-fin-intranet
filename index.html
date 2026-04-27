@@ -12924,6 +12924,24 @@ document.addEventListener('click', e => {
 
 const MSG_MEMBERS = ['손청락','이제훈','장한빛','정은진'];
 
+function MSG_fmtTime(t) {
+  if (!t) return '';
+  try {
+    // "yyyy-MM-dd HH:mm" 형식이면 바로 반환
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(String(t))) {
+      return String(t).substring(0, 16);
+    }
+    const d = new Date(t);
+    if (isNaN(d.getTime())) return String(t);
+    const y = d.getFullYear();
+    const mo = String(d.getMonth()+1).padStart(2,'0');
+    const da = String(d.getDate()).padStart(2,'0');
+    const h  = String(d.getHours()).padStart(2,'0');
+    const mi = String(d.getMinutes()).padStart(2,'0');
+    return `${y}.${mo}.${da} ${h}:${mi}`;
+  } catch(e) { return String(t); }
+}
+
 function MSG_positionBtn() { /* 헤더 인라인 배치로 불필요 */ }
 window.addEventListener('resize', MSG_positionBtn);
 
@@ -13101,7 +13119,7 @@ function MSG_renderInbox() {
             <span style="color:#bbb;font-size:11px;">→ ${m.to || '전체'}</span>
             ${!m.read ? '<span class="msg-unread-dot"></span>' : ''}
           </div>
-          <span class="msg-item-time">${m.time}</span>
+          <span class="msg-item-time">${MSG_fmtTime(m.time)}</span>
         </div>
         <div><span class="msg-item-type">${m.type}</span></div>
         <div class="msg-item-preview">${m.body.replace(/</g,'&lt;').replace(/>/g,'&gt;').slice(0,90)}${m.body.length>90?'…':''}</div>
@@ -13158,7 +13176,7 @@ function MSG_renderSent() {
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:12px;color:#555;">→ <strong>${m.to || '전체'}</strong></span>
           </div>
-          <span class="msg-item-time">${m.time}</span>
+          <span class="msg-item-time">${MSG_fmtTime(m.time)}</span>
         </div>
         <div><span class="msg-item-type">${m.type}</span></div>
         <div class="msg-item-preview">${m.body.replace(/</g,'&lt;').replace(/>/g,'&gt;').slice(0,90)}${m.body.length>90?'…':''}</div>
@@ -13237,7 +13255,7 @@ async function MSG_showDetail(idx) {
           <span style="color:#bbb;font-size:12px;margin:0 6px;">→</span>
           <span style="font-size:13px;font-weight:700;color:#555">${m.to || '전체'}</span>
         </div>
-        <span class="msg-item-time">${m.time}</span>
+        <span class="msg-item-time">${MSG_fmtTime(m.time)}</span>
       </div>
       <span class="msg-item-type">${m.type}</span>
     </div>
