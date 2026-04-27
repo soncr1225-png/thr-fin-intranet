@@ -6251,10 +6251,11 @@ function B_itemDl(item){
 }
 function B_parseTitles(titles){
   if(!titles)return[];
-  if(titles.includes('[제목')){
-    return(titles.match(/\[제목\d+\][^\[]+/g)||[titles]).map(t=>t.trim()).filter(Boolean);
+  const clean=titles.includes('||')?titles.split('||')[0]:titles;
+  if(clean.includes('[제목')){
+    return(clean.match(/\[제목\d+\][^\[]+/g)||[clean]).map(t=>t.trim()).filter(Boolean);
   }
-  return titles.split(/\s*\/\s*/).filter(Boolean);
+  return clean.split(/\s*\/\s*/).filter(Boolean);
 }
 function B_render(){
   const B_AH=`<tr>
