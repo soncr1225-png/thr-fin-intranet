@@ -13268,30 +13268,32 @@ function CAL_getEvents(dateStr) {
   const evs = [];
   const _calIsMgr = sessionStorage.getItem('thefin_auth_role') === 'manager';
 
-  // 완전히 숨길 상태 (낙찰 완료·패찰 — 이미 종료된 경매)
-  const CAL_HIDDEN = ['closed', 'lost'];
-  // 취소선으로 표시할 상태 (경매가 진행되지 않음)
+  // 취소선으로 표시할 상태 (경매 취소/변경)
   const CAL_STRIKE_MAP = { changed: '기일변경', cancel: '고객변심', drop: '취하·종료' };
+  // 결과 뱃지로 표시할 상태 (경매 완료 — 숨기지 않고 기록 유지)
+  const CAL_RESULT_MAP = { closed: '🏆 낙찰', lost: '✗ 패찰' };
+  const CAL_RESULT_COLOR = { closed: '#0f7b3b', lost: '#9ca3af' };
+  const CAL_RESULT_BG    = { closed: '#ecfdf5', lost: '#f3f4f6' };
 
   // 경매기일·마감일은 팀 전체 공유 — 모든 로그인 계정에 표시
   if (typeof C_cases !== 'undefined') {
     C_cases.forEach(c => {
-      if (CAL_HIDDEN.includes(c.status)) return;
       const isStruck = !!CAL_STRIKE_MAP[c.status];
-      const reason   = CAL_STRIKE_MAP[c.status] || null;
+      const isResult = !!CAL_RESULT_MAP[c.status];
+      const reason   = CAL_STRIKE_MAP[c.status] || CAL_RESULT_MAP[c.status] || null;
       const tooltip  = [c.caseNo, c.court, c.address, reason].filter(Boolean).join(' | ');
       if (c.auctionDate === dateStr) {
         evs.push({
-          type: isStruck ? 'strike' : 'auction',
-          label: '경매기일',
-          color: isStruck ? '#9ca3af' : '#c9a84c',
-          bg:    isStruck ? '#f3f4f6' : '#fdf6e0',
+          type:  isResult ? 'result' : isStruck ? 'strike' : 'auction',
+          label: isResult ? CAL_RESULT_MAP[c.status] : '경매기일',
+          color: isResult ? CAL_RESULT_COLOR[c.status] : isStruck ? '#9ca3af' : '#c9a84c',
+          bg:    isResult ? CAL_RESULT_BG[c.status]    : isStruck ? '#f3f4f6' : '#fdf6e0',
           name: c.caseNo || '', sub: c.court || '',
-          tooltip, struck: isStruck, reason,
+          tooltip, struck: isStruck, reason: isStruck ? reason : null,
           onclick: `switchMainTab('cases')`
         });
       }
-      if (!isStruck && c.deadline === dateStr) {
+      if (!isStruck && !isResult && c.deadline === dateStr) {
         evs.push({ type: 'deadline', label: '마감', color: '#e05454', bg: '#fdf0f0',
           name: c.caseNo || '', sub: c.address ? c.address.substring(0, 10) : '', tooltip,
           onclick: `switchMainTab('cases')` });
@@ -13390,8 +13392,11 @@ function CAL_render() {
     const chips = evs.slice(0, 3).map(e => {
       const inner = e.struck
         ? `<s>${e.label}${e.name ? ' · ' + e.name : ''}</s><span style="margin-left:3px;font-size:9px;background:#e5e7eb;color:#6b7280;border-radius:2px;padding:0 3px;font-style:normal;">${e.reason}</span>`
-        : `${e.label}${e.name ? ' · ' + e.name : ''}`;
-      return `<div class="cal-ev" style="background:${e.bg};color:${e.color};border-left-color:${e.color};cursor:pointer;" data-cal-label="${e.label}" ${e.tooltip ? `data-cal-tip="${e.tooltip.replace(/"/g,'&quot;')}" onmouseenter="CAL_tipShow(event,this)" onmouseleave="CAL_tipHide()"` : ''} ${e.onclick ? `data-cal-goto="${e.onclick.replace(/"/g,'&quot;')}"` : ''} onclick="CAL_chipClick(event)">${inner}</div>`;
+        : e.type === 'result'
+          ? `${e.label}${e.name ? ' · ' + e.name : ''}`
+          : `${e.label}${e.name ? ' · ' + e.name : ''}`;
+      const opacity = e.type === 'result' ? 'opacity:0.8;' : '';
+      return `<div class="cal-ev" style="background:${e.bg};color:${e.color};border-left-color:${e.color};cursor:pointer;${opacity}" data-cal-label="${e.label}" ${e.tooltip ? `data-cal-tip="${e.tooltip.replace(/"/g,'&quot;')}" onmouseenter="CAL_tipShow(event,this)" onmouseleave="CAL_tipHide()"` : ''} ${e.onclick ? `data-cal-goto="${e.onclick.replace(/"/g,'&quot;')}"` : ''} onclick="CAL_chipClick(event)">${inner}</div>`;
     }).join('');
     const more = evs.length > 3 ? `<div class="cal-ev-more">+${evs.length - 3}건 더</div>` : '';
 
@@ -13438,7 +13443,8 @@ function CAL_renderSidebar() {
 
     const evHtml = evs.map(e => {
       const tip = e.tooltip ? e.tooltip.replace(/"/g,'&quot;') : '';
-      const strikeOpacity = e.struck ? 'opacity:0.65;' : '';
+      const isResultEv   = e.type === 'result';
+      const strikeOpacity = e.struck ? 'opacity:0.65;' : isResultEv ? 'opacity:0.8;' : '';
       const nameStyle     = e.struck ? 'text-decoration:line-through;' : '';
       const typeStyle     = e.struck ? 'text-decoration:line-through;' : '';
       const subHtml = e.reason
