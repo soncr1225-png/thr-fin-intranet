@@ -807,7 +807,11 @@ function analyzeImage(d, mode) {
     if (!match) return { error: 'JSON 파싱 실패' };
     return { ok: true, data: JSON.parse(match[0]) };
   } catch(e) {
-    return { error: '분석 오류: ' + e.message };
+    var msg = e.message || '';
+    if (msg.indexOf('대역폭') !== -1 || msg.indexOf('bandwidth') !== -1 || msg.indexOf('quota') !== -1) {
+      return { error: '이미지가 너무 큽니다. 화면 캡처 후 다시 시도해주세요.' };
+    }
+    return { error: '분석 오류: ' + msg };
   }
 }
 

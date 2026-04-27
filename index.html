@@ -5987,20 +5987,20 @@ function C_saveTypeMapBg(id,c){
 function C_startEdit(span,id,field,cur){const inp=document.createElement('input');inp.type='text';inp.className='inline-edit';inp.value=cur==='—'?'':cur;const finish=()=>{const v=inp.value.trim();span.textContent=v||'—';inp.replaceWith(span);C_editField(id,field,v);};inp.onblur=finish;inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')inp.replaceWith(span);};span.replaceWith(inp);inp.focus();inp.select();}
 function C_startEditDate(span,id,field,cur){const inp=document.createElement('input');inp.type='date';inp.className='inline-edit';inp.value=cur||'';inp.style.width='130px';const finish=()=>{const v=inp.value;span.textContent=v?C_fmt(v):'—';inp.replaceWith(span);if(v)C_editField(id,field,v);};inp.onblur=finish;inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')inp.replaceWith(span);};span.replaceWith(inp);inp.focus();}
 
-// 이미지 압축: 전송 전 최대 1600px로 리사이즈 + JPEG 0.78 압축 → 전송 속도 개선
+// 이미지 압축: GAS UrlFetchApp 대역폭 한도 대응 — 최대 1100px + JPEG 0.65
 function _compressImage(file, cb){
   const img=new Image();
   const url=URL.createObjectURL(file);
   img.onload=()=>{
     URL.revokeObjectURL(url);
-    const MAX=1600;
+    const MAX=1100;
     const scale=Math.min(1,MAX/Math.max(img.width,img.height));
     const w=Math.round(img.width*scale), h=Math.round(img.height*scale);
     const c=document.createElement('canvas'); c.width=w; c.height=h;
     c.getContext('2d').drawImage(img,0,0,w,h);
-    c.toBlob(blob=>cb(blob),'image/jpeg',0.78);
+    c.toBlob(blob=>cb(blob),'image/jpeg',0.65);
   };
-  img.onerror=()=>{ URL.revokeObjectURL(url); cb(file); }; // 압축 실패 시 원본 사용
+  img.onerror=()=>{ URL.revokeObjectURL(url); cb(file); };
   img.src=url;
 }
 
