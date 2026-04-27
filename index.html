@@ -6234,6 +6234,7 @@ function B_render(){
     ${B_BLOGS.map(b=>`<th style="width:68px;text-align:center;padding:6px 2px;"><span style="font-size:11px;font-weight:800;">${b.name}</span></th>`).join('')}
     <th style="width:68px;text-align:center;">키워드</th>
     <th style="width:auto;">추천 제목/키워드</th>
+    <th style="width:72px;text-align:center;"></th>
   </tr>`;
   const B_ZH=`<tr>
     <th style="min-width:200px;">사건번호 / 물건내용</th>
@@ -6337,6 +6338,10 @@ function B_activeRow(item){
       ${kwChecked&&item.keywordDate?`<span class="check-date" style="color:var(--gold-dim);">${B_fmtDate(item.keywordDate)||item.keywordDate}</span>`:''}
     </td>
     <td>${titlesHtml}</td>
+    <td style="text-align:center;white-space:nowrap;padding:4px 6px;">
+      <button onclick="B_editItem('${item.caseNum}','${item.round||'1'}')" title="재등록" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:5px;padding:4px 7px;cursor:pointer;font-size:12px;margin-bottom:3px;display:block;width:100%;">↩ 재등록</button>
+      <button onclick="B_deleteItem('${item.caseNum}','${item.round||'1'}')" title="삭제" style="background:#fff0f0;border:1px solid #fecaca;color:#dc2626;border-radius:5px;padding:4px 7px;cursor:pointer;font-size:12px;display:block;width:100%;">🗑 삭제</button>
+    </td>
   </tr>`;
 }
 
@@ -6394,6 +6399,38 @@ function B_restoreItem(caseNum,round){
   B_render();B_updateStats();
   B_switchTab('active');
   fetch(`${GAS_URL}?module=blog&action=updateStatus&caseNum=${encodeURIComponent(caseNum)}&round=${round}&status=${encodeURIComponent('정상')}`).catch(()=>{});
+}
+
+async function B_deleteItem(caseNum,round){
+  if(!confirm(`[${caseNum}] ${round}차 물건을 삭제하시겠습니까?\n삭제 후 복구가 불가합니다.`))return;
+  try{
+    const r=await fetch(`${GAS_URL}?module=blog&action=delete&caseNum=${encodeURIComponent(caseNum)}&round=${encodeURIComponent(round)}`);
+    const res=await r.json();
+    if(res&&res.success){
+      B_items=B_items.filter(i=>!(i.caseNum===caseNum&&(i.round||'1')===String(round)));
+      B_render();B_updateStats();
+    } else {
+      alert(res?.error||'삭제 실패. 다시 시도해주세요.');
+    }
+  }catch(e){alert('삭제 중 오류가 발생했습니다.');}
+}
+
+function B_editItem(caseNum,round){
+  const item=B_items.find(i=>i.caseNum===caseNum&&(i.round||'1')===String(round));
+  if(!item)return;
+  // 등록 폼 열기 + 기존 데이터 채우기
+  document.getElementById('B_addForm').style.display='block';
+  const setV=(id,v)=>{const el=document.getElementById(id);if(el&&v!==undefined&&v!==null)el.value=v;};
+  setV('B_caseNum', item.caseNum);
+  setV('B_name',    item.name);
+  setV('B_date',    item.date);
+  setV('B_round',   item.round||'1');
+  // 기존 항목 삭제 후 재등록할 수 있도록 안내
+  document.getElementById('B_addForm').scrollIntoView({behavior:'smooth',block:'center'});
+  // 재등록 시 중복 방지를 위해 먼저 삭제할지 확인
+  if(confirm(`[${caseNum}] ${round}차 항목을 삭제하고 폼 내용을 수정 후 재등록하시겠습니까?\n확인 시 기존 항목이 삭제됩니다.`)){
+    B_deleteItem(caseNum,round);
+  }
 }
 
 async function B_registerItem(){

@@ -870,6 +870,7 @@ function blogGet(p) {
   if (p.action === 'check')         return json(blogCheck(ss, p));
   if (p.action === 'updateStatus')  return json(blogUpdateStatus(ss, p));
   if (p.action === 'add')           return json(blogAdd(ss, p));
+  if (p.action === 'delete')        return json(blogDelete(ss, p));
   return json({ error: 'unknown blog action' });
 }
 
@@ -1010,6 +1011,22 @@ function blogAdd(ss, p) {
   moveExpiredBlogItems(ss);
   updateBlogStats(ss);
   return { success: true, message: '추가 완료!' };
+}
+
+function blogDelete(ss, p) {
+  var sheet  = sh(ss, SH_BLOG_ACTIVE);
+  var last   = sheet.getLastRow();
+  var target = p.round + '차';
+  for (var i = 2; i <= last; i++) {
+    var cn = String(sheet.getRange(i, 1).getValue());
+    var rd = String(sheet.getRange(i, 4).getValue());
+    if (cn === String(p.caseNum) && rd === target) {
+      sheet.deleteRow(i);
+      updateBlogStats(ss);
+      return { success: true };
+    }
+  }
+  return { success: false, error: '항목을 찾을 수 없습니다.' };
 }
 
 // ============================================================
