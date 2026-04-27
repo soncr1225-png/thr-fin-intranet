@@ -5467,7 +5467,7 @@ function C_updateStats(){
   const lawsuit=C_cases.filter(c=>c.status==='lawsuit'&&_usMgrMatch(c));
   const closedCases=C_cases.filter(c=>c.status==='closed'&&_usMgrMatch(c));
   const lostCases=C_cases.filter(c=>c.status==='lost'&&_usMgrMatch(c));
-  const archiveCases=C_cases.filter(c=>['cancel','drop','changed'].includes(c.status)&&_usMgrMatch(c));
+  const archiveCases=C_cases.filter(c=>['cancel','drop','changed','lost'].includes(c.status)&&_usMgrMatch(c));
   const allCases=C_cases.filter(c=>_usMgrMatch(c));
   const tcAll=document.getElementById('C_tc-all'); if(tcAll) tcAll.textContent=allCases.length;
   const tcA=document.getElementById('C_tc-active');
@@ -6897,7 +6897,7 @@ function A_render() {
     A_items.some(i => i.caseNo === c.caseNo && i.balanceOk === 'O') ||
     [...M_active, ...M_done].some(m => m.caseNo === c.caseNo)
   ));
-  const _fcArchive = _fcBase.filter(c => ['cancel','drop','changed'].includes(c.status));
+  const _fcArchive = _fcBase.filter(c => ['cancel','drop','changed','lost'].includes(c.status));
   const _fcLawsuit = _fcBase.filter(c => c.status === 'lawsuit');
   const _fcLost = _fcBase.filter(c => c.status === 'lost');
   const setFc = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
@@ -6992,7 +6992,8 @@ function A_caseBg(status) {
     closed:       '#cff0f8',
     changed:   '#f3f4f6',
     cancel:    '#f3f4f6',
-    drop:      '#f3f4f6'
+    drop:      '#f3f4f6',
+    lost:      '#fef2f2'
   };
   return map[status] || '#fff';
 }
@@ -7002,7 +7003,7 @@ function A_caseRow(cas, cust, isFirst) {
   const caseLbl  = A_CASE_SM[cas.status] || cas.status;
   const isClosed   = cas.status === 'closed';
   const isCaseActive = ['ongoing','done','report','confirmed','balance_wait','lawsuit'].includes(cas.status);
-  const isArchived   = ['cancel','drop','changed'].includes(cas.status);
+  const isArchived   = ['cancel','drop','changed','lost'].includes(cas.status);
   const caseBg  = A_caseBg(cas.status);
   const caseOpacity = isArchived ? 'opacity:0.8;' : '';
 
