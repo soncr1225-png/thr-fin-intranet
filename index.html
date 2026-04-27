@@ -1552,11 +1552,15 @@ tr:hover td { background: #f8f6ff; }
 .cal-cell.today-cell::after {
   content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#c9a84c;
 }
+.cal-cell-head { display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px; }
 .cal-date-num {
   font-size:15px;font-weight:700;color:#333;
   width:28px;height:28px;display:flex;align-items:center;justify-content:center;
-  border-radius:50%;margin-bottom:4px;flex-shrink:0;
+  border-radius:50%;flex-shrink:0;
 }
+.cal-add-btn { display:none;font-size:16px;font-weight:700;color:#c8a44a;cursor:pointer;line-height:1;padding:1px 4px;border-radius:4px;transition:all .1s;margin-top:2px; }
+.cal-cell:hover .cal-add-btn { display:inline-block; }
+.cal-add-btn:hover { background:#fdf6e0;color:#a37b20; }
 .cal-date-num.is-today {
   background:#0f1f3d;color:#c9a84c;font-size:14px;font-weight:900;
 }
@@ -2801,7 +2805,7 @@ table.data-table tbody tr:hover,
     <span id="M_tab-active" onclick="M_switchTab('active')" style="font-size:12px;font-weight:700;color:var(--navy);cursor:pointer;border-bottom:2px solid var(--navy);padding-bottom:2px;">진행중 <span id="M_tc-active" style="font-size:10px;background:var(--navy);color:#fff;padding:1px 6px;border-radius:99px;margin-left:3px;">—</span></span>
     <span id="M_tab-done" onclick="M_switchTab('done')" style="font-size:12px;font-weight:600;color:#888;cursor:pointer;padding-bottom:2px;">명도완료 <span id="M_tc-done" style="font-size:10px;background:#ddd;color:#666;padding:1px 6px;border-radius:99px;margin-left:3px;">—</span></span>
     <a href="https://www.scourt.go.kr/portal/information/events/search/search.jsp" target="_blank" rel="noopener"
-      style="margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#f0f7ff;border:1px solid #93c5fd;border-radius:6px;color:#1d4ed8;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .15s;"
+      style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#f0f7ff;border:1px solid #93c5fd;border-radius:6px;color:#1d4ed8;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .15s;"
       onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#f0f7ff'">🔍 나의사건검색</a>
   </div>
 
@@ -4103,6 +4107,7 @@ table.data-table tbody tr:hover,
     <button class="cal-nav-btn" onclick="CAL_prevMonth()">‹</button>
     <button class="cal-nav-btn" onclick="CAL_nextMonth()">›</button>
     <button class="cal-today-btn" onclick="CAL_goToday()" style="margin-left:auto;">오늘</button>
+    <button class="cal-today-btn" onclick="CAL_openAddEvent('')" style="margin-left:6px;background:#c8a44a;color:#fff;border-color:#c8a44a;font-weight:700;">＋ 일정 추가</button>
     <button id="CAL_icsBtn" class="cal-today-btn" onclick="ICS_export()" style="display:none;margin-left:6px;background:#0f7b3b;color:#fff;border-color:#0f7b3b;" title="모든 일정을 구글/애플 캘린더용 파일로 내보냅니다">📥 .ics 내보내기</button>
     <button id="GCAL_syncAllBtn" class="cal-today-btn" onclick="GCAL_syncAll()" style="display:none;margin-left:6px;background:#1a73e8;color:#fff;border-color:#1a73e8;" title="모든 활성 사건을 구글 캘린더에 동기화합니다">☁ 전체 동기화</button>
     <div class="cal-legend">
@@ -4112,6 +4117,7 @@ table.data-table tbody tr:hover,
       <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#ea6c00;"></span>강제집행</div>
       <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#0891b2;"></span>경고장</div>
       <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#059669;"></span>이사일</div>
+      <div class="cal-leg-item"><span class="cal-leg-dot" style="background:#db2777;"></span>수기 일정</div>
     </div>
   </div>
 
@@ -4140,6 +4146,42 @@ table.data-table tbody tr:hover,
 
   </div>
 </div><!-- /panel-cal -->
+
+<!-- 수기 일정 추가/수정 모달 -->
+<div id="CAL_manualModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9500;align-items:center;justify-content:center;" onclick="if(event.target===this)CAL_closeManualModal()">
+  <div style="background:#fff;border-radius:14px;padding:26px 24px 20px;width:340px;box-shadow:0 12px 40px rgba(0,0,0,.25);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <span style="font-size:15px;font-weight:800;color:#142040;">📌 수기 일정</span>
+      <button onclick="CAL_closeManualModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#9ca3af;line-height:1;">×</button>
+    </div>
+    <input type="hidden" id="CAL_mEditId">
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">날짜</label>
+      <input type="date" id="CAL_mDate" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:13px;box-sizing:border-box;outline:none;">
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">제목</label>
+      <input type="text" id="CAL_mTitle" placeholder="일정 제목을 입력하세요" maxlength="30" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:13px;box-sizing:border-box;outline:none;" onkeydown="if(event.key==='Enter')CAL_saveManualEvent()">
+    </div>
+    <div style="margin-bottom:20px;">
+      <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:8px;">색상</label>
+      <div style="display:flex;gap:10px;" id="CAL_mColorPicker">
+        <button data-color="#db2777" onclick="CAL_selectColor(this)" style="width:30px;height:30px;border-radius:50%;background:#db2777;border:3px solid transparent;cursor:pointer;transition:all .15s;" title="핑크"></button>
+        <button data-color="#2563eb" onclick="CAL_selectColor(this)" style="width:30px;height:30px;border-radius:50%;background:#2563eb;border:3px solid transparent;cursor:pointer;transition:all .15s;" title="파랑"></button>
+        <button data-color="#059669" onclick="CAL_selectColor(this)" style="width:30px;height:30px;border-radius:50%;background:#059669;border:3px solid transparent;cursor:pointer;transition:all .15s;" title="초록"></button>
+        <button data-color="#d97706" onclick="CAL_selectColor(this)" style="width:30px;height:30px;border-radius:50%;background:#d97706;border:3px solid transparent;cursor:pointer;transition:all .15s;" title="주황"></button>
+        <button data-color="#7c3aed" onclick="CAL_selectColor(this)" style="width:30px;height:30px;border-radius:50%;background:#7c3aed;border:3px solid transparent;cursor:pointer;transition:all .15s;" title="보라"></button>
+        <button data-color="#6b7280" onclick="CAL_selectColor(this)" style="width:30px;height:30px;border-radius:50%;background:#6b7280;border:3px solid transparent;cursor:pointer;transition:all .15s;" title="회색"></button>
+      </div>
+      <input type="hidden" id="CAL_mColor" value="#db2777">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;">
+      <button id="CAL_mDeleteBtn" onclick="CAL_deleteManualEvent()" style="display:none;margin-right:auto;background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:7px;padding:7px 14px;cursor:pointer;font-size:13px;">삭제</button>
+      <button onclick="CAL_closeManualModal()" style="background:none;border:1px solid #d1d5db;color:#6b7280;border-radius:7px;padding:7px 14px;cursor:pointer;font-size:13px;">취소</button>
+      <button onclick="CAL_saveManualEvent()" style="background:#142040;color:#fff;border:none;border-radius:7px;padding:7px 20px;cursor:pointer;font-size:13px;font-weight:700;">저장</button>
+    </div>
+  </div>
+</div>
 
 <!-- ════════════════════════════════════
      탭: 경영 대시보드 (신규)
@@ -13369,6 +13411,15 @@ function CAL_getEvents(dateStr) {
       evs.push({ type: 'move', label: '이사날짜', color: '#059669', bg: '#ecfdf5', name: nm, sub, tooltip, onclick: oc });
   });
 
+  // 수기 일정 — 개인별 메모
+  if (typeof CAL_manualEvs !== 'undefined') {
+    CAL_manualEvs.forEach(ev => {
+      if (ev.date === dateStr) {
+        evs.push({ type: 'manual', id: ev.id, label: ev.title, color: ev.color, bg: ev.color + '22' });
+      }
+    });
+  }
+
   return evs;
 }
 
@@ -13414,6 +13465,9 @@ function CAL_render() {
 
     const evs = CAL_getEvents(ds);
     const chips = evs.slice(0, 3).map(e => {
+      if (e.type === 'manual') {
+        return `<div class="cal-ev" style="background:${e.bg};color:${e.color};border-left-color:${e.color};cursor:pointer;" onclick="event.stopPropagation();CAL_openEditEvent('${e.id}')">📌 ${e.label}</div>`;
+      }
       const inner = e.struck
         ? `<s>${e.label}${e.name ? ' · ' + e.name : ''}</s><span style="margin-left:3px;font-size:9px;background:#e5e7eb;color:#6b7280;border-radius:2px;padding:0 3px;font-style:normal;">${e.reason}</span>`
         : e.type === 'result'
@@ -13426,7 +13480,10 @@ function CAL_render() {
 
     const numCls = isToday ? 'cal-date-num is-today' : 'cal-date-num';
     cells += `<div class="${cls}">
-      <div class="${numCls}">${dn}</div>
+      <div class="cal-cell-head">
+        <div class="${numCls}">${dn}</div>
+        ${!isOther ? `<span class="cal-add-btn" onclick="event.stopPropagation();CAL_openAddEvent('${ds}')" title="일정 추가">＋</span>` : ''}
+      </div>
       <div class="cal-events-wrap">${chips}${more}</div>
     </div>`;
   }
@@ -13466,6 +13523,12 @@ function CAL_renderSidebar() {
       : `${mo}/${da} (${dow}) · <span style="color:#c9a84c;font-weight:900;">${diffTxt}</span>`;
 
     const evHtml = evs.map(e => {
+      if (e.type === 'manual') {
+        return `<div class="cal-sb-ev" style="border-left-color:${e.color};cursor:pointer;background:${e.bg};" onclick="CAL_openEditEvent('${e.id}')">
+          <span class="cal-sb-type" style="color:${e.color};">📌 수기</span>
+          <div class="cal-sb-info"><span class="cal-sb-name">${e.label}</span></div>
+        </div>`;
+      }
       const tip = e.tooltip ? e.tooltip.replace(/"/g,'&quot;') : '';
       const isResultEv   = e.type === 'result';
       const strikeOpacity = e.struck ? 'opacity:0.65;' : isResultEv ? 'opacity:0.8;' : '';
@@ -13506,6 +13569,77 @@ function CAL_goToday() {
 }
 function CAL_init() {
   const n = new Date(); CAL_year = n.getFullYear(); CAL_month = n.getMonth();
+  CAL_render();
+}
+
+// ══ 수기 일정 관리
+let CAL_manualEvs = [];
+const CAL_MANUAL_KEY = 'thefin_cal_manual';
+try { CAL_manualEvs = JSON.parse(localStorage.getItem(CAL_MANUAL_KEY) || '[]'); } catch(e) {}
+
+function CAL_openAddEvent(dateStr) {
+  const today = new Date();
+  const def = dateStr || CAL_fmt(today.getFullYear(), today.getMonth(), today.getDate());
+  document.getElementById('CAL_mEditId').value = '';
+  document.getElementById('CAL_mDate').value = def;
+  document.getElementById('CAL_mTitle').value = '';
+  document.getElementById('CAL_mDeleteBtn').style.display = 'none';
+  CAL_selectColor(document.querySelector('#CAL_mColorPicker button'));
+  document.getElementById('CAL_manualModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('CAL_mTitle').focus(), 60);
+}
+
+function CAL_openEditEvent(id) {
+  const ev = CAL_manualEvs.find(e => e.id === id);
+  if (!ev) return;
+  document.getElementById('CAL_mEditId').value = id;
+  document.getElementById('CAL_mDate').value = ev.date;
+  document.getElementById('CAL_mTitle').value = ev.title;
+  document.getElementById('CAL_mDeleteBtn').style.display = '';
+  const btn = document.querySelector(`#CAL_mColorPicker button[data-color="${ev.color}"]`);
+  CAL_selectColor(btn || document.querySelector('#CAL_mColorPicker button'));
+  document.getElementById('CAL_manualModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('CAL_mTitle').focus(), 60);
+}
+
+function CAL_closeManualModal() {
+  document.getElementById('CAL_manualModal').style.display = 'none';
+}
+
+function CAL_selectColor(btn) {
+  if (!btn) return;
+  document.querySelectorAll('#CAL_mColorPicker button').forEach(b => {
+    b.style.border = '3px solid transparent';
+    b.style.transform = 'scale(1)';
+  });
+  btn.style.border = '3px solid #142040';
+  btn.style.transform = 'scale(1.2)';
+  document.getElementById('CAL_mColor').value = btn.dataset.color;
+}
+
+function CAL_saveManualEvent() {
+  const date = document.getElementById('CAL_mDate').value;
+  const title = document.getElementById('CAL_mTitle').value.trim();
+  const color = document.getElementById('CAL_mColor').value || '#db2777';
+  const editId = document.getElementById('CAL_mEditId').value;
+  if (!date || !title) { alert('날짜와 제목을 입력해주세요.'); return; }
+  if (editId) {
+    const idx = CAL_manualEvs.findIndex(e => e.id === editId);
+    if (idx !== -1) CAL_manualEvs[idx] = { id: editId, date, title, color };
+  } else {
+    CAL_manualEvs.push({ id: Date.now().toString(), date, title, color });
+  }
+  localStorage.setItem(CAL_MANUAL_KEY, JSON.stringify(CAL_manualEvs));
+  CAL_closeManualModal();
+  CAL_render();
+}
+
+function CAL_deleteManualEvent() {
+  const id = document.getElementById('CAL_mEditId').value;
+  if (!id || !confirm('일정을 삭제하시겠습니까?')) return;
+  CAL_manualEvs = CAL_manualEvs.filter(e => e.id !== id);
+  localStorage.setItem(CAL_MANUAL_KEY, JSON.stringify(CAL_manualEvs));
+  CAL_closeManualModal();
   CAL_render();
 }
 
