@@ -1038,7 +1038,40 @@ function blogDelete(ss, p) {
 // ============================================================
 function blogPost(b) {
   if (b.action === 'analyze') return json(analyzeImage(b, 'blog'));
+  if (b.action === 'add')     return json(blogAddJson(blogSS(), b));
   return json({ error: 'unknown blog post action' });
+}
+
+// POST JSON 전용 blogAdd — URL 디코딩 불필요
+function blogAddJson(ss, b) {
+  var sheet  = sh(ss, SH_BLOG_ACTIVE);
+  if (sheet.getLastRow() === 0) setupBlogMainSheet(sheet);
+  var last   = sheet.getLastRow();
+  var target = String(b.round) + '차';
+  for (var i = 2; i <= last; i++) {
+    if (sheet.getRange(i,1).getValue() == b.caseNum && sheet.getRange(i,4).getValue() == target) {
+      return { success: false, duplicate: true, message: b.caseNum + ' ' + target + '는 이미 등록된 물건입니다!' };
+    }
+  }
+  var row = sheet.getLastRow() + 1;
+  sheet.getRange(row, 1).setValue(b.caseNum);
+  sheet.getRange(row, 2).setValue(b.name || '');
+  sheet.getRange(row, 3).setValue(b.date);
+  sheet.getRange(row, 4).setValue(target);
+  sheet.getRange(row, 5).setFormula('=IF(C'+row+'="","",IF(C'+row+'<TODAY(),"종료","D-"&(C'+row+'-TODAY())))');
+  [6, 8, 10, 12].forEach(function(c) {
+    sheet.getRange(row, c).insertCheckboxes().setValue(false);
+    sheet.getRange(row, c+1).setValue('');
+  });
+  sheet.getRange(row, 14).insertCheckboxes().setValue(false);
+  sheet.getRange(row, 15).setValue('');
+  sheet.getRange(row, 16).setValue(b.keywords || '');
+  sheet.getRange(row, 17).setValue('정상');
+  styleBlogRows(sheet);
+  sortBlogByDate(sheet);
+  moveExpiredBlogItems(ss);
+  updateBlogStats(ss);
+  return { success: true, message: '추가 완료!' };
 }
 
 // ============================================================

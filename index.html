@@ -6484,6 +6484,23 @@ function B_editItem(caseNum,round){
   setV('B_name',    item.name);
   setV('B_date',    item.date);
   setV('B_round',   item.round||'1');
+  // 저장된 titles에서 제목 텍스트와 메타데이터 복원
+  const _raw = item.titles || '';
+  let _kwText = _raw, _structText = '';
+  if(_raw.includes('||')){ [_kwText, _structText] = _raw.split('||'); }
+  setV('B_keywords', _kwText);
+  if(_structText){
+    const _pairs = Object.fromEntries(_structText.split('|').map(s=>{ const i=s.indexOf(':'); return [s.slice(0,i), s.slice(i+1)]; }));
+    setV('B_court',    _pairs['법원']||'');
+    setV('B_gu',       _pairs['구']||'');
+    setV('B_dong',     _pairs['동']||'');
+    setV('B_floor',    _pairs['층']||'');
+    setV('B_size',     _pairs['면적']||'');
+    setV('B_appraisal',(_pairs['감정']||'').replace('억',''));
+    setV('B_minbid',   (_pairs['최저']||'').replace('억',''));
+    setV('B_market',   _pairs['시세']||'');
+    const _t=_pairs['유형'];if(_t){const tEl=document.getElementById('B_type');if(tEl){tEl.value=_t;B_onTypeChange(_t);}}
+  }
   f.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
@@ -6541,7 +6558,7 @@ async function B_registerItem(){
   if(market)    struct.push('시세:'+market);
   const keywords = [kwBase, struct.join('|')].filter(Boolean).join('||');
 
-  const r=await fetch(`${GAS_URL}?module=blog&action=add&caseNum=${encodeURIComponent(caseNum)}&name=${encodeURIComponent(name)}&date=${date}&round=${round}&keywords=${encodeURIComponent(keywords)}`);
+  const r=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({module:'blog',action:'add',caseNum,name,date,round,keywords})});
   const res=await r.json();
   _resetBtn();
   if(res&&res.success){
