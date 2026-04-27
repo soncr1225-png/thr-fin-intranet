@@ -3289,90 +3289,6 @@ table.data-table tbody tr:hover,
       <button class="ag-print-btn" onclick="AG_copyText()">📋 텍스트 복사</button>
     </div>
 
-    <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;">
-
-    <!-- ★ 왼쪽: 카톡 전송용 모바일 미리보기 (항상 표시) -->
-    <div style="flex-shrink:0;max-width:390px;">
-      <div style="font-size:12px;font-weight:700;color:#142040;margin-bottom:8px;text-align:center;letter-spacing:.04em;">📱 카톡 전송용 미리보기</div>
-      <div id="ag-mobile-card" style="width:390px;background:#fff;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.14);">
-      <!-- 헤더 -->
-      <div style="background:#142040;padding:20px 22px 16px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <div>
-            <div style="font-size:20px;font-weight:900;color:#fff;letter-spacing:.12em;">THE FIN</div>
-            <div style="font-size:10px;color:#c8a44a;letter-spacing:.08em;margin-top:2px;">더핀중개법인 · 경매·공매 전문</div>
-          </div>
-          <div style="background:rgba(200,164,74,.15);border:1px solid #c8a44a;border-radius:6px;padding:5px 12px;text-align:center;">
-            <div style="font-size:10px;color:#c8a44a;font-weight:700;">경매 입찰 안내문</div>
-          </div>
-        </div>
-      </div>
-      <!-- 날짜·시간 강조 -->
-      <div style="background:#f5f3ef;padding:20px 22px;text-align:center;border-bottom:1px solid #e8e4dc;">
-        <div style="font-size:11px;color:#888;letter-spacing:.08em;margin-bottom:6px;">경 매 기 일</div>
-        <div id="mob-datetime" style="font-size:22px;font-weight:900;color:#142040;line-height:1.2;"></div>
-        <div style="margin:12px auto 0;background:#fff;border:1px solid #ddd;border-radius:10px;padding:10px 18px;max-width:320px;text-align:center;white-space:nowrap;">
-          <div style="font-size:10px;color:#888;margin-bottom:4px;letter-spacing:.05em;">입찰시간 (시작 → 마감)</div>
-          <div style="font-size:15px;font-weight:900;line-height:1.3;white-space:nowrap;">
-            <span id="mob-starttime" style="color:#142040;white-space:nowrap;"></span>
-            <span style="color:#c8a44a;font-size:13px;font-weight:700;padding:0 6px;">→</span>
-            <span id="mob-closetime" style="color:#c00;white-space:nowrap;"></span>
-          </div>
-        </div>
-      </div>
-      <!-- 법원·사건 정보 -->
-      <div style="padding:16px 22px;border-bottom:1px solid #f0ede8;">
-        <div style="font-size:10px;font-weight:700;color:#142040;letter-spacing:.08em;border-left:3px solid #c8a44a;padding-left:7px;margin-bottom:10px;">경매 법원</div>
-        <div id="mob-court" style="font-size:16px;font-weight:800;color:#142040;margin-bottom:3px;"></div>
-        <div id="mob-addr" style="font-size:12px;color:#666;margin-bottom:2px;"></div>
-        <div id="mob-room" style="font-size:12px;color:#888;"></div>
-        <div id="mob-caseno-wrap" style="margin-top:8px;background:#f8f6f1;border-radius:6px;padding:7px 10px;font-size:12px;color:#555;display:none;">
-          사건번호: <strong id="mob-caseno" style="color:#142040;"></strong>
-        </div>
-        <div id="mob-propaddr-wrap" style="margin-top:6px;font-size:12px;color:#666;display:none;">
-          📍 <span id="mob-propaddr"></span>
-        </div>
-      </div>
-      <!-- 입찰보증금 -->
-      <div style="padding:16px 22px;border-bottom:1px solid #f0ede8;">
-        <div style="font-size:10px;font-weight:700;color:#142040;letter-spacing:.08em;border-left:3px solid #c8a44a;padding-left:7px;margin-bottom:10px;">입찰 금액</div>
-        <div style="display:flex;gap:10px;margin-bottom:8px;">
-          <div style="flex:1;background:#f8f6f1;border-radius:8px;padding:10px 14px;">
-            <div style="font-size:10px;color:#888;margin-bottom:3px;">최저매각가격</div>
-            <div id="mob-minprice" style="font-size:14px;font-weight:800;color:#142040;"></div>
-          </div>
-        </div>
-        <div style="background:#fffbf0;border:1.5px solid #f0d080;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:12px;font-weight:700;color:#7a5a00;">입찰보증금 (최저가 10%)</div>
-          <div id="mob-deposit" style="font-size:20px;font-weight:900;color:#b8860b;"></div>
-        </div>
-        <div style="font-size:10px;color:#aaa;margin-top:6px;">※ 법원 지정 자기앞수표 지참</div>
-      </div>
-      <!-- 준비서류 -->
-      <div style="padding:16px 22px;border-bottom:1px solid #f0ede8;">
-        <div style="font-size:10px;font-weight:700;color:#142040;letter-spacing:.08em;border-left:3px solid #c8a44a;padding-left:7px;margin-bottom:10px;">준비 서류 <span id="mob-type-label" style="font-weight:400;color:#888;"></span></div>
-        <ul id="mob-docs" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;"></ul>
-      </div>
-      <!-- 체크리스트 -->
-      <div style="padding:16px 22px;border-bottom:1px solid #f0ede8;">
-        <div style="font-size:10px;font-weight:700;color:#142040;letter-spacing:.08em;border-left:3px solid #c8a44a;padding-left:7px;margin-bottom:10px;">당일 체크리스트</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-          <div style="background:#f8f6f1;border-radius:6px;padding:9px 10px;font-size:11px;color:#374151;display:flex;align-items:flex-start;gap:6px;"><span style="font-size:13px;flex-shrink:0;">⏰</span><span id="mob-arrive-lbl" style="flex:1;min-width:0;word-break:keep-all;line-height:1.4;">입찰 시작 전까지 도착</span></div>
-          <div style="background:#f8f6f1;border-radius:6px;padding:9px 10px;font-size:11px;color:#374151;display:flex;align-items:flex-start;gap:6px;"><span style="font-size:13px;flex-shrink:0;">✍️</span><span style="flex:1;min-width:0;word-break:keep-all;line-height:1.4;">입찰표 정정 불가</span></div>
-          <div style="background:#f8f6f1;border-radius:6px;padding:9px 10px;font-size:11px;color:#374151;display:flex;align-items:flex-start;gap:6px;"><span style="font-size:13px;flex-shrink:0;">💴</span><span style="flex:1;min-width:0;word-break:keep-all;line-height:1.4;">자기앞수표 준비</span></div>
-          <div style="background:#f8f6f1;border-radius:6px;padding:9px 10px;font-size:11px;color:#374151;display:flex;align-items:flex-start;gap:6px;"><span style="font-size:13px;flex-shrink:0;">📨</span><span style="flex:1;min-width:0;word-break:keep-all;line-height:1.4;">봉투 봉인 후 제출</span></div>
-        </div>
-      </div>
-      <!-- 푸터 -->
-      <div style="background:#142040;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="color:#fff;font-size:12px;">담당: <strong id="mob-staff" style="color:#c8a44a;"></strong> <span id="mob-staff-phone" style="color:#8899bb;font-size:11px;font-weight:400;"></span></div>
-        <div style="font-size:10px;color:#6b7a99;">THE FIN 더핀중개법인</div>
-      </div>
-      </div><!-- /ag-mobile-card -->
-    </div><!-- /left col -->
-
-    <!-- ★ 오른쪽: 데스크톱 카드 -->
-    <div style="flex:1;min-width:320px;">
     <div class="ag-card" id="ag-card">
       <!-- 헤더 -->
       <div class="ag-card-header">
@@ -3450,8 +3366,6 @@ table.data-table tbody tr:hover,
         <div class="ag-card-footer-contact" style="font-size:11px;color:#888;">THE FIN 더핀중개법인</div>
       </div>
     </div><!-- /ag-card -->
-    </div><!-- /right col -->
-    </div><!-- /flex container -->
 
   </div><!-- /ag-card-wrap -->
 
@@ -8459,9 +8373,7 @@ function AG_generate() {
   document.getElementById('ag-out-datetime').textContent = AG_fmtDate(date);
   document.getElementById('ag-out-starttime').textContent = time ? AG_fmtTime(time) : '—';
   document.getElementById('ag-out-closetime').textContent = closeTime ? AG_fmtTime(closeTime) : '—';
-  const _arriveLbl = AG_fmtArriveTime(time);
-  document.getElementById('ag-out-arrive-lbl').textContent = _arriveLbl;
-  document.getElementById('mob-arrive-lbl').textContent = _arriveLbl;
+  document.getElementById('ag-out-arrive-lbl').textContent = AG_fmtArriveTime(time);
   document.getElementById('ag-out-court-big').textContent = court;
   document.getElementById('ag-out-addr-big').textContent = addr || '';
   // 주소 끝 건물번호(예: 101)가 법정 호수 앞에 중복될 경우 자동 제거
@@ -8484,34 +8396,6 @@ function AG_generate() {
 
   AG_updateDocs();
 
-  // 모바일 카드 동기화
-  document.getElementById('mob-datetime').textContent   = AG_fmtDate(date);
-  document.getElementById('mob-starttime').textContent  = time ? AG_fmtTime(time) : '—';
-  document.getElementById('mob-closetime').textContent  = closeTime ? AG_fmtTime(closeTime) : '—';
-  document.getElementById('mob-court').textContent      = court;
-  document.getElementById('mob-addr').textContent       = addr || '';
-  document.getElementById('mob-room').textContent       = cleanRoom || '';
-  document.getElementById('mob-minprice').textContent   = minprice ? minprice + '원' : '—';
-  document.getElementById('mob-deposit').textContent    = deposit ? deposit + '원' : '—';
-  document.getElementById('mob-staff').textContent      = staff;
-  document.getElementById('mob-staff-phone').textContent = staffPhone ? ' · ' + staffPhone : '';
-  const jointLabels = {
-    '둘다직접':    '(공동명의 · 둘다 직접 참가)',
-    '1명직접1명위임': '(공동명의 · 1명 직접참가 · 1명 위임)',
-    '둘다위임':    '(공동명의 · 둘다 위임 · 제3자 대리)',
-  };
-  const mobTypeLabel = ownership === '공동'
-    ? (jointLabels[joint] || '(공동명의)')
-    : `(${type} · ${proxy} 입찰)`;
-  document.getElementById('mob-type-label').textContent = mobTypeLabel;
-
-  const mobCaseWrap = document.getElementById('mob-caseno-wrap');
-  if (caseno) { document.getElementById('mob-caseno').textContent = caseno; mobCaseWrap.style.display=''; }
-  else { mobCaseWrap.style.display='none'; }
-
-  const mobPropWrap = document.getElementById('mob-propaddr-wrap');
-  if (propaddr) { document.getElementById('mob-propaddr').textContent = propaddr; mobPropWrap.style.display=''; }
-  else { mobPropWrap.style.display='none'; }
 
   // 준비서류 모바일 카드 동기화
   const mobDocs = document.getElementById('mob-docs');
