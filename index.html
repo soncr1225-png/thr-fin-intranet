@@ -786,7 +786,9 @@ tr:hover td { background: #f8f6ff; }
   box-shadow: var(--shadow-md);
   z-index: 9999;
   min-width: 164px;
-  overflow: hidden;
+  max-height: 80vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .status-menu.open { display: block; }
 .smenu-item {
@@ -5725,8 +5727,15 @@ function C_openMenu(e,id){
   e.stopPropagation();C_closeMenus();
   const m=document.getElementById('C_m'+id);
   const r=e.target.getBoundingClientRect();
-  m.style.top=(r.bottom+4)+'px';m.style.left=r.left+'px';
+  m.style.top=(r.bottom+4)+'px';
+  m.style.left=r.left+'px';
+  m.style.bottom='';
   m.classList.add('open');
+  // 뷰포트 아래로 넘치면 위로 뒤집기
+  const mh=m.getBoundingClientRect().height;
+  if(r.bottom+4+mh>window.innerHeight-8){
+    m.style.top=(r.top-mh-4)+'px';
+  }
 }
 function C_closeMenus(){document.querySelectorAll('.status-menu').forEach(m=>m.classList.remove('open'));}
 document.addEventListener('click',C_closeMenus);
