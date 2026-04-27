@@ -6225,14 +6225,14 @@ function B_parseTitles(titles){
 }
 function B_render(){
   const B_AH=`<tr>
-    <th style="width:115px;">상태</th>
-    <th style="width:105px;white-space:nowrap;">사건번호</th>
-    <th style="width:160px;">물건내용</th>
-    <th style="width:68px;">매각기일</th>
-    <th style="width:52px;text-align:center;">차</th>
-    <th style="width:54px;text-align:center;">잔여일</th>
-    ${B_BLOGS.map(b=>`<th style="width:78px;text-align:center;padding:6px 4px;"><span style="font-size:11px;font-weight:800;">${b.name}</span></th>`).join('')}
-    <th style="width:46px;text-align:center;">키워드</th>
+    <th style="width:90px;">상태</th>
+    <th style="width:108px;white-space:nowrap;">사건번호</th>
+    <th style="width:155px;">물건내용</th>
+    <th style="width:64px;white-space:nowrap;">매각기일</th>
+    <th style="width:36px;text-align:center;">차</th>
+    <th style="width:58px;text-align:center;white-space:nowrap;">잔여일</th>
+    ${B_BLOGS.map(b=>`<th style="width:68px;text-align:center;padding:6px 2px;"><span style="font-size:11px;font-weight:800;">${b.name}</span></th>`).join('')}
+    <th style="width:44px;text-align:center;">키워드</th>
     <th style="width:auto;">추천 제목/키워드</th>
   </tr>`;
   const B_ZH=`<tr>
@@ -6319,7 +6319,7 @@ function B_activeRow(item){
   return`<tr>
     <td style="padding:6px 8px;">
       <select onchange="B_changeStatus('${item.caseNum}','${item.round||'1'}',this.value)"
-        style="font-size:11px;border:1px solid #ddd;border-radius:5px;padding:3px 5px;font-family:inherit;background:#fff;color:${st==='정상'?'#374151':'#dc2626'};width:100%;cursor:pointer;">
+        style="font-size:11px;border:1px solid #ddd;border-radius:5px;padding:3px 4px;font-family:inherit;background:#fff;color:${st==='정상'?'#374151':'#dc2626'};width:100%;cursor:pointer;white-space:nowrap;">
         <option value="정상" ${st==='정상'?'selected':''}>정상</option>
         <option value="취하" ${st==='취하'?'selected':''}>취하</option>
         <option value="매각기일변경" ${st==='매각기일변경'?'selected':''}>기일변경</option>
@@ -6330,7 +6330,7 @@ function B_activeRow(item){
     <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${item.name||''}">${item.name||''}</td>
     <td style="font-size:11px;color:#9ca3af;white-space:nowrap;">${B_fmtDate(item.date)}</td>
     <td style="text-align:center;font-size:11px;color:#9ca3af;white-space:nowrap;">${item.round||''}</td>
-    <td style="text-align:center;">${dlStr}</td>
+    <td style="text-align:center;white-space:nowrap;">${dlStr}</td>
     ${blogCells}
     <td class="blog-check-cell">
       <input type="checkbox" class="blog-check" ${kwChecked?'checked':''} onchange="B_toggleCheck('${item.caseNum}','${item.round||'1'}','K',this.checked)" style="accent-color:var(--gold);">
