@@ -886,7 +886,7 @@ function loadBlogList(ss) {
     data: vals.map(function(r, i) {
       return {
         caseNum:     String(r[0]),  name:        String(r[1]),
-        date:        r[2] ? kstDate(r[2]) : '',   round:       String(r[3]),
+        date:        r[2] ? kstDate(r[2]) : '',   round:       String(r[3]).replace(/차$/, ''),
         daysLeft:    disp[i][4],
         blogA:  r[5],  blogADate:  r[6]  instanceof Date ? kstDate(r[6])  : (disp[i][6]  || ''),
         blogB:  r[7],  blogBDate:  r[8]  instanceof Date ? kstDate(r[8])  : (disp[i][8]  || ''),
@@ -931,7 +931,7 @@ function blogCheck(ss, p) {
   var sheet   = sh(ss, SH_BLOG_ACTIVE);
   var last    = sheet.getLastRow();
   var checked = (p.checked === 'true');
-  var target  = p.round + '차';
+  var target  = String(p.round).replace(/차$/, '') + '차';
 
   for (var i = 2; i <= last; i++) {
     if (String(sheet.getRange(i,1).getValue()) === p.caseNum &&
@@ -960,7 +960,7 @@ function blogUpdateStatus(ss, p) {
   if (allowed.indexOf(p.status) === -1) return { success: false, message: '잘못된 상태값' };
   var sheet  = sh(ss, SH_BLOG_ACTIVE);
   var last   = sheet.getLastRow();
-  var target = p.round + '차';
+  var target = String(p.round).replace(/차$/, '') + '차';
   var bgMap  = { '취하': '#fce8e8', '매각기일변경': '#fef9e7', '정지': '#f5f5f5' };
 
   for (var i = 2; i <= last; i++) {
@@ -1016,7 +1016,7 @@ function blogAdd(ss, p) {
 function blogDelete(ss, p) {
   var sheet  = sh(ss, SH_BLOG_ACTIVE);
   var last   = sheet.getLastRow();
-  var target = p.round + '차';
+  var target = String(p.round).replace(/차$/, '') + '차';
   for (var i = 2; i <= last; i++) {
     var cn = String(sheet.getRange(i, 1).getValue());
     var rd = String(sheet.getRange(i, 4).getValue());
@@ -1539,7 +1539,7 @@ function mapAuctionRow(r) {
     createdAt:        r[11] ? kstDate(r[11]) : '',
     balanceOk:        String(r[12] || ''),
     isSub:            r[13] === true || r[13] === 'TRUE' || r[13] === 'true',
-    subStaff:         String(r[14] || ''),
+    subStaff:         (r[14] instanceof Date) ? '' : String(r[14] || ''),
     loanOk:           r[15] === true || r[15] === 'TRUE' || r[15] === 'true',
     reportSent:       r[16] === true || r[16] === 'TRUE' || r[16] === 'true'
   };

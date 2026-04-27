@@ -2797,11 +2797,12 @@ table.data-table tbody tr:hover,
   </div>
 
   <!-- 서브탭 -->
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0 10px;border-bottom:1px solid #eee;">
-    <div style="display:flex;gap:16px;">
-      <span id="M_tab-active" onclick="M_switchTab('active')" style="font-size:12px;font-weight:700;color:var(--navy);cursor:pointer;border-bottom:2px solid var(--navy);padding-bottom:2px;">진행중 <span id="M_tc-active" style="font-size:10px;background:var(--navy);color:#fff;padding:1px 6px;border-radius:99px;margin-left:3px;">—</span></span>
-      <span id="M_tab-done" onclick="M_switchTab('done')" style="font-size:12px;font-weight:600;color:#888;cursor:pointer;padding-bottom:2px;">명도완료 <span id="M_tc-done" style="font-size:10px;background:#ddd;color:#666;padding:1px 6px;border-radius:99px;margin-left:3px;">—</span></span>
-    </div>
+  <div style="display:flex;align-items:center;gap:16px;padding:12px 0 10px;border-bottom:1px solid #eee;">
+    <span id="M_tab-active" onclick="M_switchTab('active')" style="font-size:12px;font-weight:700;color:var(--navy);cursor:pointer;border-bottom:2px solid var(--navy);padding-bottom:2px;">진행중 <span id="M_tc-active" style="font-size:10px;background:var(--navy);color:#fff;padding:1px 6px;border-radius:99px;margin-left:3px;">—</span></span>
+    <span id="M_tab-done" onclick="M_switchTab('done')" style="font-size:12px;font-weight:600;color:#888;cursor:pointer;padding-bottom:2px;">명도완료 <span id="M_tc-done" style="font-size:10px;background:#ddd;color:#666;padding:1px 6px;border-radius:99px;margin-left:3px;">—</span></span>
+    <a href="https://www.scourt.go.kr/portal/information/events/search/search.jsp" target="_blank" rel="noopener"
+      style="margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#f0f7ff;border:1px solid #93c5fd;border-radius:6px;color:#1d4ed8;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .15s;"
+      onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#f0f7ff'">🔍 나의사건검색</a>
   </div>
 
   <!-- 등록/수정 폼 -->
@@ -13355,11 +13356,11 @@ function CAL_getEvents(dateStr) {
       if (m.auctionDate === dateStr)
         evs.push({ type: 'myeongdo', label: '낙찰일', color: '#7c3aed', bg: '#f5f0ff', name: nm, sub, tooltip, onclick: oc });
       if (m.enforcementDate === dateStr)
-        evs.push({ type: 'enforce', label: '강제집행', color: '#ea6c00', bg: '#fff4ec', name: nm, sub, tooltip, onclick: oc });
+        evs.push({ type: 'enforce', label: '강제집행신청', color: '#ea6c00', bg: '#fff4ec', name: nm, sub, tooltip, onclick: oc });
       if (m.warningDate === dateStr)
-        evs.push({ type: 'warning', label: '경고장', color: '#0891b2', bg: '#ecfeff', name: nm, sub, tooltip, onclick: oc });
+        evs.push({ type: 'warning', label: '계고일', color: '#0891b2', bg: '#ecfeff', name: nm, sub, tooltip, onclick: oc });
       if (m.moveDate === dateStr)
-        evs.push({ type: 'move', label: '이사일', color: '#059669', bg: '#ecfdf5', name: nm, sub, tooltip, onclick: oc });
+        evs.push({ type: 'move', label: '이사날짜', color: '#059669', bg: '#ecfdf5', name: nm, sub, tooltip, onclick: oc });
     });
   }
 
@@ -13784,7 +13785,8 @@ function FEE_getAllStaff(c) {
   });
   const coPart = c.coParticipants || {};
   Object.values(coPart).forEach(arr => { if (Array.isArray(arr)) arr.forEach(x => { if (x) set.add(x); }); });
-  return [...set].filter(Boolean);
+  const VALID = new Set(['손청락','이제훈','장한빛','정은진']);
+  return [...set].filter(s => s && VALID.has(s));
 }
 
 // ══════════════════════════════════════════════════════════════════
