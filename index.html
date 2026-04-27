@@ -6567,13 +6567,22 @@ async function B_registerItem(){
   const res=await r.json();
   _resetBtn();
   if(res&&res.success){
-    await B_loadAll();
+    // 즉시 UI 반영 (optimistic)
+    B_items.push({
+      caseNum, name, date, round: String(round),
+      daysLeft: '', status: '정상', titles: keywords,
+      blogA:false, blogADate:'', blogB:false, blogBDate:'',
+      blogC:false, blogCDate:'', blogD:false, blogDDate:'',
+      keyword:false, keywordDate:''
+    });
+    B_render(); B_updateStats();
     document.getElementById('B_addForm').style.display='none';
     ['B_caseNum','B_name','B_gu','B_dong','B_floor','B_size','B_appraisal','B_minbid','B_market','B_keywords','B_court']
       .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
     document.getElementById('B_round').value='1';
     if(document.getElementById('B_type')) document.getElementById('B_type').value='아파트';
     B_showToast('✅ 등록되었습니다.');
+    B_loadAll(); // 백그라운드 동기화
   }else if(res&&res.duplicate){alert(res.message);}
   else{alert('등록 실패');}
 }
