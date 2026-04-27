@@ -5429,6 +5429,7 @@ function C_registerCase(){
   ['t_price_mgr','t_field_mgr','t_report_mgr','p_court'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('C_addForm').style.display='none';
   if(!['all','active'].includes(C_tab))C_switchTab('active');
+  B_showToast('✅ 등록되었습니다.');
   C_api('addCase',{status:'ongoing',caseNo,address,court,auctionDate,deadline,types,note}).then(()=>C_scheduleSync());
 }
 
@@ -6496,6 +6497,9 @@ function B_onTypeChange(type){
 }
 
 async function B_registerItem(){
+  const _regBtn = document.querySelector('#B_addForm .btn-primary');
+  if(_regBtn){ _regBtn.disabled=true; _regBtn.textContent='등록 중…'; }
+  const _resetBtn = ()=>{ if(_regBtn){ _regBtn.disabled=false; _regBtn.textContent='등록하기'; } };
   const caseNum    = document.getElementById('B_caseNum').value.trim();
   const name       = document.getElementById('B_name').value.trim();
   const date       = document.getElementById('B_date').value;
@@ -6512,8 +6516,8 @@ async function B_registerItem(){
   const market     = document.getElementById('B_market')?.value.trim() || '';
 
   const _nameRequired = ['아파트','빌라'].includes(type);
-  if(!caseNum){alert('사건번호는 필수입니다.');return;}
-  if(_nameRequired&&!name){alert('단지명은 필수입니다.');return;}
+  if(!caseNum){_resetBtn();alert('사건번호는 필수입니다.');return;}
+  if(_nameRequired&&!name){_resetBtn();alert('단지명은 필수입니다.');return;}
 
   // 편집 모드: 기존 항목 조용히 삭제 후 재등록
   const _f=document.getElementById('B_addForm');
@@ -6539,6 +6543,7 @@ async function B_registerItem(){
 
   const r=await fetch(`${GAS_URL}?module=blog&action=add&caseNum=${encodeURIComponent(caseNum)}&name=${encodeURIComponent(name)}&date=${date}&round=${round}&keywords=${encodeURIComponent(keywords)}`);
   const res=await r.json();
+  _resetBtn();
   if(res&&res.success){
     await B_loadAll();
     document.getElementById('B_addForm').style.display='none';
@@ -6546,6 +6551,7 @@ async function B_registerItem(){
       .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
     document.getElementById('B_round').value='1';
     if(document.getElementById('B_type')) document.getElementById('B_type').value='아파트';
+    B_showToast('✅ 등록되었습니다.');
   }else if(res&&res.duplicate){alert(res.message);}
   else{alert('등록 실패');}
 }
