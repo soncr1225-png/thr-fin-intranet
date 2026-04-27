@@ -2642,13 +2642,13 @@ table.data-table tbody tr:hover,
             <option value="3">3차</option><option value="4">4차</option>
           </select>
         </div>
-        <div class="pf"><label>단지명 ★</label><input type="text" id="B_name" placeholder="예) 래미안마포리버웰"></div>
+        <div class="pf"><label id="lbl-B_name">단지명 ★</label><input type="text" id="B_name" placeholder="예) 래미안마포리버웰"></div>
         <div class="pf"><label>구 ★</label><input type="text" id="B_gu" placeholder="예) 마포구"></div>
         <div class="pf"><label>동/호수</label><input type="text" id="B_dong" placeholder="예) 101동 304호"></div>
         <div class="pf"><label>층수</label><input type="text" id="B_floor" placeholder="예) 15층"></div>
         <div class="pf"><label>면적</label><input type="text" id="B_size" placeholder="예) 84㎡ 또는 35평"></div>
         <div class="pf"><label>물건유형</label>
-          <select id="B_type">
+          <select id="B_type" onchange="B_onTypeChange(this.value)">
             <option value="아파트">아파트</option><option value="빌라">빌라</option>
             <option value="다가구">다가구</option><option value="주택">주택</option>
             <option value="근린주택">근린주택</option><option value="근린시설">근린시설</option>
@@ -6485,6 +6485,15 @@ function B_editItem(caseNum,round){
   f.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
+function B_onTypeChange(type){
+  const lbl = document.getElementById('lbl-B_name');
+  const inp = document.getElementById('B_name');
+  if(!lbl||!inp) return;
+  const needsName = ['아파트','빌라'].includes(type);
+  lbl.textContent = needsName ? '단지명 ★' : '단지명 (선택)';
+  inp.placeholder = needsName ? '예) 래미안마포리버웰' : '예) 강남신사빌딩 (없으면 생략 가능)';
+}
+
 async function B_registerItem(){
   const caseNum    = document.getElementById('B_caseNum').value.trim();
   const name       = document.getElementById('B_name').value.trim();
@@ -6501,7 +6510,9 @@ async function B_registerItem(){
   const minbid     = document.getElementById('B_minbid')?.value.trim() || '';
   const market     = document.getElementById('B_market')?.value.trim() || '';
 
-  if(!caseNum||!name){alert('사건번호와 단지명은 필수입니다.');return;}
+  const _nameRequired = ['아파트','빌라'].includes(type);
+  if(!caseNum){alert('사건번호는 필수입니다.');return;}
+  if(_nameRequired&&!name){alert('단지명은 필수입니다.');return;}
 
   // 편집 모드: 기존 항목 조용히 삭제 후 재등록
   const _f=document.getElementById('B_addForm');
@@ -6563,7 +6574,7 @@ async function B_analyzeImage(base64,mimeType){
     setV('B_dong',     d.dong);
     setV('B_floor',    d.floor);
     setV('B_size',     d.size);
-    if(d.type){const tEl=document.getElementById('B_type');if(tEl)tEl.value=d.type;}
+    if(d.type){const tEl=document.getElementById('B_type');if(tEl){tEl.value=d.type;B_onTypeChange(d.type);}}
     setV('B_appraisal', d.appraisal);
     setV('B_minbid',    d.minbid);
     if(d.title1||d.title2||d.title3)setV('B_keywords',[d.title1,d.title2,d.title3].filter(Boolean).join(' / '));
@@ -8418,13 +8429,6 @@ function AG_generate() {
 
   AG_updateDocs();
 
-
-  // 준비서류 모바일 카드 동기화
-  const mobDocs = document.getElementById('mob-docs');
-  const srcDocs = [...document.querySelectorAll('#ag-out-docs li')].map(li => li.textContent);
-  mobDocs.innerHTML = srcDocs.map(d =>
-    `<li style="background:#f8f6f1;border:1px solid #e8e4dc;border-radius:6px;padding:8px 12px;font-size:12px;color:#374151;display:flex;align-items:flex-start;gap:8px;"><span style="color:#142040;font-weight:700;flex-shrink:0;margin-top:1px;">✓</span><span style="flex:1;min-width:0;word-break:keep-all;line-height:1.5;">${d}</span></li>`
-  ).join('');
 
   const wrap = document.getElementById('ag-card-wrap');
   wrap.classList.add('show');
