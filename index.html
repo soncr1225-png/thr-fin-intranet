@@ -6434,18 +6434,40 @@ function B_restoreItem(caseNum,round){
   fetch(`${GAS_URL}?module=blog&action=updateStatus&caseNum=${encodeURIComponent(caseNum)}&round=${round}&status=${encodeURIComponent('정상')}`).catch(()=>{});
 }
 
+function B_showToast(msg, type='ok'){
+  let t=document.getElementById('B_toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='B_toast';
+    t.style.cssText='position:fixed;bottom:32px;left:50%;transform:translateX(-50%);z-index:99999;padding:11px 28px;border-radius:10px;font-size:13px;font-weight:700;color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.22);transition:opacity .35s;pointer-events:none;white-space:nowrap;';
+    document.body.appendChild(t);
+  }
+  t.style.background=type==='ok'?'#16a34a':type==='err'?'#dc2626':'#374151';
+  t.textContent=msg;
+  t.style.opacity='1';
+  clearTimeout(t._hide);
+  t._hide=setTimeout(()=>{t.style.opacity='0';},2200);
+}
+
 async function B_deleteItem(caseNum,round){
   if(!confirm(`[${caseNum}] ${round}차 물건을 삭제하시겠습니까?\n삭제 후 복구가 불가합니다.`))return;
+  // 낙관적 업데이트: 즉시 목록에서 제거
+  const backup=[...B_items];
+  B_items=B_items.filter(i=>!(i.caseNum===caseNum&&(i.round||'1')===String(round)));
+  B_render();B_updateStats();
   try{
     const r=await fetch(`${GAS_URL}?module=blog&action=delete&caseNum=${encodeURIComponent(caseNum)}&round=${encodeURIComponent(round)}`);
     const res=await r.json();
     if(res&&res.success){
-      B_items=B_items.filter(i=>!(i.caseNum===caseNum&&(i.round||'1')===String(round)));
-      B_render();B_updateStats();
-    } else {
-      alert(res?.error||'삭제 실패. 다시 시도해주세요.');
+      B_showToast('✅ 삭제 완료');
+    }else{
+      B_items=backup;B_render();B_updateStats();
+      B_showToast('❌ '+(res?.error||'삭제 실패. 다시 시도해주세요.'),'err');
     }
-  }catch(e){alert('삭제 중 오류가 발생했습니다.');}
+  }catch(e){
+    B_items=backup;B_render();B_updateStats();
+    B_showToast('❌ 삭제 중 오류가 발생했습니다.','err');
+  }
 }
 
 function B_editItem(caseNum,round){
