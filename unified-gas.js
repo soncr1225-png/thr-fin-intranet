@@ -1014,13 +1014,13 @@ function blogAdd(ss, p) {
 }
 
 function blogDelete(ss, p) {
-  var sheet  = sh(ss, SH_BLOG_ACTIVE);
-  var last   = sheet.getLastRow();
-  var target = String(p.round).replace(/차$/, '') + '차';
+  var sheet    = sh(ss, SH_BLOG_ACTIVE);
+  var last     = sheet.getLastRow();
+  var roundKey = String(p.round).replace(/차$/, '');
   for (var i = 2; i <= last; i++) {
     var cn = String(sheet.getRange(i, 1).getValue());
-    var rd = String(sheet.getRange(i, 4).getValue());
-    if (cn === String(p.caseNum) && rd === target) {
+    var rd = String(sheet.getRange(i, 4).getValue()).replace(/차$/, '');
+    if (cn === String(p.caseNum) && rd === roundKey) {
       sheet.deleteRow(i);
       updateBlogStats(ss);
       return { success: true };
