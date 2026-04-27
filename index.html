@@ -1552,15 +1552,14 @@ tr:hover td { background: #f8f6ff; }
 .cal-cell.today-cell::after {
   content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#c9a84c;
 }
-.cal-cell-head { display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px; }
 .cal-date-num {
   font-size:15px;font-weight:700;color:#333;
   width:28px;height:28px;display:flex;align-items:center;justify-content:center;
-  border-radius:50%;flex-shrink:0;
+  border-radius:50%;margin-bottom:4px;flex-shrink:0;
 }
-.cal-add-btn { display:none;font-size:16px;font-weight:700;color:#c8a44a;cursor:pointer;line-height:1;padding:1px 4px;border-radius:4px;transition:all .1s;margin-top:2px; }
-.cal-cell:hover .cal-add-btn { display:inline-block; }
-.cal-add-btn:hover { background:#fdf6e0;color:#a37b20; }
+.cal-add-btn { display:none;position:absolute;top:6px;right:6px;font-size:13px;font-weight:900;color:#c8a44a;cursor:pointer;background:#fdf6e0;border-radius:4px;padding:0px 5px;line-height:1.6;transition:all .1s; }
+.cal-cell:hover .cal-add-btn { display:inline; }
+.cal-add-btn:hover { background:#c8a44a;color:#fff; }
 .cal-date-num.is-today {
   background:#0f1f3d;color:#c9a84c;font-size:14px;font-weight:900;
 }
@@ -13480,10 +13479,8 @@ function CAL_render() {
 
     const numCls = isToday ? 'cal-date-num is-today' : 'cal-date-num';
     cells += `<div class="${cls}">
-      <div class="cal-cell-head">
-        <div class="${numCls}">${dn}</div>
-        ${!isOther ? `<span class="cal-add-btn" onclick="event.stopPropagation();CAL_openAddEvent('${ds}')" title="일정 추가">＋</span>` : ''}
-      </div>
+      <div class="${numCls}">${dn}</div>
+      ${!isOther ? `<span class="cal-add-btn" onclick="event.stopPropagation();CAL_openAddEvent('${ds}')" title="일정 추가">＋</span>` : ''}
       <div class="cal-events-wrap">${chips}${more}</div>
     </div>`;
   }
