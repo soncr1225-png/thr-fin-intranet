@@ -1600,6 +1600,59 @@ tr:hover td { background: #f8f6ff; }
   font-size:11px;color:#fbbf24;font-weight:700;
 }
 
+/* ═════ 뷰 전환 버튼 ═════ */
+.cal-view-switcher { display:flex;gap:2px;margin-left:8px; }
+.cal-view-btn { padding:5px 11px;border:1px solid #d1d5db;background:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;color:#4b5563;transition:all .15s; }
+.cal-view-btn.active { background:#0f1f3d;color:#fff;border-color:#0f1f3d; }
+.cal-view-btn:hover:not(.active) { background:#f3f4f6; }
+
+/* ═════ 주간/일간 뷰 컨테이너 ═════ */
+.cal-wv-wrap,.cal-dv-wrap { display:none;flex-direction:column;overflow:hidden; }
+
+/* 헤더 행 */
+.cal-tv-header { display:flex;border-bottom:1px solid #e5e7eb;flex-shrink:0;background:#fafafa;border-radius:8px 8px 0 0; }
+.cal-tv-timecol { width:52px;flex-shrink:0;border-right:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;font-size:10px;color:#9ca3af;font-weight:600;padding:8px 0; }
+.cal-tv-daycols { display:flex;flex:1; }
+.cal-tv-daycol { flex:1;border-right:1px solid #f0ece4;text-align:center;padding:6px 4px;font-size:11px;font-weight:700;color:#374151;min-width:0;cursor:default; }
+.cal-tv-daycol:last-child { border-right:none; }
+.cal-tv-daycol.today-col { background:#fffef5; }
+.cal-tv-day-num { font-size:19px;font-weight:900;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;margin-top:2px; }
+.cal-tv-daycol.today-col .cal-tv-day-num { background:#0f1f3d;color:#c9a84c; }
+.cal-tv-daycol.sun-col { color:#ef4444; }
+.cal-tv-daycol.sat-col { color:#2563eb; }
+.cal-tv-daycol.sun-col.today-col .cal-tv-day-num,.cal-tv-daycol.sat-col.today-col .cal-tv-day-num { color:#c9a84c; }
+
+/* 종일 행 */
+.cal-tv-allday { display:flex;border-bottom:2px solid #dedad4;background:#f9f8f5;flex-shrink:0;min-height:28px;max-height:80px;overflow-y:auto; }
+.cal-tv-allday-label { width:52px;flex-shrink:0;font-size:10px;color:#9ca3af;display:flex;align-items:flex-start;justify-content:center;border-right:1px solid #e5e7eb;padding:5px 2px;font-weight:700; }
+.cal-tv-allday-cols { display:flex;flex:1; }
+.cal-tv-allday-col { flex:1;padding:2px 3px;display:flex;flex-direction:column;gap:2px;border-right:1px solid #f0ece4;min-width:0; }
+.cal-tv-allday-col:last-child { border-right:none; }
+.cal-tv-allday-ev { font-size:11px;font-weight:700;padding:2px 5px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:3px solid transparent;cursor:pointer; }
+
+/* 시간 그리드 */
+.cal-tv-grid-wrap { display:flex;height:620px;overflow-y:auto;position:relative; }
+.cal-tv-timecol-grid { width:52px;flex-shrink:0;border-right:1px solid #e5e7eb;position:relative;background:#fff; }
+.cal-tv-time-label { position:absolute;right:6px;font-size:10px;color:#9ca3af;font-weight:600;transform:translateY(-50%);line-height:1;white-space:nowrap; }
+.cal-tv-cols-grid { display:flex;flex:1;position:relative; }
+.cal-tv-col-grid { flex:1;border-right:1px solid #f0ece4;position:relative;min-width:0; }
+.cal-tv-col-grid:last-child { border-right:none; }
+.cal-tv-col-grid.sun-col-g { background:#fff8f8; }
+.cal-tv-col-grid.sat-col-g { background:#f8f9ff; }
+.cal-tv-hr-line { position:absolute;left:0;right:0;border-top:1px solid #e5e7eb;pointer-events:none; }
+.cal-tv-hr-half { position:absolute;left:0;right:0;border-top:1px dashed #f0ece4;pointer-events:none; }
+.cal-tv-slot { position:absolute;left:0;right:0;cursor:pointer;transition:background .1s;z-index:1; }
+.cal-tv-slot:hover { background:rgba(201,168,76,.1); }
+
+/* 현재 시간선 */
+.cal-tv-now-line { position:absolute;left:0;right:0;height:2px;background:#ef4444;z-index:6;pointer-events:none; }
+.cal-tv-now-dot { position:absolute;left:-5px;top:50%;transform:translateY(-50%);width:10px;height:10px;border-radius:50%;background:#ef4444; }
+.cal-tv-now-timecol { position:absolute;right:4px;font-size:9px;color:#ef4444;font-weight:700;transform:translateY(-50%);white-space:nowrap; }
+
+/* 이벤트 블록 (시간 지정) */
+.cal-tv-event { position:absolute;left:2px;right:2px;border-radius:5px;font-size:11px;font-weight:700;padding:3px 5px;overflow:hidden;cursor:pointer;border-left:3px solid transparent;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,.12);line-height:1.3; }
+.cal-tv-event:hover { filter:brightness(.93); }
+
 /* 우측 사이드바 */
 .cal-sidebar {
   width:280px;flex-shrink:0;background:#fff;
@@ -4103,9 +4156,14 @@ table.data-table tbody tr:hover,
   <!-- 상단 헤더: 월 네비 + 범례 -->
   <div class="cal-header">
     <div class="cal-month-label" id="CAL_monthLabel">2026년 1월</div>
-    <button class="cal-nav-btn" onclick="CAL_prevMonth()">‹</button>
-    <button class="cal-nav-btn" onclick="CAL_nextMonth()">›</button>
+    <button class="cal-nav-btn" onclick="CAL_nav(-1)">‹</button>
+    <button class="cal-nav-btn" onclick="CAL_nav(1)">›</button>
     <button class="cal-today-btn" onclick="CAL_goToday()" style="margin-left:auto;">오늘</button>
+    <div class="cal-view-switcher">
+      <button class="cal-view-btn active" id="CAL_vBtn_month" onclick="CAL_setView('month')">월</button>
+      <button class="cal-view-btn" id="CAL_vBtn_week" onclick="CAL_setView('week')">주</button>
+      <button class="cal-view-btn" id="CAL_vBtn_day" onclick="CAL_setView('day')">일</button>
+    </div>
     <button class="cal-today-btn" onclick="CAL_openAddEvent('')" style="margin-left:6px;background:#c8a44a;color:#fff;border-color:#c8a44a;font-weight:700;">＋ 일정 추가</button>
     <button id="CAL_icsBtn" class="cal-today-btn" onclick="ICS_export()" style="display:none;margin-left:6px;background:#0f7b3b;color:#fff;border-color:#0f7b3b;" title="모든 일정을 구글/애플 캘린더용 파일로 내보냅니다">📥 .ics 내보내기</button>
     <button id="GCAL_syncAllBtn" class="cal-today-btn" onclick="GCAL_syncAll()" style="display:none;margin-left:6px;background:#1a73e8;color:#fff;border-color:#1a73e8;" title="모든 활성 사건을 구글 캘린더에 동기화합니다">☁ 전체 동기화</button>
@@ -4144,6 +4202,13 @@ table.data-table tbody tr:hover,
     </div>
 
   </div>
+
+  <!-- 주간 뷰 -->
+  <div class="cal-wv-wrap" id="CAL_wkWrap"></div>
+
+  <!-- 일간 뷰 -->
+  <div class="cal-dv-wrap" id="CAL_dayWrap"></div>
+
 </div><!-- /panel-cal -->
 
 <!-- 수기 일정 추가/수정 모달 -->
@@ -4157,6 +4222,16 @@ table.data-table tbody tr:hover,
     <div style="margin-bottom:12px;">
       <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">날짜</label>
       <input type="date" id="CAL_mDate" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:13px;box-sizing:border-box;outline:none;">
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <div style="flex:1;">
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">시작 시간 <span style="font-weight:400;color:#9ca3af;">(선택)</span></label>
+        <input type="time" id="CAL_mStart" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:13px;box-sizing:border-box;outline:none;">
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">종료 시간 <span style="font-weight:400;color:#9ca3af;">(선택)</span></label>
+        <input type="time" id="CAL_mEnd" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:13px;box-sizing:border-box;outline:none;">
+      </div>
     </div>
     <div style="margin-bottom:14px;">
       <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">제목</label>
@@ -7986,6 +8061,9 @@ async function loadBulk() {
 
 let CAL_year = new Date().getFullYear();
 let CAL_month = new Date().getMonth();
+let CAL_view = 'month';
+let CAL_wkStartDate = null;
+let CAL_dayDate = null;
 
 loadBulk();
 
@@ -13423,6 +13501,8 @@ function CAL_getEvents(dateStr) {
 }
 
 function CAL_render() {
+  if (CAL_view === 'week') { CAL_renderWeek(); return; }
+  if (CAL_view === 'day')  { CAL_renderDay();  return; }
   const y = CAL_year, m = CAL_month;
   document.getElementById('CAL_monthLabel').innerHTML =
     `${y}년<em>${m + 1}월</em>`;
@@ -13552,16 +13632,58 @@ function CAL_renderSidebar() {
   document.getElementById('CAL_sidebar').innerHTML = html;
 }
 
-function CAL_prevMonth() {
-  if (CAL_month === 0) { CAL_year--; CAL_month = 11; } else { CAL_month--; }
+function CAL_prevMonth() { CAL_nav(-1); }
+function CAL_nextMonth() { CAL_nav(1); }
+
+function CAL_nav(dir) {
+  if (CAL_view === 'month') {
+    CAL_month += dir;
+    if (CAL_month < 0)  { CAL_year--; CAL_month = 11; }
+    if (CAL_month > 11) { CAL_year++; CAL_month = 0; }
+  } else if (CAL_view === 'week') {
+    if (!CAL_wkStartDate) { const n=new Date();n.setDate(n.getDate()-n.getDay());n.setHours(0,0,0,0);CAL_wkStartDate=n; }
+    const d = new Date(CAL_wkStartDate); d.setDate(d.getDate() + dir * 7);
+    CAL_wkStartDate = d; CAL_year = d.getFullYear(); CAL_month = d.getMonth();
+  } else {
+    if (!CAL_dayDate) { CAL_dayDate = new Date(); CAL_dayDate.setHours(0,0,0,0); }
+    const d = new Date(CAL_dayDate); d.setDate(d.getDate() + dir);
+    CAL_dayDate = d; CAL_year = d.getFullYear(); CAL_month = d.getMonth();
+  }
   CAL_render();
 }
-function CAL_nextMonth() {
-  if (CAL_month === 11) { CAL_year++; CAL_month = 0; } else { CAL_month++; }
+
+function CAL_setView(v) {
+  CAL_view = v;
+  if (v === 'week' && !CAL_wkStartDate) {
+    const n = new Date(); n.setDate(n.getDate() - n.getDay()); n.setHours(0,0,0,0);
+    CAL_wkStartDate = n;
+  }
+  if (v === 'day' && !CAL_dayDate) {
+    CAL_dayDate = new Date(); CAL_dayDate.setHours(0,0,0,0);
+  }
+  ['month','week','day'].forEach(n => {
+    const b = document.getElementById('CAL_vBtn_' + n);
+    if (b) b.classList.toggle('active', n === v);
+  });
+  const body = document.querySelector('.cal-body');
+  const wk = document.getElementById('CAL_wkWrap');
+  const dv = document.getElementById('CAL_dayWrap');
+  if (body) body.style.display = v === 'month' ? '' : 'none';
+  if (wk)   wk.style.display   = v === 'week'  ? 'flex' : 'none';
+  if (dv)   dv.style.display   = v === 'day'   ? 'flex' : 'none';
   CAL_render();
 }
+
 function CAL_goToday() {
-  const n = new Date(); CAL_year = n.getFullYear(); CAL_month = n.getMonth();
+  const n = new Date();
+  CAL_year = n.getFullYear(); CAL_month = n.getMonth();
+  if (CAL_view === 'week') {
+    const d = new Date(n); d.setDate(d.getDate() - d.getDay()); d.setHours(0,0,0,0);
+    CAL_wkStartDate = d;
+  } else if (CAL_view === 'day') {
+    const d = new Date(n); d.setHours(0,0,0,0);
+    CAL_dayDate = d;
+  }
   CAL_render();
 }
 function CAL_init() {
@@ -13569,17 +13691,158 @@ function CAL_init() {
   CAL_render();
 }
 
+// ══ 주간/일간 뷰 렌더
+const CAL_TV_START = 7, CAL_TV_END = 22;
+const CAL_TV_PPM = 1; // px per minute (60px/hour)
+const CAL_DOW = ['일','월','화','수','목','금','토'];
+
+function CAL_getNowPx() {
+  const n = new Date(), h = n.getHours(), m = n.getMinutes();
+  if (h < CAL_TV_START || h >= CAL_TV_END) return null;
+  return ((h * 60 + m) - CAL_TV_START * 60) * CAL_TV_PPM;
+}
+
+function CAL_tvBuildCols(days, totalH, todayStr) {
+  return days.map(day => {
+    const sunCls = day.dow === 0 ? 'sun-col-g' : day.dow === 6 ? 'sat-col-g' : '';
+    const timedEvs = (typeof CAL_manualEvs !== 'undefined' ? CAL_manualEvs : []).filter(e => e.date === day.ds && e.startTime);
+    let evBlocks = timedEvs.map(ev => {
+      const [sh,sm] = ev.startTime.split(':').map(Number);
+      const [eh,em] = (ev.endTime || ev.startTime).split(':').map(Number);
+      const topPx = ((sh*60+sm) - CAL_TV_START*60) * CAL_TV_PPM;
+      const durMin = Math.max(30, (eh*60+em) - (sh*60+sm));
+      const hPx = durMin * CAL_TV_PPM;
+      return `<div class="cal-tv-event" style="top:${topPx}px;height:${hPx}px;background:${ev.color}22;color:${ev.color};border-left-color:${ev.color};" onclick="CAL_openEditEvent('${ev.id}')">📌 ${ev.title}<br><span style="font-size:10px;font-weight:400;">${ev.startTime}${ev.endTime?' – '+ev.endTime:''}</span></div>`;
+    }).join('');
+    let slots = '';
+    for (let mm = 0; mm < (CAL_TV_END - CAL_TV_START)*60; mm += 30) {
+      const topPx = mm * CAL_TV_PPM;
+      const hh = Math.floor(mm/60)+CAL_TV_START, rest = mm%60;
+      const ts = `${String(hh).padStart(2,'0')}:${String(rest).padStart(2,'0')}`;
+      slots += `<div class="cal-tv-slot" style="top:${topPx}px;height:${30*CAL_TV_PPM}px;" onclick="CAL_openAddEvent('${day.ds}','${ts}')" title="${ts}"></div>`;
+    }
+    const isToday = day.ds === todayStr;
+    const nowLine = isToday ? (() => { const p=CAL_getNowPx(); return p!=null ? `<div class="cal-tv-now-line" style="top:${p}px;"><div class="cal-tv-now-dot"></div></div>` : ''; })() : '';
+    return `<div class="cal-tv-col-grid ${sunCls}" style="height:${totalH}px;">${slots}${evBlocks}${nowLine}</div>`;
+  }).join('');
+}
+
+function CAL_tvBuildTimeLabels(totalH) {
+  let html = '';
+  for (let h = CAL_TV_START; h <= CAL_TV_END; h++) {
+    const topPx = (h - CAL_TV_START) * 60 * CAL_TV_PPM;
+    html += `<div class="cal-tv-time-label" style="top:${topPx}px;">${String(h).padStart(2,'0')}:00</div>`;
+    if (h < CAL_TV_END) html += `<div class="cal-tv-hr-line" style="top:${topPx}px;"></div>`;
+    if (h < CAL_TV_END) html += `<div class="cal-tv-hr-half" style="top:${topPx + 30*CAL_TV_PPM}px;"></div>`;
+  }
+  return html;
+}
+
+function CAL_tvBuildAlldayRow(days) {
+  return days.map(day => {
+    // Auto-generated events + untimed manual events
+    const autoEvs = CAL_getEvents(day.ds).filter(e => e.type !== 'manual');
+    const untimedM = (typeof CAL_manualEvs !== 'undefined' ? CAL_manualEvs : [])
+      .filter(e => e.date === day.ds && !e.startTime)
+      .map(ev => ({type:'manual', id:ev.id, label:ev.title, color:ev.color, bg:ev.color+'22'}));
+    const evs = [...autoEvs, ...untimedM];
+    const chips = evs.slice(0,4).map(e => {
+      if (e.type === 'manual') return `<div class="cal-tv-allday-ev" style="background:${e.bg};color:${e.color};border-left-color:${e.color};cursor:pointer;" onclick="CAL_openEditEvent('${e.id}')">📌 ${e.label}</div>`;
+      return `<div class="cal-tv-allday-ev" style="background:${e.bg};color:${e.color};border-left-color:${e.color};" data-cal-label="${e.label}" ${e.tooltip?`data-cal-tip="${e.tooltip.replace(/"/g,'&quot;')}" onmouseenter="CAL_tipShow(event,this)" onmouseleave="CAL_tipHide()"`:''} ${e.onclick?`data-cal-goto="${e.onclick.replace(/"/g,'&quot;')}"`:''} onclick="CAL_chipClick(event)">${e.label}${e.name?' · '+e.name:''}</div>`;
+    }).join('');
+    return `<div class="cal-tv-allday-col">${chips}${evs.length>4?`<div style="font-size:10px;color:#aaa;padding:1px 4px;">+${evs.length-4}건</div>`:''}</div>`;
+  }).join('');
+}
+
+function CAL_tvScrollToNow(wrapId) {
+  setTimeout(() => {
+    const w = document.getElementById(wrapId);
+    if (!w) return;
+    const p = CAL_getNowPx();
+    w.scrollTop = p != null ? Math.max(0, p - 120) : (8 - CAL_TV_START)*60*CAL_TV_PPM;
+  }, 30);
+}
+
+function CAL_renderWeek() {
+  const today = new Date();
+  const todayStr = CAL_fmt(today.getFullYear(), today.getMonth(), today.getDate());
+  if (!CAL_wkStartDate) { const n=new Date();n.setDate(n.getDate()-n.getDay());n.setHours(0,0,0,0);CAL_wkStartDate=n; }
+  const start = new Date(CAL_wkStartDate);
+  const days = Array.from({length:7}, (_,i) => {
+    const d=new Date(start); d.setDate(d.getDate()+i);
+    return {d, ds:CAL_fmt(d.getFullYear(),d.getMonth(),d.getDate()), dow:d.getDay()};
+  });
+  const endD = days[6].d;
+  const sy=start.getFullYear(),sm=start.getMonth()+1,ey=endD.getFullYear(),em=endD.getMonth()+1;
+  document.getElementById('CAL_monthLabel').innerHTML =
+    sy===ey && sm===em ? `${sy}년<em>${sm}월</em>` : sy===ey ? `${sy}년<em>${sm}월 – ${em}월</em>` : `${sy}년 ${sm}월 – ${ey}년<em>${em}월</em>`;
+
+  const totalH = (CAL_TV_END - CAL_TV_START) * 60 * CAL_TV_PPM;
+  const dayColsH = days.map(day => {
+    const isToday = day.ds === todayStr;
+    const cls = ['cal-tv-daycol', isToday?'today-col':'', day.dow===0?'sun-col':'', day.dow===6?'sat-col':''].filter(Boolean).join(' ');
+    return `<div class="${cls}"><div style="font-size:11px;">${CAL_DOW[day.dow]}</div><div class="cal-tv-day-num">${day.d.getDate()}</div></div>`;
+  }).join('');
+
+  const nowPx = CAL_getNowPx();
+  const timecol = `<div class="cal-tv-timecol">KST</div>`;
+  const nowTimeLbl = nowPx != null ? (() => {
+    const n=new Date(); return `<div class="cal-tv-now-timecol" style="top:${nowPx}px;">${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}</div>`;
+  })() : '';
+
+  document.getElementById('CAL_wkWrap').innerHTML = `
+    <div class="cal-tv-header">${timecol}<div class="cal-tv-daycols">${dayColsH}</div></div>
+    <div class="cal-tv-allday"><div class="cal-tv-allday-label">종일</div><div class="cal-tv-allday-cols">${CAL_tvBuildAlldayRow(days)}</div></div>
+    <div class="cal-tv-grid-wrap" id="CAL_wvGrid">
+      <div class="cal-tv-timecol-grid" style="height:${totalH}px;">${CAL_tvBuildTimeLabels(totalH)}${nowTimeLbl}</div>
+      <div class="cal-tv-cols-grid" style="height:${totalH}px;">${CAL_tvBuildCols(days, totalH, todayStr)}</div>
+    </div>`;
+  CAL_tvScrollToNow('CAL_wvGrid');
+}
+
+function CAL_renderDay() {
+  const today = new Date();
+  const todayStr = CAL_fmt(today.getFullYear(), today.getMonth(), today.getDate());
+  if (!CAL_dayDate) { CAL_dayDate = new Date(); CAL_dayDate.setHours(0,0,0,0); }
+  const d = new Date(CAL_dayDate);
+  const ds = CAL_fmt(d.getFullYear(), d.getMonth(), d.getDate());
+  const DOW_FULL=['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+  document.getElementById('CAL_monthLabel').innerHTML =
+    `${d.getFullYear()}년 ${d.getMonth()+1}월<em>${d.getDate()}일 ${DOW_FULL[d.getDay()]}</em>`;
+
+  const totalH = (CAL_TV_END - CAL_TV_START) * 60 * CAL_TV_PPM;
+  const isToday = ds === todayStr;
+  const cls = ['cal-tv-daycol','flex:1;', isToday?'today-col':'', d.getDay()===0?'sun-col':'', d.getDay()===6?'sat-col':''].filter(Boolean).join(' ');
+  const dayCol = `<div class="${cls}" style="flex:1;"><div style="font-size:11px;">${CAL_DOW[d.getDay()]}</div><div class="cal-tv-day-num">${d.getDate()}</div></div>`;
+  const day = {d, ds, dow:d.getDay()};
+  const nowPx = CAL_getNowPx();
+  const nowTimeLbl = (isToday && nowPx!=null) ? (() => {
+    const n=new Date(); return `<div class="cal-tv-now-timecol" style="top:${nowPx}px;">${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}</div>`;
+  })() : '';
+
+  document.getElementById('CAL_dayWrap').innerHTML = `
+    <div class="cal-tv-header"><div class="cal-tv-timecol">KST</div><div class="cal-tv-daycols">${dayCol}</div></div>
+    <div class="cal-tv-allday"><div class="cal-tv-allday-label">종일</div><div class="cal-tv-allday-cols">${CAL_tvBuildAlldayRow([day])}</div></div>
+    <div class="cal-tv-grid-wrap" id="CAL_dvGrid">
+      <div class="cal-tv-timecol-grid" style="height:${totalH}px;">${CAL_tvBuildTimeLabels(totalH)}${nowTimeLbl}</div>
+      <div class="cal-tv-cols-grid" style="height:${totalH}px;">${CAL_tvBuildCols([day], totalH, todayStr)}</div>
+    </div>`;
+  CAL_tvScrollToNow('CAL_dvGrid');
+}
+
 // ══ 수기 일정 관리
 let CAL_manualEvs = [];
 const CAL_MANUAL_KEY = 'thefin_cal_manual';
 try { CAL_manualEvs = JSON.parse(localStorage.getItem(CAL_MANUAL_KEY) || '[]'); } catch(e) {}
 
-function CAL_openAddEvent(dateStr) {
+function CAL_openAddEvent(dateStr, timeStr) {
   const today = new Date();
   const def = dateStr || CAL_fmt(today.getFullYear(), today.getMonth(), today.getDate());
   document.getElementById('CAL_mEditId').value = '';
   document.getElementById('CAL_mDate').value = def;
   document.getElementById('CAL_mTitle').value = '';
+  document.getElementById('CAL_mStart').value = timeStr || '';
+  document.getElementById('CAL_mEnd').value = '';
   document.getElementById('CAL_mDeleteBtn').style.display = 'none';
   CAL_selectColor(document.querySelector('#CAL_mColorPicker button'));
   document.getElementById('CAL_manualModal').style.display = 'flex';
@@ -13592,6 +13855,8 @@ function CAL_openEditEvent(id) {
   document.getElementById('CAL_mEditId').value = id;
   document.getElementById('CAL_mDate').value = ev.date;
   document.getElementById('CAL_mTitle').value = ev.title;
+  document.getElementById('CAL_mStart').value = ev.startTime || '';
+  document.getElementById('CAL_mEnd').value = ev.endTime || '';
   document.getElementById('CAL_mDeleteBtn').style.display = '';
   const btn = document.querySelector(`#CAL_mColorPicker button[data-color="${ev.color}"]`);
   CAL_selectColor(btn || document.querySelector('#CAL_mColorPicker button'));
@@ -13618,13 +13883,18 @@ function CAL_saveManualEvent() {
   const date = document.getElementById('CAL_mDate').value;
   const title = document.getElementById('CAL_mTitle').value.trim();
   const color = document.getElementById('CAL_mColor').value || '#db2777';
+  const startTime = document.getElementById('CAL_mStart').value;
+  const endTime = document.getElementById('CAL_mEnd').value;
   const editId = document.getElementById('CAL_mEditId').value;
   if (!date || !title) { alert('날짜와 제목을 입력해주세요.'); return; }
+  const ev = { id: editId || Date.now().toString(), date, title, color };
+  if (startTime) ev.startTime = startTime;
+  if (endTime)   ev.endTime   = endTime;
   if (editId) {
     const idx = CAL_manualEvs.findIndex(e => e.id === editId);
-    if (idx !== -1) CAL_manualEvs[idx] = { id: editId, date, title, color };
+    if (idx !== -1) CAL_manualEvs[idx] = ev;
   } else {
-    CAL_manualEvs.push({ id: Date.now().toString(), date, title, color });
+    CAL_manualEvs.push(ev);
   }
   localStorage.setItem(CAL_MANUAL_KEY, JSON.stringify(CAL_manualEvs));
   CAL_closeManualModal();
