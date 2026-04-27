@@ -13342,27 +13342,32 @@ function CAL_getEvents(dateStr) {
     });
   }
 
-  // 명도 — 이제훈 이사 전담이므로 매니저에게는 표시 안 함
-  if (!_calIsMgr) {
-    const mAll = [
-      ...(typeof M_active !== 'undefined' ? M_active : []),
-      ...(typeof M_done !== 'undefined' ? M_done : [])
-    ];
-    mAll.forEach(m => {
-      const nm = m.clientName || m.caseNo || '';
-      const sub = m.propertyName || '';
-      const tooltip = [m.caseNo, m.clientName, m.propertyName, m.court].filter(Boolean).join(' | ');
-      const oc = `switchMainTab('myeongdo')`;
-      if (m.auctionDate === dateStr)
-        evs.push({ type: 'myeongdo', label: '낙찰일', color: '#7c3aed', bg: '#f5f0ff', name: nm, sub, tooltip, onclick: oc });
-      if (m.enforcementDate === dateStr)
-        evs.push({ type: 'enforce', label: '강제집행신청', color: '#ea6c00', bg: '#fff4ec', name: nm, sub, tooltip, onclick: oc });
-      if (m.warningDate === dateStr)
-        evs.push({ type: 'warning', label: '계고일', color: '#0891b2', bg: '#ecfeff', name: nm, sub, tooltip, onclick: oc });
-      if (m.moveDate === dateStr)
-        evs.push({ type: 'move', label: '이사날짜', color: '#059669', bg: '#ecfdf5', name: nm, sub, tooltip, onclick: oc });
-    });
-  }
+  // 명도 — 관리자는 전체, 매니저는 본인이 참여자인 사건만 표시
+  const _calMgrName = _calIsMgr ? sessionStorage.getItem('thefin_auth_name') : null;
+  const mAll = [
+    ...(typeof M_active !== 'undefined' ? M_active : []),
+    ...(typeof M_done !== 'undefined' ? M_done : [])
+  ];
+  mAll.forEach(m => {
+    if (_calIsMgr && _calMgrName) {
+      const inStaff = (m.staffList||'').split(',').filter(Boolean).includes(_calMgrName);
+      const cas = (typeof A_allCases !== 'undefined' ? A_allCases : []).find(c => c.caseNo === m.caseNo);
+      const inCase = cas && typeof C_isAssigned === 'function' && C_isAssigned(cas, _calMgrName);
+      if (!inStaff && !inCase) return;
+    }
+    const nm = m.clientName || m.caseNo || '';
+    const sub = m.propertyName || '';
+    const tooltip = [m.caseNo, m.clientName, m.propertyName, m.court].filter(Boolean).join(' | ');
+    const oc = `switchMainTab('myeongdo')`;
+    if (m.auctionDate === dateStr)
+      evs.push({ type: 'myeongdo', label: '낙찰일', color: '#7c3aed', bg: '#f5f0ff', name: nm, sub, tooltip, onclick: oc });
+    if (m.enforcementDate === dateStr)
+      evs.push({ type: 'enforce', label: '강제집행신청', color: '#ea6c00', bg: '#fff4ec', name: nm, sub, tooltip, onclick: oc });
+    if (m.warningDate === dateStr)
+      evs.push({ type: 'warning', label: '계고일', color: '#0891b2', bg: '#ecfeff', name: nm, sub, tooltip, onclick: oc });
+    if (m.moveDate === dateStr)
+      evs.push({ type: 'move', label: '이사날짜', color: '#059669', bg: '#ecfdf5', name: nm, sub, tooltip, onclick: oc });
+  });
 
   return evs;
 }
