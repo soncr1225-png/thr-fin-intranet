@@ -2542,7 +2542,6 @@ table.data-table tbody tr:hover,
     <div class="sheet-tab" id="C_tab-archive" onclick="C_switchTab('archive')">종료 <span class="tab-count" id="C_tc-archive">—</span></div>
     <div class="sheet-tab" id="C_tab-closed" onclick="C_switchTab('closed')">낙찰 <span class="tab-count" id="C_tc-closed">—</span></div>
     <div class="sheet-tab" id="C_tab-lawsuit" onclick="C_switchTab('lawsuit')">소송 <span class="tab-count" id="C_tc-lawsuit">—</span></div>
-    <div class="sheet-tab" id="C_tab-lost" onclick="C_switchTab('lost')">패찰 <span class="tab-count" id="C_tc-lost">—</span></div>
     <div class="sheet-tab" id="C_tab-stats" onclick="C_switchTab('stats')">담당자 통계</div>
   </div>
   <div class="table-card">
@@ -2720,7 +2719,6 @@ table.data-table tbody tr:hover,
       <button class="filter-btn" onclick="A_setFilter('archive',this)">종료 <span id="A_fc-archive" class="tab-count">—</span></button>
       <button class="filter-btn" onclick="A_setFilter('won',this)">낙찰 <span id="A_fc-won" class="tab-count">—</span></button>
       <button class="filter-btn" onclick="A_setFilter('lawsuit',this)" style="color:#c2410c;border-color:#fdba74;">소송 <span id="A_fc-lawsuit" class="tab-count" style="background:#fff7ed;color:#c2410c;">—</span></button>
-      <button class="filter-btn" onclick="A_setFilter('lost',this)">패찰 <span id="A_fc-lost" class="tab-count">—</span></button>
       <a href="https://www.scourt.go.kr/portal/information/events/search/search.jsp" target="_blank" rel="noopener"
         style="display:inline-flex;align-items:center;gap:4px;padding:5px 11px;background:#f0f7ff;border:1px solid #93c5fd;border-radius:6px;color:#1d4ed8;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .15s;"
         onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#f0f7ff'">🔍 나의사건검색</a>
@@ -5522,7 +5520,7 @@ function C_registerCase(){
 
 function C_switchTab(t){
   C_tab=t; C_filt='all'; C_filtArc='all';
-  ['all','active','archive','closed','lawsuit','lost','stats'].forEach(x=>{
+  ['all','active','archive','closed','lawsuit','stats'].forEach(x=>{
     const el=document.getElementById('C_tab-'+x); if(el) el.classList.toggle('active',t===x);
   });
   document.getElementById('C_filterRow').style.display = t==='active'?'flex':'none';
@@ -5596,10 +5594,11 @@ function C_render(){
     else if(C_filt==='lawsuit')list=list.filter(c=>c.status==='lawsuit');
     tbody.innerHTML=list.length?list.map(C_activeRow).join(''):`<tr class="empty-row"><td colspan="9">진행중인 사건이 없습니다</td></tr>`;
   }else if(C_tab==='archive'){
-    list=C_cases.filter(c=>['cancel','drop','changed'].includes(c.status)&&_cMgrMatch(c));
+    list=C_cases.filter(c=>['cancel','drop','changed','lost'].includes(c.status)&&_cMgrMatch(c));
     if(C_filtArc==='cancel')list=list.filter(c=>c.status==='cancel');
     else if(C_filtArc==='drop')list=list.filter(c=>c.status==='drop');
     else if(C_filtArc==='changed')list=list.filter(c=>c.status==='changed');
+    else if(C_filtArc==='lost')list=list.filter(c=>c.status==='lost');
     tbody.innerHTML=list.length?list.map(c=>C_archiveRow(c)).join(''):`<tr class="empty-row"><td colspan="10">종료된 사건이 없습니다</td></tr>`;
   }else if(C_tab==='closed'){
     list=C_cases.filter(c=>c.status==='closed'&&_cMgrMatch(c));
@@ -5874,7 +5873,7 @@ function C_chStatus(id,ns){
   }
   if(C_ARCHIVE.includes(ns)){
     c.closedAt=C_today();
-    const tabMap={closed:'closed',lost:'lost',cancel:'archive',drop:'archive',changed:'archive'};
+    const tabMap={closed:'closed',lost:'archive',cancel:'archive',drop:'archive',changed:'archive'};
     C_render(); C_switchTab(tabMap[ns]||'archive');
     A_render();
     C_api('archiveCase',{id,status:ns}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
