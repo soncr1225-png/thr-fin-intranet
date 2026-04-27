@@ -14644,9 +14644,10 @@ function PART_render(c) {
     </div>`;
 
   // ── 총괄 담당자 ──
-  const mgrAllNames = [c.manager, ...(co.manager || [])].filter(Boolean);
-  const mgrChips = (c.manager ? chip(c.manager) : emptyChip) + coChips('manager') + plusBtn('manager', mgrAllNames);
-  const row_manager = makeRow('총괄 담당자', '상담·입찰·대출 담당', '#7c3aed', mgrChips, PART_sel(`PART_save('manager',this.value)`, c.manager));
+  const validMgr = (c.manager && C_MANAGERS.includes(c.manager)) ? c.manager : '';
+  const mgrAllNames = [validMgr, ...(co.manager || [])].filter(Boolean);
+  const mgrChips = (validMgr ? chip(validMgr) : emptyChip) + coChips('manager') + plusBtn('manager', mgrAllNames);
+  const row_manager = makeRow('총괄 담당자', '상담·입찰·대출 담당', '#7c3aed', mgrChips, PART_sel(`PART_save('manager',this.value)`, validMgr));
 
   // ── 블로그 작성 ──
   const blogAllNames = [c.blogStaff, ...(co.blogStaff || [])].filter(Boolean);
@@ -14678,12 +14679,13 @@ function PART_render(c) {
     aItem ? PART_sel(`PART_saveSubStaff('${aItem.id}',this.value)`, subStaff) : '');
 
   // ── 명도 담당자 ──
-  const evicAllNames = [...mStaff, c.evictionStaff, ...(co.evictionStaff || [])].filter(Boolean);
+  const validEvic = (c.evictionStaff && C_MANAGERS.includes(c.evictionStaff)) ? c.evictionStaff : '';
+  const evicAllNames = [...mStaff, validEvic, ...(co.evictionStaff || [])].filter(Boolean);
   const mStaffChipsHtml = mStaff.map(m => chip(m)).join('');
-  const evicPrimaryChip = c.evictionStaff && !mStaff.includes(c.evictionStaff) ? chip(c.evictionStaff) : '';
+  const evicPrimaryChip = validEvic && !mStaff.includes(validEvic) ? chip(validEvic) : '';
   const evicBodyHtml = mStaffChipsHtml + evicPrimaryChip + coChips('evictionStaff');
   const evicChips = (evicBodyHtml || emptyChip) + plusBtn('evictionStaff', evicAllNames);
-  const row_evic = makeRow('명도 담당자', '명도 절차 담당', '#dc2626', evicChips, PART_sel(`PART_save('eviction',this.value)`, c.evictionStaff));
+  const row_evic = makeRow('명도 담당자', '명도 절차 담당', '#dc2626', evicChips, PART_sel(`PART_save('eviction',this.value)`, validEvic));
 
   // ── 수수료 배분율 ──
   const feeResult = FEE_calc(c);
