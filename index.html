@@ -8469,20 +8469,23 @@ async function AG_capture(btn) {
     });
 
     const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    const court = (document.getElementById('ag-out-court-big').textContent || '입찰안내').replace(/\s/g,'');
+    const date = document.getElementById('ag-date').value || '';
+    let copied = false;
     try {
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      copied = true;
+    } catch(_) {}
+    if (copied) {
       btn.textContent = '✅ 복사됨! 카톡에서 Ctrl+V';
-      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 3000);
-      return;
-    } catch(_) {
-      const court = (document.getElementById('ag-out-court-big').textContent || '입찰안내').replace(/\s/g,'');
-      const date = document.getElementById('ag-date').value || '';
+    } else {
       const link = document.createElement('a');
       link.download = `더핀_입찰안내_${court}_${date}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-      alert('클립보드 복사가 지원되지 않아 파일로 저장했습니다.\n저장된 파일을 카톡에 첨부해 주세요.');
+      btn.textContent = '💾 파일저장됨 — 카톡에 첨부하세요';
     }
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 3500);
   } catch(e) {
     alert('캡처 실패: ' + e.message);
   } finally {
