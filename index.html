@@ -6254,7 +6254,7 @@ function B_parseTitles(titles){
   if(!titles)return[];
   const clean=titles.includes('||')?titles.split('||')[0]:titles;
   if(clean.includes('[제목')){
-    return(clean.match(/\[제목\d+\][^\[]+/g)||[clean]).map(t=>t.trim()).filter(Boolean);
+    return(clean.match(/\[제목\d+\][^\[]+/g)||[clean]).map(t=>t.replace(/^\[제목\d+\]/,'').trim()).filter(Boolean);
   }
   return clean.split(/\s*\/\s*/).filter(Boolean);
 }
