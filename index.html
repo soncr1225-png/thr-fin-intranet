@@ -6502,6 +6502,10 @@ function B_editItem(caseNum,round){
     const _t=_pairs['유형'];if(_t){const tEl=document.getElementById('B_type');if(tEl){tEl.value=_t;B_onTypeChange(_t);}}
   }
   f.scrollIntoView({behavior:'smooth',block:'center'});
+  if(!_kwText){
+    const _kw=document.getElementById('B_keywords');
+    if(_kw){ _kw.style.border='2px solid #c9a84c'; _kw.placeholder='📋 경매 공고 이미지를 Ctrl+V하면 AI가 추천 제목을 자동 입력합니다'; setTimeout(()=>{ _kw.style.border=''; _kw.placeholder='예) 마포구아파트경매 래미안경매물건 강남권경매'; },6000); }
+  }
 }
 
 function B_onTypeChange(type){
@@ -6558,7 +6562,8 @@ async function B_registerItem(){
   if(market)    struct.push('시세:'+market);
   const keywords = [kwBase, struct.join('|')].filter(Boolean).join('||');
 
-  const r=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({module:'blog',action:'add',caseNum,name,date,round,keywords})});
+  const _kwSafe=keywords.length>800?keywords.substring(0,800):keywords;
+  const r=await fetch(`${GAS_URL}?module=blog&action=add&caseNum=${encodeURIComponent(caseNum)}&name=${encodeURIComponent(name)}&date=${date}&round=${round}&keywords=${encodeURIComponent(_kwSafe)}`);
   const res=await r.json();
   _resetBtn();
   if(res&&res.success){
