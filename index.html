@@ -6292,7 +6292,7 @@ function B_updateStats(){
   setBadgeShared('mainBadge-blog', activeItems.length);
 }
 
-function B_toggleForm(){const f=document.getElementById('B_addForm');f.style.display=f.style.display==='block'?'none':'block';}
+function B_toggleForm(){const f=document.getElementById('B_addForm');const closing=f.style.display==='block';f.style.display=closing?'none':'block';if(closing){delete f.dataset.editCaseNum;delete f.dataset.editRound;}}
 function B_switchTab(t){
   B_tab=t;B_filt='all';
   const ta=document.getElementById('B_tab-active');
@@ -6537,19 +6537,16 @@ async function B_deleteItem(caseNum,round){
 function B_editItem(caseNum,round){
   const item=B_items.find(i=>i.caseNum===caseNum&&(i.round||'1')===String(round));
   if(!item)return;
-  // 등록 폼 열기 + 기존 데이터 채우기
-  document.getElementById('B_addForm').style.display='block';
-  const setV=(id,v)=>{const el=document.getElementById(id);if(el&&v!==undefined&&v!==null)el.value=v;};
+  const f=document.getElementById('B_addForm');
+  f.style.display='block';
+  f.dataset.editCaseNum=caseNum;
+  f.dataset.editRound=String(round);
+  const setV=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null)el.value=v;};
   setV('B_caseNum', item.caseNum);
   setV('B_name',    item.name);
   setV('B_date',    item.date);
   setV('B_round',   item.round||'1');
-  // 기존 항목 삭제 후 재등록할 수 있도록 안내
-  document.getElementById('B_addForm').scrollIntoView({behavior:'smooth',block:'center'});
-  // 재등록 시 중복 방지를 위해 먼저 삭제할지 확인
-  if(confirm(`[${caseNum}] ${round}차 항목을 삭제하고 폼 내용을 수정 후 재등록하시겠습니까?\n확인 시 기존 항목이 삭제됩니다.`)){
-    B_deleteItem(caseNum,round);
-  }
+  f.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
 async function B_registerItem(){
@@ -6569,6 +6566,15 @@ async function B_registerItem(){
   const market     = document.getElementById('B_market')?.value.trim() || '';
 
   if(!caseNum||!name){alert('사건번호와 단지명은 필수입니다.');return;}
+
+  // 편집 모드: 기존 항목 조용히 삭제 후 재등록
+  const _f=document.getElementById('B_addForm');
+  const _eCN=_f.dataset.editCaseNum, _eRD=_f.dataset.editRound;
+  if(_eCN){
+    delete _f.dataset.editCaseNum; delete _f.dataset.editRound;
+    try{ await fetch(`${GAS_URL}?module=blog&action=delete&caseNum=${encodeURIComponent(_eCN)}&round=${encodeURIComponent(_eRD)}`); }catch(e){}
+    B_items=B_items.filter(i=>!(i.caseNum===_eCN&&(i.round||'1')===String(_eRD)));
+  }
 
   // 구조화 데이터를 keywords에 인코딩 (구분자: ||, 필드구분: |, 키:값)
   const struct = [];
