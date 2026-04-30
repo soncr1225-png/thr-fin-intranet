@@ -2287,6 +2287,7 @@ body.view-mobile .stats-body {
   padding-left: 16px !important;
   padding-right: 16px !important;
 }
+body.view-mobile .tab-panel { overflow-x: hidden !important; }
 
 /* 헤더 — 컴팩트 모드 */
 body.view-mobile .top-header { padding: 0 14px; min-height: 52px; }
@@ -2778,27 +2779,38 @@ body.view-mobile .auth-modal-btn-secondary {
    MOBILE UX v3 — 캘린더 단일 칼럼 레이아웃
 ══════════════════════════════════════ */
 
-/* 캘린더 헤더 간소화 */
+/* 캘린더 헤더 — 2행 자연 줄바꿈
+   행1: [2026년 4월] [‹] [›] .............. [오늘]
+   행2: [월/주/일] [+ 일정추가]
+*/
 body.view-mobile .cal-header {
-  padding: 10px 14px;
-  gap: 8px;
-  flex-wrap: nowrap;
+  padding: 10px 14px 8px;
+  gap: 6px 8px;
+  flex-wrap: wrap;
+  overflow: hidden;
 }
 body.view-mobile .cal-month-label {
-  font-size: 17px;
+  font-size: 16px;
   flex-shrink: 0;
+}
+body.view-mobile .cal-nav-btn {
+  padding: 4px 12px !important;
+  font-size: 16px !important;
 }
 body.view-mobile .cal-legend,
 body.view-mobile #CAL_icsBtn,
 body.view-mobile #GCAL_syncAllBtn {
   display: none !important;
 }
+/* 오늘 버튼 — 행1 오른쪽 끝 유지 */
 body.view-mobile .cal-today-btn {
-  padding: 5px 10px;
+  padding: 5px 12px;
   font-size: 11px;
 }
-body.view-mobile #panel-cal button[onclick="CAL_openAddEvent('')"] {
-  padding: 5px 10px;
+/* + 일정추가 버튼 — margin-left 제거해 행2로 자연 wrapping */
+body.view-mobile button[onclick="CAL_openAddEvent('')"] {
+  margin-left: 0 !important;
+  padding: 5px 12px;
   font-size: 11px;
 }
 
