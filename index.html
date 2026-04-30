@@ -2426,6 +2426,66 @@ body.view-mobile #panel-member .table-scroll-wrap {
 body.view-mobile .mbn-item .mbn-label { font-size: 10px; }
 
 /* ══════════════════════════════════════
+   PC에서 모바일 모드 — 폰 프레임 중앙 정렬
+   769px 이상 화면에서 body.view-mobile 활성 시:
+   콘텐츠를 430px 폰 폭으로 중앙 집중
+══════════════════════════════════════ */
+@media (min-width: 769px) {
+  body.view-mobile {
+    background: radial-gradient(ellipse at 50% 0%, #0d1e36 0%, #040c18 70%);
+    align-items: center; /* flex-column 기준 → 가로 중앙 */
+  }
+
+  /* 헤더 — 430px 고정, sticky 유지 */
+  body.view-mobile .top-header {
+    width: 100%;
+    max-width: 430px;
+    border-left: 1px solid rgba(255,255,255,.07);
+    border-right: 1px solid rgba(255,255,255,.07);
+    border-radius: 0 0 0 0;
+  }
+
+  /* 패널 — 430px 고정, 세로 스크롤 */
+  body.view-mobile .tab-panel {
+    width: 100% !important;
+    max-width: 430px !important;
+    border-left: 1px solid var(--divider) !important;
+    border-right: 1px solid var(--divider) !important;
+    min-height: calc(100vh - 52px);
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  /* 하단 탭바 — fixed이므로 직접 중앙 정렬 */
+  body.view-mobile .mobile-bottom-nav {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: 430px !important;
+    border-radius: 0 !important;
+    border-top: 1px solid rgba(255,255,255,.08) !important;
+    border-left: 1px solid rgba(255,255,255,.07) !important;
+    border-right: 1px solid rgba(255,255,255,.07) !important;
+  }
+
+  /* 더보기 시트 — 폰 폭 맞춤 */
+  body.view-mobile .v3-sheet-box {
+    max-width: 430px !important;
+  }
+
+  /* 인증 모달 — 폰 폭 맞춤 */
+  body.view-mobile .mbr-modal-box,
+  body.view-mobile .auth-modal-box {
+    max-width: 430px !important;
+  }
+
+  /* 폰 프레임 상단 라운드 — 선택적 시각 효과 */
+  body.view-mobile .top-header:first-of-type {
+    border-top: none;
+  }
+}
+
+/* ══════════════════════════════════════
    반응형 화면 최적화
    • ≤1366px : 소형 노트북 — 여백 압축
    • ≥1920px : FHD 이상 — 폰트·레이아웃 확장
