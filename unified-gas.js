@@ -1010,10 +1010,6 @@ function blogAdd(ss, p) {
   sheet.getRange(row, 16).setValue(String(p.keywords || ''));
   sheet.getRange(row, 17).setValue('정상');
 
-  styleBlogRows(sheet);
-  sortBlogByDate(sheet);
-  moveExpiredBlogItems(ss);
-  updateBlogStats(ss);
   return { success: true, message: '추가 완료!' };
 }
 
