@@ -12508,11 +12508,21 @@ function AUTH_logout() {
 
 // ── 권한 적용 ─────────────────────────────────────────────────────
 function AUTH_applyRole(name, role, label) {
+  const roleLabel = label || (role === 'admin' ? '관리자' : '매니저');
   document.getElementById('auth-header-name').textContent = name;
-  document.getElementById('auth-header-role').textContent = label || (role === 'admin' ? '관리자' : '매니저');
+  document.getElementById('auth-header-role').textContent = roleLabel;
   document.getElementById('auth-header-badge').style.display = 'flex';
   // 관리자만 계정 관리 버튼 표시
   document.getElementById('auth-admin-btn').style.display = name === '손청락' ? '' : 'none';
+  // 더보기 시트 계정 정보 업데이트 (모바일 모드용)
+  const sheetUserInfo = document.getElementById('v3SheetUserInfo');
+  if (sheetUserInfo) {
+    sheetUserInfo.style.display = 'flex';
+    document.getElementById('v3SheetUserName').textContent = name;
+    document.getElementById('v3SheetUserRole').textContent = roleLabel;
+    const adminBtn = document.getElementById('v3SheetAdminBtn');
+    if (adminBtn) adminBtn.style.display = name === '손청락' ? '' : 'none';
+  }
 
   // 매니저는 대시보드 탭 숨김
   const dashTab = document.getElementById('mainTab-dashboard');
@@ -16706,7 +16716,21 @@ let _MBR_syncTimer = null;
      onclick="if(event.target===this) v3CloseMoreSheet()">
   <div class="v3-sheet-box" style="background:var(--card);width:100%;max-width:560px;border-radius:var(--r-xl) var(--r-xl) 0 0;padding:20px 20px calc(28px + var(--safe-bottom));box-shadow:var(--shadow-soft-lg);transform:translateY(100%);transition:transform var(--dur-slow) var(--ease-out);position:relative;">
     <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:40px;height:4px;background:var(--divider);border-radius:var(--r-pill);"></div>
-    <div style="font-size:13px;font-weight:700;color:var(--text-3);letter-spacing:.08em;text-transform:uppercase;margin:16px 6px 14px;">전체 메뉴</div>
+
+    <!-- 계정 정보 영역 (모바일 모드에서만 표시) -->
+    <div id="v3SheetUserInfo" style="display:none;align-items:center;justify-content:space-between;background:var(--bg-soft);border:1px solid var(--divider);border-radius:12px;padding:14px 16px;margin-top:20px;margin-bottom:16px;">
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <div style="font-size:15px;font-weight:800;color:var(--text-1);" id="v3SheetUserName">—</div>
+        <div style="font-size:12px;color:var(--text-3);" id="v3SheetUserRole">—</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="v3CloseMoreSheet();AUTH_showChangePw(false);" style="min-height:40px;padding:0 14px;background:#fff;border:1px solid var(--divider);border-radius:10px;color:var(--text-2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">🔑 비밀번호</button>
+        <button id="v3SheetAdminBtn" onclick="v3CloseMoreSheet();AUTH_showAdmin();" style="display:none;min-height:40px;padding:0 14px;background:#fff;border:1px solid var(--divider);border-radius:10px;color:var(--text-2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">⚙️ 계정관리</button>
+        <button onclick="AUTH_logout();" style="min-height:40px;padding:0 14px;background:#fff3f3;border:1px solid #fecaca;border-radius:10px;color:#ef4444;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">로그아웃</button>
+      </div>
+    </div>
+
+    <div style="font-size:13px;font-weight:700;color:var(--text-3);letter-spacing:.08em;text-transform:uppercase;margin:0 6px 14px;">전체 메뉴</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
       <button class="v3-sheet-item" onclick="v3SwitchTab('cal')"><span class="vsi-ico">📅</span><span>일정</span></button>
       <button class="v3-sheet-item" onclick="v3SwitchTab('dashboard')"><span class="vsi-ico">📊</span><span>대시보드</span></button>
