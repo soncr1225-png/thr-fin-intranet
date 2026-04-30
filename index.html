@@ -16897,10 +16897,9 @@ let _MBR_syncTimer = null;
     el.style.display = 'flex';
     el.style.opacity = '1';
     el.style.pointerEvents = 'auto';
-    if (box) { box.style.transform = 'translateY(0)'; box.style.transition = 'transform 0.3s cubic-bezier(.16,1,.3,1)'; }
     el.setAttribute('aria-hidden', 'false');
     el.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    if (box) { el.offsetHeight; box.style.transform = 'translateY(0)'; }
   };
 
   window.v3CloseMoreSheet = function(){
@@ -16911,7 +16910,6 @@ let _MBR_syncTimer = null;
     el.style.opacity = '0';
     el.classList.remove('open');
     el.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
     setTimeout(() => { if (!el.classList.contains('open')) { el.style.display = 'none'; el.style.pointerEvents = ''; } }, 320);
   };
 
