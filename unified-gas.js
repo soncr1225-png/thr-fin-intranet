@@ -997,7 +997,7 @@ function blogAdd(ss, p) {
   }
   var row = sheet.getLastRow() + 1;
   sheet.getRange(row, 1).setValue(p.caseNum);
-  sheet.getRange(row, 2).setValue(p.name ? decodeURIComponent(String(p.name)) : '');
+  sheet.getRange(row, 2).setValue(String(p.name || ''));
   sheet.getRange(row, 3).setValue(p.date);
   sheet.getRange(row, 4).setValue(target);
   sheet.getRange(row, 5).setFormula('=IF(C'+row+'="","",IF(C'+row+'<TODAY(),"종료","D-"&(C'+row+'-TODAY())))');
@@ -1007,7 +1007,7 @@ function blogAdd(ss, p) {
   });
   sheet.getRange(row, 14).insertCheckboxes().setValue(false);
   sheet.getRange(row, 15).setValue('');
-  sheet.getRange(row, 16).setValue(p.keywords ? decodeURIComponent(String(p.keywords)) : '');
+  sheet.getRange(row, 16).setValue(String(p.keywords || ''));
   sheet.getRange(row, 17).setValue('정상');
 
   styleBlogRows(sheet);
@@ -1362,7 +1362,7 @@ function styleBlogRows(sheet) {
 
 function sortBlogByDate(sheet) {
   if (sheet.getLastRow() < 3) return;
-  sheet.getRange(2, 1, sheet.getLastRow()-1, 16).sort({ column: 3, ascending: true });
+  sheet.getRange(2, 1, sheet.getLastRow()-1, 17).sort({ column: 3, ascending: true });
   styleBlogRows(sheet);
 }
 
