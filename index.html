@@ -145,6 +145,9 @@
   /* Safe area (iOS notch/home indicator) */
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top:    env(safe-area-inset-top, 0px);
+
+  /* Header height — used in panel calc() */
+  --header-h: 60px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -153,7 +156,7 @@ body {
   font-family: 'Pretendard Variable', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', -apple-system, sans-serif;
   background: var(--surface-3);
   color: var(--text-1);
-  font-size: 14px;
+  font-size: var(--text-base);
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -212,7 +215,7 @@ body {
   align-items: center;
   gap: 6px;
   padding: 0 15px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: rgba(255,255,255,.5);
   cursor: pointer;
@@ -238,7 +241,7 @@ body {
   letter-spacing: 0;
 }
 /* ══ 자료실 v3 ══ */
-#panel-forms { background:#fff;flex-direction:column;overflow:hidden;height:calc(100vh - 60px); }
+#panel-forms { background:#fff;flex-direction:column;overflow:hidden;height:calc(100vh - var(--header-h)); }
 #panel-forms.active { display:flex; }
 
 /* 헤더 */
@@ -973,14 +976,14 @@ tr:hover td { background: #f8f6ff; }
 #panel-cases .container { max-width:none; padding:0 24px 40px; }
 
 /* ══ 블로그 탭 — 라이트 테마 ══ */
-#panel-blog { background:var(--surface-3); height:calc(100vh - 60px); overflow-y:auto; overflow-x:auto; }
+#panel-blog { background:var(--surface-3); height:calc(100vh - var(--header-h)); overflow-y:auto; overflow-x:auto; }
 #panel-blog .container { max-width:none; padding:0 24px 40px; }
 #panel-blog table { width:100%; border-collapse:collapse; }
-#panel-blog th, #panel-auction th, #panel-cases th, #panel-myeongdo th { background:#0a1e3a !important; color:#fff !important; font-size:11.5px; font-weight:700; padding:10px 12px; border-bottom:2px solid var(--gold) !important; border-right:1px solid rgba(255,255,255,.07) !important; white-space:nowrap; letter-spacing:.04em; }
+#panel-blog th, #panel-auction th, #panel-cases th, #panel-myeongdo th { background:#0a1e3a !important; color:#fff !important; font-size:var(--text-xs); font-weight:700; padding:10px 12px; border-bottom:2px solid var(--gold) !important; border-right:1px solid rgba(255,255,255,.07) !important; white-space:nowrap; letter-spacing:.04em; }
 #B_tHead th { position:sticky; z-index:6; border-bottom:none !important; box-shadow:0 2px 0 var(--gold), inset -1px 0 0 rgba(255,255,255,.07); }
 #panel-blog th:last-child, #panel-auction th:last-child, #panel-cases th:last-child, #panel-myeongdo th:last-child { border-right:none !important; }
 #panel-cases td { vertical-align:middle; }
-#panel-blog td { padding:9px 12px; border-bottom:1px solid var(--border-lt) !important; border-right:1px solid #f0ece6 !important; color:var(--text-2) !important; font-size:12.5px; vertical-align:middle; }
+#panel-blog td { padding:9px 12px; border-bottom:1px solid var(--border-lt) !important; border-right:1px solid #f0ece6 !important; color:var(--text-2) !important; font-size:var(--text-sm); vertical-align:middle; }
 #panel-blog td:last-child { border-right:none !important; }
 #panel-blog tbody tr:nth-child(odd) td { background:#fff !important; }
 #panel-blog tbody tr:nth-child(even) td { background:#faf9f6 !important; }
@@ -991,7 +994,7 @@ tr:hover td { background: #f8f6ff; }
 
 
 /* ══ 블로그 대본 탭 ══ */
-#panel-draft { background:var(--surface-3); min-height:calc(100vh - 60px); }
+#panel-draft { background:var(--surface-3); min-height:calc(100vh - var(--header-h)); }
 .draft-wrap { display:grid; grid-template-columns:380px 1fr; gap:20px; padding:20px 24px 40px; max-width:none; }
 @media(max-width:1100px){ .draft-wrap { grid-template-columns:1fr; } }
 .draft-form-area { background:#fff; border-radius:12px; border:1px solid #e8e4dc; padding:20px; height:fit-content; position:sticky; top:72px; }
@@ -1067,7 +1070,7 @@ tr:hover td { background: #f8f6ff; }
 #panel-myeongdo .add-form { margin-bottom:16px; }
 
 /* ══ 통계 패널 ══ */
-#panel-stats { background:var(--surface-3); min-height:calc(100vh - 60px); }
+#panel-stats { background:var(--surface-3); min-height:calc(100vh - var(--header-h)); }
 #panel-stats .container { max-width:1100px; }
 .s-section-title {
   font-size:13px; font-weight:700; color:#555;
@@ -1106,7 +1109,7 @@ tr:hover td { background: #f8f6ff; }
 @media(max-width:640px){ .photo-grid{grid-template-columns:1fr;} }
 
 /* ══ 입찰안내문 탭 ══ */
-#panel-guide { background:var(--surface-3); min-height:calc(100vh - 60px); padding:28px 24px 60px; }
+#panel-guide { background:var(--surface-3); min-height:calc(100vh - var(--header-h)); padding:28px 24px 60px; }
 .ag-wrap { max-width:900px; margin:0 auto; }
 .ag-page-title { font-size:18px; font-weight:800; color:var(--navy); margin-bottom:4px; }
 .ag-page-sub { font-size:13px; color:#888; margin-bottom:24px; }
@@ -1177,7 +1180,7 @@ tr:hover td { background: #f8f6ff; }
 }
 
 /* ══ 더핀 회원 탭 ══ */
-#panel-member { background:var(--surface-3); height:calc(100vh - 60px); overflow-y:auto; overflow-x:auto; }
+#panel-member { background:var(--surface-3); height:calc(100vh - var(--header-h)); overflow-y:auto; overflow-x:auto; }
 #MBR_stickyHeader { position:sticky; top:0; z-index:var(--z-sticky); background:var(--surface-3); box-shadow:0 2px 6px rgba(0,0,0,.08); }
 #MBR_stickyHeader .mbr-inner { padding:12px 28px 8px; }
 #MBR_thead-wrap { padding:0 28px; border:1px solid transparent; overflow:hidden; }
@@ -1336,8 +1339,8 @@ tr:hover td { background: #f8f6ff; }
 .mbr-table { min-width:1100px; }
 
 /* ══ 약정서 탭 ══ */
-#panel-contract { background:#f0ede8; min-height:calc(100vh - 60px); }
-.ctr-wrap { display:grid; grid-template-columns:360px 1fr; gap:0; min-height:calc(100vh - 60px); }
+#panel-contract { background:#f0ede8; min-height:calc(100vh - var(--header-h)); }
+.ctr-wrap { display:grid; grid-template-columns:360px 1fr; gap:0; min-height:calc(100vh - var(--header-h)); }
 .ctr-form-area { background:#fff; border-right:1px solid #e8e4dc; padding:28px 24px; overflow-y:auto; }
 .ctr-form-title { font-size:16px; font-weight:800; color:var(--navy); margin-bottom:18px; }
 .ctr-form-grid { display:flex; flex-direction:column; gap:14px; }
@@ -1497,7 +1500,7 @@ tr:hover td { background: #f8f6ff; }
 .auth-pw-strength { height: 4px; border-radius: 2px; margin-top: 6px; transition: all .3s; }
 
 /* ══ 캘린더 탭 ══ */
-#panel-cal { flex-direction:column;overflow:hidden;background:#f4f2ee;min-height:calc(100vh - 60px); }
+#panel-cal { flex-direction:column;overflow:hidden;background:#f4f2ee;min-height:calc(100vh - var(--header-h)); }
 #panel-cal.active { display:flex; }
 
 .cal-header {
@@ -2145,6 +2148,90 @@ table.data-table tbody tr:hover,
     animation-duration: .01ms !important;
     transition-duration: .01ms !important;
   }
+}
+
+/* ══════════════════════════════════════
+   반응형 화면 최적화
+   • ≤1366px : 소형 노트북 — 여백 압축
+   • ≥1920px : FHD 이상 — 폰트·레이아웃 확장
+   • ≥2560px : QHD+ — 대형 모니터 최적화
+══════════════════════════════════════ */
+
+/* ── 소형 노트북 (≤1366px) ── */
+@media (max-width: 1366px) {
+  .top-header { padding: 0 14px; }
+  .logo-area { padding: 10px 16px 10px 0; margin-right: 10px; }
+  .main-tab { padding: 0 10px; font-size: 11.5px; }
+  .container { padding: 16px !important; }
+  #panel-blog .container,
+  #panel-cases .container,
+  #panel-auction .container,
+  #panel-myeongdo .container,
+  #panel-member .container { padding: 0 14px 32px !important; }
+  .draft-wrap { gap: 14px; padding: 14px 14px 32px; }
+}
+
+/* ── FHD 이상 (≥1920px) ── */
+@media (min-width: 1920px) {
+  :root {
+    --text-xs:      12px;
+    --text-sm:      13px;
+    --text-base:    15px;
+    --text-md:      16px;
+    --text-lg:      17px;
+    --text-xl:      19px;
+    --text-2xl:     23px;
+    --text-3xl:     29px;
+    --text-display: 38px;
+  }
+  body { font-size: var(--text-base); }
+  .container { max-width: 1600px; }
+  .top-header { padding: 0 36px; }
+  #panel-blog .container,
+  #panel-cases .container,
+  #panel-auction .container,
+  #panel-myeongdo .container,
+  #panel-member .container { padding: 0 36px 48px !important; }
+  #panel-blog th, #panel-auction th,
+  #panel-cases th, #panel-myeongdo th { padding: 12px 14px; }
+  #panel-blog td { padding: 10px 14px; }
+  .draft-wrap { padding: 24px 36px 48px; gap: 24px; }
+}
+
+/* ── QHD 이상 (≥2560px) ── */
+@media (min-width: 2560px) {
+  :root {
+    --text-xs:      13px;
+    --text-sm:      14px;
+    --text-base:    16px;
+    --text-md:      17px;
+    --text-lg:      18px;
+    --text-xl:      21px;
+    --text-2xl:     25px;
+    --text-3xl:     32px;
+    --text-display: 42px;
+    --header-h:     70px;
+  }
+  body { font-size: var(--text-base); }
+  .container { max-width: 2400px; }
+  .top-header { padding: 0 52px; }
+  .logo-area { padding: 16px 30px 16px 0; margin-right: 22px; gap: 13px; }
+  .logo-mark { width: 40px; height: 40px; border-radius: 10px; }
+  .logo-text .brand { font-size: 19px; }
+  .logo-text .sub { font-size: 11px; }
+  .main-tab { padding: 0 22px; font-size: var(--text-sm); }
+  .main-tab .tab-icon { font-size: 17px; }
+  #panel-blog .container,
+  #panel-cases .container,
+  #panel-auction .container,
+  #panel-myeongdo .container,
+  #panel-member .container { padding: 0 52px 56px !important; }
+  #panel-blog th, #panel-auction th,
+  #panel-cases th, #panel-myeongdo th { padding: 14px 18px; }
+  #panel-blog td { padding: 12px 18px; }
+  .draft-wrap { padding: 28px 52px 56px; gap: 28px; }
+  .stat-card, .s-card { padding: 24px !important; }
+  .mbr-modal-box { width: 820px; padding: 34px 36px; }
 }
 
 </style>
