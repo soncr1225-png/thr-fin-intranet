@@ -2482,32 +2482,31 @@ body.view-mobile .mbn-item .mbn-label { font-size: 10px; }
 
 body.view-mobile .mobile-menu-btn { display: flex; }
 
-/* ── 헤더 정리 — 모바일에서 불필요한 항목 숨김 ── */
+/* ── 헤더 정리 — 모바일: 로고 + 메시지아이콘 + 햄버거만 남김 ── */
 body.view-mobile .sync-badge,
 body.view-mobile #headerDate,
 body.view-mobile #save-indicator,
-body.view-mobile #storage-warn {
+body.view-mobile #storage-warn,
+body.view-mobile #BETA_badge {
   display: none !important;
 }
-/* 사용자 뱃지 — 이름만 간결하게 */
+/* auth 뱃지 전체 숨김 — 햄버거 메뉴(v3MoreSheet)에서 접근 */
 body.view-mobile .auth-user-badge {
-  padding: 4px 8px 4px 10px;
-  gap: 4px;
+  display: none !important;
 }
-body.view-mobile .auth-user-sep,
-body.view-mobile .auth-user-role { display: none; }
-body.view-mobile .auth-user-name { font-size: 13px; }
-/* 로그아웃 텍스트 버튼 → 아이콘만 */
-body.view-mobile .auth-logout-btn.text-btn {
-  font-size: 0;  /* 텍스트 숨김 */
-  width: 32px; height: 32px;
-  padding: 0;
+/* 메시지 버튼 — 아이콘만 */
+body.view-mobile #MSG_label {
+  display: none !important;
+}
+body.view-mobile #MSG_headerBtn {
+  padding: 8px 10px;
+  min-width: 44px; min-height: 44px;
   display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
 }
-body.view-mobile .auth-logout-btn.text-btn::before {
-  content: '↩';
-  font-size: 16px;
-  color: #f87171;
+/* header-right 간격 정리 */
+body.view-mobile .header-right {
+  gap: 4px;
 }
 
 /* ── 전체 컨테이너 패딩 16-20px 통일 ── */
@@ -2774,6 +2773,90 @@ body.view-mobile .auth-modal-btn-secondary {
   border-radius: 12px !important;
   font-size: 15px !important;
 }
+
+/* ══════════════════════════════════════
+   MOBILE UX v3 — 캘린더 단일 칼럼 레이아웃
+══════════════════════════════════════ */
+
+/* 캘린더 헤더 간소화 */
+body.view-mobile .cal-header {
+  padding: 10px 14px;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+body.view-mobile .cal-month-label {
+  font-size: 17px;
+  flex-shrink: 0;
+}
+body.view-mobile .cal-legend,
+body.view-mobile #CAL_icsBtn,
+body.view-mobile #GCAL_syncAllBtn {
+  display: none !important;
+}
+body.view-mobile .cal-today-btn {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+body.view-mobile #panel-cal button[onclick="CAL_openAddEvent('')"] {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+
+/* 캘린더 바디 → 단일 칼럼 (그리드 위, 예정일정 아래) */
+body.view-mobile .cal-body {
+  flex-direction: column !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  min-height: 0;
+}
+
+/* 달력 그리드 — 셀 높이 축소 */
+body.view-mobile .cal-grid-wrap {
+  flex: none !important;
+  padding: 6px 8px !important;
+}
+body.view-mobile .cal-grid {
+  grid-auto-rows: minmax(52px, auto) !important;
+  gap: 3px !important;
+  overflow-y: visible !important;
+  flex: none !important;
+}
+body.view-mobile .cal-cell {
+  min-height: 52px !important;
+  padding: 5px 6px 4px !important;
+}
+body.view-mobile .cal-date-num {
+  font-size: 13px !important;
+  width: 24px; height: 24px;
+}
+body.view-mobile .cal-ev {
+  font-size: 10px !important;
+  padding: 2px 4px 1px !important;
+}
+
+/* 사이드바 → 풀폭 하단 배치 */
+body.view-mobile .cal-sidebar {
+  width: 100% !important;
+  flex-shrink: 0 !important;
+  margin: 0 8px 80px !important;
+  border-left: none !important;
+  border-top: 2px solid #c9a84c;
+  border-radius: 0 0 8px 8px !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  box-sizing: border-box;
+}
+body.view-mobile .cal-sb-scroll {
+  overflow-y: visible !important;
+  max-height: none !important;
+}
+body.view-mobile .cal-sb-day { padding: 10px 14px 8px; }
+body.view-mobile .cal-sb-name { font-size: 13px !important; }
+body.view-mobile .cal-sb-sub  { font-size: 11px !important; }
+
+/* 캘린더 툴팁 — 모바일에서 숨김 (탭으로 모달 열기) */
+body.view-mobile #CAL_tooltip,
+body.view-mobile #cal-tooltip { display: none !important; }
 
 /* ══════════════════════════════════════
    PC에서 모바일 모드 — 폰 프레임 중앙 정렬
