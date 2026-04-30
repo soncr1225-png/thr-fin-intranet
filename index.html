@@ -2168,6 +2168,264 @@ table.data-table tbody tr:hover,
 }
 
 /* ══════════════════════════════════════
+   iOS / Android 공통 터치 최적화
+   — 탭 하이라이트 제거 & 300ms 딜레이 제거
+══════════════════════════════════════ */
+* { -webkit-tap-highlight-color: transparent; }
+button, a, label, summary,
+[onclick], [role="button"], [tabindex] {
+  touch-action: manipulation;
+  cursor: pointer;
+}
+input, select, textarea { touch-action: manipulation; }
+
+/* 모멘텀 스크롤 (iOS 전체 패널) */
+.tab-panel,
+#panel-blog, #panel-cases, #panel-auction,
+#panel-myeongdo, #panel-stats, #panel-member,
+#panel-guide, #panel-forms, #panel-cal,
+#panel-dashboard, #panel-photo, #panel-draft,
+#panel-contract, #panel-feedback {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* GPU 가속 레이어 예약 */
+.mobile-bottom-nav,
+.v3-sheet-box, .mbr-modal-box, .auth-modal-box,
+.v3-sheet-overlay { will-change: transform; }
+
+/* ══════════════════════════════════════
+   뷰 모드 선택기 — 로그인 화면
+══════════════════════════════════════ */
+.auth-view-selector {
+  margin: 0 0 16px;
+  text-align: left;
+}
+.auth-view-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-2);
+  margin-bottom: 8px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.auth-view-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.auth-view-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 16px 10px;
+  background: rgba(255,255,255,.04);
+  border: 1.5px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  color: rgba(255,255,255,.45);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color .2s, background .2s, color .2s, transform .15s;
+  touch-action: manipulation;
+}
+.auth-view-btn:hover {
+  border-color: var(--gold-dim);
+  color: rgba(255,255,255,.8);
+  background: rgba(200,168,78,.07);
+}
+.auth-view-btn:active { transform: scale(.97); }
+.auth-view-btn.active {
+  border-color: var(--gold);
+  background: rgba(200,168,78,.18);
+  color: var(--gold);
+}
+.auth-view-ico { font-size: 24px; line-height: 1; }
+.auth-view-txt { font-size: 12px; font-weight: 700; letter-spacing: .03em; }
+
+/* ══════════════════════════════════════
+   body.view-mobile — 명시적 모바일 레이아웃
+   (화면 크기와 무관하게 모바일 UX 강제)
+══════════════════════════════════════ */
+
+/* 기본 */
+body.view-mobile {
+  font-size: 14px;
+  padding-bottom: calc(68px + var(--safe-bottom)) !important;
+}
+
+/* 컨테이너 여백 */
+body.view-mobile .main-container,
+body.view-mobile .tab-panel,
+body.view-mobile .form-panel,
+body.view-mobile .stats-body {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+/* 헤더 — 컴팩트 모드 */
+body.view-mobile .top-header { padding: 0 14px; min-height: 52px; }
+body.view-mobile .logo-area {
+  padding: 8px 14px 8px 0;
+  margin-right: 8px;
+  gap: 8px;
+}
+body.view-mobile .logo-mark { width: 30px; height: 30px; border-radius: 8px; }
+body.view-mobile .logo-text .brand { font-size: 14px; letter-spacing: .1em; }
+body.view-mobile .logo-text .sub { display: none; }
+
+/* 상단 탭 — 모바일 모드에서 숨김 (하단 탭바 사용) */
+body.view-mobile .main-tabs { display: none !important; }
+
+/* 하단 탭바 — 항상 표시 */
+body.view-mobile .mobile-bottom-nav { display: block !important; }
+
+/* 카드 패딩 */
+body.view-mobile .stat-card,
+body.view-mobile .s-card,
+body.view-mobile .photo-card,
+body.view-mobile .add-form,
+body.view-mobile .calc-card {
+  padding: 16px !important;
+  border-radius: var(--r-md) !important;
+}
+
+/* 버튼 최소 터치 영역 44×44 */
+body.view-mobile .add-btn,
+body.view-mobile .btn-primary,
+body.view-mobile .btn-secondary,
+body.view-mobile .filter-btn {
+  min-height: 44px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+body.view-mobile .mbn-item { min-height: 56px; }
+
+/* 입력 필드 — 16px로 iOS 자동줌 방지 */
+body.view-mobile input:not([type="checkbox"]):not([type="radio"]):not(.no-v3),
+body.view-mobile select:not(.no-v3),
+body.view-mobile textarea:not(.no-v3) {
+  min-height: 44px;
+  font-size: 16px !important;
+}
+
+/* 모달 → 하단 시트로 전환 */
+body.view-mobile .mbr-modal-overlay,
+body.view-mobile .auth-modal-overlay {
+  align-items: flex-end !important;
+  padding: 0 !important;
+}
+body.view-mobile .mbr-modal-box,
+body.view-mobile .auth-modal-box {
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: 92vh !important;
+  border-radius: var(--r-xl) var(--r-xl) 0 0 !important;
+  padding-bottom: calc(24px + var(--safe-bottom)) !important;
+  animation: v3SheetUp var(--dur-slow) var(--ease-out) !important;
+  position: relative;
+}
+body.view-mobile .mbr-modal-box::before,
+body.view-mobile .auth-modal-box::before {
+  content: '';
+  position: absolute;
+  top: 8px; left: 50%;
+  transform: translateX(-50%);
+  width: 40px; height: 4px;
+  background: var(--divider);
+  border-radius: var(--r-pill);
+}
+
+/* 테이블 → 카드 (v3-card-table 클래스 붙은 것만) */
+body.view-mobile table.v3-card-table thead { display: none; }
+body.view-mobile table.v3-card-table,
+body.view-mobile table.v3-card-table tbody,
+body.view-mobile table.v3-card-table tr,
+body.view-mobile table.v3-card-table td { display: block; width: 100%; }
+body.view-mobile table.v3-card-table tr {
+  background: var(--card);
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-soft-xs);
+}
+body.view-mobile table.v3-card-table td {
+  padding: 6px 0;
+  border: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+body.view-mobile table.v3-card-table td::before {
+  content: attr(data-label);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: var(--tracking-wide);
+  flex-shrink: 0;
+}
+
+/* 그리드 → 1열 */
+body.view-mobile .calc-grid,
+body.view-mobile .add-grid,
+body.view-mobile .ag-grid,
+body.view-mobile .ag-grid-3,
+body.view-mobile .draft-wrap,
+body.view-mobile .ctr-wrap,
+body.view-mobile .photo-grid {
+  grid-template-columns: 1fr !important;
+  gap: 12px !important;
+}
+body.view-mobile .mbr-stats-row { grid-template-columns: repeat(2,1fr) !important; }
+body.view-mobile .stat-card-row,
+body.view-mobile .s-card-row { grid-template-columns: repeat(2,1fr); gap: 10px; }
+
+/* 자료실 세로 사이드 → 가로 스크롤 탭 */
+body.view-mobile .lib2-body { flex-direction: column !important; }
+body.view-mobile .lib2-catnav {
+  width: 100% !important;
+  flex-direction: row !important;
+  border-right: none !important;
+  border-bottom: 1px solid var(--divider) !important;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 12px !important;
+  gap: 6px;
+  scrollbar-width: none;
+}
+body.view-mobile .lib2-catnav::-webkit-scrollbar { display: none; }
+body.view-mobile .lib2-header { padding: 16px 20px 10px !important; }
+body.view-mobile .lib2-header-title { font-size: 20px !important; }
+
+/* 패널 스크롤 영역 확보 */
+body.view-mobile #panel-blog,
+body.view-mobile #panel-cases,
+body.view-mobile #panel-auction,
+body.view-mobile #panel-myeongdo,
+body.view-mobile #panel-member,
+body.view-mobile #panel-stats {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+/* 블로그·사건 테이블 — 가로 스크롤 허용 */
+body.view-mobile #panel-blog .table-scroll-wrap,
+body.view-mobile #panel-cases .table-scroll-wrap,
+body.view-mobile #panel-auction .table-scroll-wrap,
+body.view-mobile #panel-myeongdo .table-scroll-wrap,
+body.view-mobile #panel-member .table-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 뱃지 레이블 */
+body.view-mobile .mbn-item .mbn-label { font-size: 10px; }
+
+/* ══════════════════════════════════════
    반응형 화면 최적화
    • ≤1366px : 소형 노트북 — 여백 압축
    • ≥1920px : FHD 이상 — 폰트·레이아웃 확장
@@ -2509,6 +2767,19 @@ table.data-table tbody tr:hover,
         <input type="checkbox" id="auth-save-pw" onchange="AUTH_onSavePwChange()">
         <span>비밀번호 저장</span>
       </label>
+    </div>
+    <div class="auth-view-selector">
+      <div class="auth-view-label">접속 환경</div>
+      <div class="auth-view-row">
+        <button class="auth-view-btn" id="authViewPC" onclick="AUTH_setViewMode('pc')" type="button">
+          <span class="auth-view-ico">💻</span>
+          <span class="auth-view-txt">PC 버전</span>
+        </button>
+        <button class="auth-view-btn" id="authViewMobile" onclick="AUTH_setViewMode('mobile')" type="button">
+          <span class="auth-view-ico">📱</span>
+          <span class="auth-view-txt">모바일 버전</span>
+        </button>
+      </div>
     </div>
     <button class="auth-btn" onclick="AUTH_login()">로그인</button>
     <div class="auth-err" id="auth-err"></div>
@@ -5256,6 +5527,10 @@ function switchMainTab(t) {
   // 그룹 버튼 하이라이트
   const grp = _tabGroupMap[t];
   if(grp){const gb=document.getElementById('navGroupBtn-'+grp);if(gb)gb.classList.add('active');}
+  // 모바일 하단 탭바 active 동기화
+  document.querySelectorAll('.mbn-item').forEach(el=>el.classList.remove('active'));
+  const mbnEl = document.querySelector(`.mbn-item[data-tab="${t}"]`);
+  if(mbnEl) mbnEl.classList.add('active');
   // paste zone이 있는 탭이면 포커스 이동 → Ctrl+V 바로 동작
   const zoneMap={photo:'C_pasteZone2',guide:'ag-pasteZone'};
   if(zoneMap[t]){setTimeout(()=>{const z=document.getElementById(zoneMap[t]);if(z){z.focus({preventScroll:true});photoMode=(t==='photo'?'cases':'');}},50);}
@@ -11665,6 +11940,8 @@ async function AUTH_login() {
   sessionStorage.setItem('thefin_auth_test',   AUTH_USERS[name].test ? 'true' : 'false');
 
   document.getElementById('auth-overlay').classList.add('hidden');
+  // 뷰 모드 적용 (로그인 화면에서 선택한 값 반영)
+  _AUTH_applyViewModeClass(_AUTH_resolveViewMode());
   AUTH_applyRole(name, AUTH_USERS[name].role, AUTH_USERS[name].label);
 
   // 로그인 후 항상 캘린더 탭으로 이동
@@ -11952,12 +12229,49 @@ let MSG_view            = 'inbox';
 let MSG_loaded          = false;
 let FB_list             = [];
 
+// ══════════════════════════════════════════════════════════════════
+//  뷰 모드 (PC / 모바일) — localStorage 기반 영구 선택
+// ══════════════════════════════════════════════════════════════════
+
+function AUTH_setViewMode(mode) {
+  localStorage.setItem('thefin_view_mode', mode);
+  _AUTH_applyViewModeClass(mode);
+  _AUTH_updateViewBtns(mode);
+}
+
+function _AUTH_applyViewModeClass(mode) {
+  if (mode === 'mobile') {
+    document.body.classList.add('view-mobile');
+    document.body.classList.remove('view-pc');
+  } else {
+    document.body.classList.remove('view-mobile');
+    document.body.classList.add('view-pc');
+  }
+}
+
+function _AUTH_updateViewBtns(mode) {
+  const pcBtn     = document.getElementById('authViewPC');
+  const mobileBtn = document.getElementById('authViewMobile');
+  if (pcBtn)     pcBtn.classList.toggle('active', mode === 'pc');
+  if (mobileBtn) mobileBtn.classList.toggle('active', mode === 'mobile');
+}
+
+function _AUTH_resolveViewMode() {
+  const saved = localStorage.getItem('thefin_view_mode');
+  if (saved === 'pc' || saved === 'mobile') return saved;
+  return window.innerWidth <= 768 ? 'mobile' : 'pc';
+}
+
 // ── 페이지 로드 시 세션 확인 ──────────────────────────────────────
 (function AUTH_init() {
+  // 뷰 모드를 가장 먼저 적용 (레이아웃 시프트 방지)
+  const _initMode = _AUTH_resolveViewMode();
+  _AUTH_applyViewModeClass(_initMode);
+  _AUTH_updateViewBtns(_initMode);
+
   AUTH_loadUsers();
   AUTH_rebuildSelect();
-  AUTH_loadSaved();   // 저장된 아이디·비번 복원
-  // 비번 해시 prefetch (실패해도 로그인 시 다시 시도하므로 무방)
+  AUTH_loadSaved();
   AUTH_loadPwHashes();
   const name   = sessionStorage.getItem('thefin_auth_name');
   const role   = sessionStorage.getItem('thefin_auth_role');
