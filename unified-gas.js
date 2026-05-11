@@ -17,6 +17,7 @@ var SH_TODOS         = 'ToDo';
 var SH_MEMBERS       = '회원관리';  // 신규 — 회원 데이터 영구 저장
 var SH_PWHASH        = '비번관리';  // 신규 — 비번 해시 동기화 (PC간 공유)
 var SH_FEEDBACK      = '오류제보';  // 신규 — 직원 오류·개선 제보
+var SH_CASE_HISTORY  = '사건히스토리'; // 신규 — 사건별 상태변경 이력
 var DRIVE_FOLDER_FEEDBACK = '1sY51aSaHZSBh54L8JOlZtZjjs56NXhiJ';  // 04-첨부파일 폴더 (Drive)
 var SH_FEE_DATA      = '수수료데이터'; // 신규 — 7단계·수수료·입찰정보 (기기간 공유)
 var SH_CTR_ARCHIVE   = '약정서보관';  // 신규 — 약정서 보관
@@ -121,6 +122,7 @@ function casesGet(p) {
   if (p.action === 'getFeeData')       return json({ data: loadFeeData(ss) });
   if (p.action === 'getCtrArchives')   return json({ data: loadCtrArchives(ss) });
   if (p.action === 'getCtrEsign')      return json({ data: loadCtrEsign(ss) });
+  if (p.action === 'getCaseHistory')   return json({ ok: true, data: loadCaseHistory(ss, p.caseNo) });
   return json({ error: 'unknown action' });
 }
 
@@ -285,12 +287,15 @@ function loadCases(ss, shName) {
   var last    = sheet.getLastRow();
   if (last < 2) return [];
   var isArc = (shName === SH_CASES_ARCHIVE);
-  // cols: active=14(+manager,evictionStaff), archive=15(+manager,evictionStaff,closedAt)
-  var cols  = isArc ? 15 : 14;
+  // cols: active=15(+manager,evictionStaff,clientName), archive=16(+closedAt,clientName)
+  var maxCols = isArc ? 16 : 15;
+  var cols    = Math.min(sheet.getLastColumn(), maxCols);
   var hdr   = sheet.getRange(1, 1, 1, cols).getValues()[0];
   if (!hdr[12]) sheet.getRange(1, 13).setValue('담당자');
   if (!hdr[13]) sheet.getRange(1, 14).setValue('명도담당자');
-  if (isArc && !hdr[14]) sheet.getRange(1, 15).setValue('종료일');
+  if (isArc && cols >= 15 && !hdr[14]) sheet.getRange(1, 15).setValue('종료일');
+  if (!isArc && cols >= 15 && !hdr[14]) sheet.getRange(1, 15).setValue('고객명');
+  if (isArc && cols >= 16 && !hdr[15]) sheet.getRange(1, 16).setValue('고객명');
   var vals  = sheet.getRange(2, 1, last - 1, cols).getValues();
   return vals.map(function(r) {
     return {
@@ -309,7 +314,8 @@ function loadCases(ss, shName) {
       note:          String(r[10] || ''),
       manager:       String(r[12] || ''),
       evictionStaff: String(r[13] || ''),
-      closedAt:      isArc && r[14] ? kstDate(r[14]) : ''
+      closedAt:      isArc && r[14] ? kstDate(r[14]) : '',
+      clientName:    isArc ? String(r[15] || '') : String(r[14] || '')
     };
   });
 }
@@ -350,13 +356,6 @@ function casesPost(b) {
     case 'analyzeImageDraft':   return json(analyzeImage(d, 'draft'));
     case 'analyzeImageMember':  return json(analyzeImage(d, 'member'));
     case 'generateLocation':  return json(generateLocationAnalysis(d));
-    case 'addAuction':       return json(addAuction(ss, d));
-    case 'updateAuction':    return json(updateAuction(ss, d));
-    case 'deleteAuction':    return json(deleteAuction(ss, d));
-    case 'addMeongdo':      return json(addMeongdo(ss, d));
-    case 'updateMeongdo':   return json(updateMeongdo(ss, d));
-    case 'completeMeongdo': return json(completeMeongdo(ss, d));
-    case 'deleteMeongdo':   return json(deleteMeongdo(ss, d));
     case 'saveMembers':      return json(saveMembersBulk(ss, b.data));
     case 'addMember':        return json(addMember(ss, d));
     case 'updateMember':     return json(updateMember(ss, d));
@@ -661,7 +660,8 @@ function addCase(ss, d) {
     d.note          || '',
     new Date(),
     d.manager       || '',
-    d.evictionStaff || ''
+    d.evictionStaff || '',
+    d.clientName    || ''
   ]);
   return { ok: true, id: id };
 }
@@ -669,13 +669,15 @@ function addCase(ss, d) {
 function updateCase(ss, d) {
   var activeSheet  = sh(ss, SH_CASES_ACTIVE);
   var archiveSheet = sh(ss, SH_CASES_ARCHIVE);
-  var rowInfo = findRowById(activeSheet, d.id, 14);
+  var rowInfo = findRowById(activeSheet, d.id, 15);
   var sheet;
+  var isArc = false;
   if (rowInfo) {
     sheet = activeSheet;
   } else {
-    rowInfo = findRowById(archiveSheet, d.id, 15);
+    rowInfo = findRowById(archiveSheet, d.id, 16);
     sheet   = archiveSheet;
+    isArc   = true;
   }
   if (!rowInfo) return { ok: false, error: '사건을 찾을 수 없습니다.' };
 
@@ -698,6 +700,8 @@ function updateCase(ss, d) {
   if (d.note          !== undefined) sheet.getRange(r, 11).setValue(d.note);
   if (d.manager       !== undefined) sheet.getRange(r, 13).setValue(d.manager);
   if (d.evictionStaff !== undefined) sheet.getRange(r, 14).setValue(d.evictionStaff);
+  if (d.clientName    !== undefined) sheet.getRange(r, isArc ? 16 : 15).setValue(d.clientName);
+  if (d.status) addCaseHistory(ss, d.caseNo || rowInfo.vals[2], '상태변경', d.status, d.changedBy || '');
   return { ok: true };
 }
 
@@ -708,10 +712,11 @@ function archiveCase(ss, d) {
   if (!rowInfo) return { ok: false, error: '사건을 찾을 수 없습니다.' };
 
   var vals = rowInfo.vals.slice();
-  vals[1]  = d.status;       // 종료 사유로 상태 업데이트
-  vals.push(new Date());     // col 15: 종료일
+  vals[1]  = d.status;
+  vals.push(new Date());
   archive.appendRow(vals);
   active.deleteRow(rowInfo.row);
+  addCaseHistory(ss, rowInfo.vals[2], '보관처리', d.status || '종료', d.changedBy || '');
   return { ok: true };
 }
 
@@ -1580,14 +1585,16 @@ function mapAuctionRow(r) {
 // AUCTION — POST
 // ============================================================
 function auctionPost(b) {
-  var ss = casesSS();
-  var d  = b.data || {};
-  switch (b.action) {
-    case 'add':    return json(addAuction(ss, d));
-    case 'update': return json(updateAuction(ss, d));
-    case 'delete': return json(deleteAuction(ss, d));
-    default:       return json({ error: 'unknown auction action' });
-  }
+  try {
+    var ss = casesSS();
+    var d  = b.data || {};
+    switch (b.action) {
+      case 'add':    return json(addAuction(ss, d));
+      case 'update': return json(updateAuction(ss, d));
+      case 'delete': return json(deleteAuction(ss, d));
+      default:       return json({ ok: false, error: 'unknown auction action' });
+    }
+  } catch(e) { return json({ ok: false, error: e.message }); }
 }
 
 function addAuction(ss, d) {
@@ -1613,6 +1620,8 @@ function addAuction(ss, d) {
     d.loanOk           || false,
     d.reportSent       || false
   ]);
+  if (d.status === 'won') addCaseHistory(ss, d.caseNo, '낙찰', '입찰 낙찰 확정', d.changedBy || '');
+  else addCaseHistory(ss, d.caseNo, '입찰등록', d.content || '', d.changedBy || '');
   return { ok: true, id: id };
 }
 
@@ -1634,6 +1643,8 @@ function updateAuction(ss, d) {
   if (d.subStaff !== undefined) sv(15, d.subStaff);
   if (d.loanOk !== undefined) sv(16, d.loanOk);
   if (d.reportSent !== undefined) sv(17, d.reportSent);
+  if (d.status === 'won') addCaseHistory(ss, d.caseNo, '낙찰', '낙찰 확정', d.changedBy || '');
+  else if (d.status) addCaseHistory(ss, d.caseNo, '입찰상태변경', d.status, d.changedBy || '');
   return { ok: true };
 }
 
@@ -1662,9 +1673,62 @@ function setupAuctionSheet(sheet) {
 function archiveAuctionByMonth(ss) { /* 입찰 항목은 적으므로 아카이브 불필요 */ }
 
 // ============================================================
+// 사건 히스토리 — 시트: 사건히스토리
+// 컬럼: 1:id  2:caseNo  3:action  4:detail  5:changedBy  6:changedAt
+// ============================================================
+function setupHistorySheet(sheet) {
+  if (sheet.getLastRow() > 0) return;
+  var h = ['ID','사건번호','액션','내용','처리자','시각'];
+  sheet.getRange(1,1,1,6).setValues([h])
+    .setBackground('#0a1628').setFontColor('#c9a961').setFontWeight('bold').setFontSize(10)
+    .setHorizontalAlignment('center');
+  sheet.setFrozenRows(1);
+  [[1,0],[2,130],[3,100],[4,280],[5,70],[6,130]].forEach(function(p){
+    sheet.setColumnWidth(p[0],p[1]);
+  });
+}
+
+function addCaseHistory(ss, caseNo, action, detail, changedBy) {
+  try {
+    if (!caseNo) return;
+    var sheet = sh(ss, SH_CASE_HISTORY);
+    setupHistorySheet(sheet);
+    sheet.appendRow([
+      Utilities.getUuid(),
+      String(caseNo),
+      String(action  || ''),
+      String(detail  || ''),
+      String(changedBy || ''),
+      new Date()
+    ]);
+  } catch(e) { /* 히스토리 실패는 조용히 무시 */ }
+}
+
+function loadCaseHistory(ss, caseNo) {
+  try {
+    var sheet = sh(ss, SH_CASE_HISTORY);
+    if (sheet.getLastRow() < 2) return [];
+    var vals = sheet.getRange(2, 1, sheet.getLastRow() - 1, 6).getValues();
+    var result = [];
+    vals.forEach(function(r) {
+      if (!r[0] || (caseNo && String(r[1]) !== String(caseNo))) return;
+      result.push({
+        id:        String(r[0]),
+        caseNo:    String(r[1]),
+        action:    String(r[2]),
+        detail:    String(r[3]),
+        changedBy: String(r[4]),
+        changedAt: r[5] ? kstDate(r[5]) : ''
+      });
+    });
+    return result.reverse(); // 최신순
+  } catch(e) { return []; }
+}
+
+// ============================================================
 // MYEONGDO — GET
 // ============================================================
-// 명도 컬럼(10): id,caseNo,address,occupantType,stage,negotiationStatus,staffName,memo,status,createdAt
+// 명도 컬럼(11): id,caseNo,address,occupantType,stage,negotiationStatus,staffName,contactInfo,memo,status,createdAt
 
 function myeongdoGet(p) {
   try {
@@ -1678,7 +1742,7 @@ function myeongdoGet(p) {
 function getMeongdo(ss, shName) {
   var sheet = sh(ss, shName);
   if (sheet.getLastRow() < 2) return { ok: true, data: [] };
-  var nCols = Math.min(sheet.getLastColumn(), 10);
+  var nCols = Math.min(sheet.getLastColumn(), 11);
   var vals  = sheet.getRange(2, 1, sheet.getLastRow() - 1, nCols).getValues();
   return { ok: true, data: vals.map(mapMeongdoRow) };
 }
@@ -1686,15 +1750,16 @@ function getMeongdo(ss, shName) {
 function mapMeongdoRow(r) {
   return {
     id:                String(r[0]),
-    caseNo:            String(r[1] || ''),
-    address:           String(r[2] || ''),
-    occupantType:      String(r[3] || ''),
-    stage:             String(r[4] || '인도명령신청'),
-    negotiationStatus: String(r[5] || '소통중'),
-    staffName:         String(r[6] || ''),
-    memo:              String(r[7] || ''),
-    status:            String(r[8] || 'active'),
-    createdAt:         r[9] ? kstDate(r[9]) : ''
+    caseNo:            String(r[1]  || ''),
+    address:           String(r[2]  || ''),
+    occupantType:      String(r[3]  || ''),
+    stage:             String(r[4]  || '인도명령신청'),
+    negotiationStatus: String(r[5]  || '소통중'),
+    staffName:         String(r[6]  || ''),
+    contactInfo:       String(r[7]  || ''),
+    memo:              String(r[8]  || ''),
+    status:            String(r[9]  || 'active'),
+    createdAt:         r[10] ? kstDate(r[10]) : ''
   };
 }
 
@@ -1727,17 +1792,19 @@ function addMeongdo(ss, d) {
     d.stage              || '인도명령신청',
     d.negotiationStatus  || '소통중',
     d.staffName          || '',
+    d.contactInfo        || '',
     d.memo               || '',
     'active',
     new Date()
   ]);
+  addCaseHistory(ss, d.caseNo, '명도시작', d.stage || '인도명령신청', d.staffName || '');
   return { ok: true, id: id };
 }
 
 function updateMeongdo(ss, d) {
   var active  = sh(ss, SH_MYEONGDO_A);
   var done    = sh(ss, SH_MYEONGDO_D);
-  var rowInfo = findRowById(active, d.id, 10) || findRowById(done, d.id, 10);
+  var rowInfo = findRowById(active, d.id, 11) || findRowById(done, d.id, 11);
   if (!rowInfo) return { ok: false, error: '항목을 찾을 수 없습니다.' };
   var row = rowInfo.row; var sheet = rowInfo.sheet;
   var sv = function(col, val) { if (val !== undefined) sheet.getRange(row, col).setValue(val); };
@@ -1747,8 +1814,10 @@ function updateMeongdo(ss, d) {
   sv(5, d.stage);
   sv(6, d.negotiationStatus);
   sv(7, d.staffName);
-  sv(8, d.memo);
-  sv(9, d.status);
+  sv(8, d.contactInfo);
+  sv(9, d.memo);
+  sv(10, d.status);
+  if (d.stage) addCaseHistory(ss, d.caseNo || rowInfo.vals[1], '명도단계변경', d.stage + (d.negotiationStatus ? ' / ' + d.negotiationStatus : ''), d.staffName || '');
   return { ok: true };
 }
 
@@ -1756,33 +1825,34 @@ function completeMeongdo(ss, d) {
   var active  = sh(ss, SH_MYEONGDO_A);
   var done    = sh(ss, SH_MYEONGDO_D);
   if (done.getLastRow() === 0) setupMeongdoSheet(done, true);
-  var rowInfo = findRowById(active, d.id, 10);
+  var rowInfo = findRowById(active, d.id, 11);
   if (!rowInfo) return { ok: false, error: '항목을 찾을 수 없습니다.' };
   var vals = rowInfo.vals.slice();
-  vals[8] = 'done';
+  vals[9] = 'done';
   done.appendRow(vals);
   active.deleteRow(rowInfo.row);
+  addCaseHistory(ss, rowInfo.vals[1], '명도완료', '', '');
   return { ok: true };
 }
 
 function deleteMeongdo(ss, d) {
   var active  = sh(ss, SH_MYEONGDO_A);
   var done    = sh(ss, SH_MYEONGDO_D);
-  var rowInfo = findRowById(active, d.id, 10) || findRowById(done, d.id, 10);
+  var rowInfo = findRowById(active, d.id, 11) || findRowById(done, d.id, 11);
   if (!rowInfo) return { ok: false, error: '항목을 찾을 수 없습니다.' };
   rowInfo.sheet.deleteRow(rowInfo.row);
   return { ok: true };
 }
 
 function setupMeongdoSheet(sheet, isDone) {
-  var h = ['ID','사건번호','주소','점유자유형','진행단계','협의상태','담당자','메모','상태','등록일'];
+  var h = ['ID','사건번호','주소','점유자유형','진행단계','협의상태','담당자','연락처','메모','상태','등록일'];
   var bg = isDone ? '#1a4731' : '#0a1628';
-  sheet.getRange(1,1,1,10).setValues([h])
+  sheet.getRange(1,1,1,11).setValues([h])
     .setBackground(bg).setFontColor('#c9a961').setFontWeight('bold').setFontSize(10)
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
   sheet.setRowHeight(1,36); sheet.setFrozenRows(1);
   sheet.setTabColor(isDone ? '#137333' : '#a61c00');
-  [[1,0],[2,120],[3,200],[4,80],[5,100],[6,80],[7,80],[8,200],[9,60],[10,90]].forEach(function(p){
+  [[1,0],[2,120],[3,200],[4,80],[5,100],[6,80],[7,80],[8,110],[9,200],[10,60],[11,90]].forEach(function(p){
     sheet.setColumnWidth(p[0], p[1]);
   });
 }
@@ -1795,23 +1865,38 @@ function addMeongdoNegotiationCol() {
       var sheet = ss.getSheetByName(name);
       if (!sheet) return;
       var lastRow = sheet.getLastRow();
-      // 이미 10열이면 스킵
       if (sheet.getLastColumn() >= 10) return;
-      // 6번째 열 앞에 새 열 삽입 (기존 6열=담당자 → 7열로 이동)
       sheet.insertColumnBefore(6);
-      // 헤더 업데이트
+      var bg = name === SH_MYEONGDO_D ? '#1a4731' : '#0a1628';
       sheet.getRange(1, 6).setValue('협의상태')
-        .setBackground(name === SH_MYEONGDO_D ? '#1a4731' : '#0a1628')
-        .setFontColor('#c9a961').setFontWeight('bold').setFontSize(10)
+        .setBackground(bg).setFontColor('#c9a961').setFontWeight('bold').setFontSize(10)
         .setHorizontalAlignment('center');
-      // 기존 데이터 행에 기본값 '소통중' 채우기
-      if (lastRow >= 2) {
-        var range = sheet.getRange(2, 6, lastRow - 1, 1);
-        range.setValue('소통중');
-      }
+      if (lastRow >= 2) sheet.getRange(2, 6, lastRow - 1, 1).setValue('소통중');
       sheet.setColumnWidth(6, 80);
     });
     return { ok: true, message: '협의상태 컬럼 추가 완료' };
+  } catch(e) { return { ok: false, error: e.message }; }
+}
+
+// 기존 10열 시트에 연락처 컬럼 삽입 — GAS 에디터에서 수동 실행 (1회)
+function addMeongdoContactCol() {
+  try {
+    var ss = casesSS();
+    [SH_MYEONGDO_A, SH_MYEONGDO_D].forEach(function(name) {
+      var sheet = ss.getSheetByName(name);
+      if (!sheet) return;
+      var lastRow = sheet.getLastRow();
+      if (sheet.getLastColumn() >= 11) return;
+      // 8번째 열(담당자 다음)에 연락처 삽입
+      sheet.insertColumnBefore(8);
+      var bg = name === SH_MYEONGDO_D ? '#1a4731' : '#0a1628';
+      sheet.getRange(1, 8).setValue('연락처')
+        .setBackground(bg).setFontColor('#c9a961').setFontWeight('bold').setFontSize(10)
+        .setHorizontalAlignment('center');
+      if (lastRow >= 2) sheet.getRange(2, 8, lastRow - 1, 1).setValue('');
+      sheet.setColumnWidth(8, 110);
+    });
+    return { ok: true, message: '연락처 컬럼 추가 완료' };
   } catch(e) { return { ok: false, error: e.message }; }
 }
 

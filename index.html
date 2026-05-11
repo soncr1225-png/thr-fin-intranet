@@ -3359,8 +3359,9 @@ body.view-mobile #cal-tooltip { display: none !important; }
   <div class="add-form" id="C_addForm">
     <div class="add-form-title">새 사건 등록</div>
     <div class="add-grid">
+      <div class="pf"><label>고객명</label><input type="text" id="p_clientName" placeholder="홍길동"></div>
       <div class="pf"><label>사건번호</label><input type="text" id="p_caseNo" placeholder="25-XXXXX"></div>
-      <div class="pf"><label>주소지</label><input type="text" id="p_address" placeholder="아파트명 또는 주소"></div>
+      <div class="pf" style="grid-column:1/-1;"><label>주소지</label><input type="text" id="p_address" placeholder="아파트명 또는 주소"></div>
       <div class="pf"><label>법원</label>
         <select id="p_court">
           <option value="">법원 선택</option>
@@ -6350,6 +6351,7 @@ function C_toggleForm(){
 }
 function C_autoCalcDeadline(){const a=document.getElementById('p_auctionDate').value;if(a)document.getElementById('p_deadline').value=C_calcDL(a);}
 function C_registerCase(){
+  const clientName=document.getElementById('p_clientName').value.trim();
   const caseNo=document.getElementById('p_caseNo').value.trim();
   const address=document.getElementById('p_address').value.trim();
   if(!caseNo||!address){alert('사건번호와 주소지는 필수입니다.');return;}
@@ -6363,15 +6365,15 @@ function C_registerCase(){
   const deadline=document.getElementById('p_deadline').value;
   const note=document.getElementById('p_note').value.trim();
   const tempId='temp_'+Date.now();
-  C_cases.push({id:tempId,status:'ongoing',caseNo,address,court,auctionDate,deadline,note,
+  C_cases.push({id:tempId,status:'ongoing',caseNo,address,court,auctionDate,deadline,note,clientName,
     typeMap:Object.fromEntries(types.filter(t=>t.manager).map(t=>[t.type,t.manager]))});
   C_cacheSave(C_CACHE_CASES,C_cases);C_render();
-  ['p_caseNo','p_address','p_auctionDate','p_deadline','p_note'].forEach(id=>document.getElementById(id).value='');
+  ['p_clientName','p_caseNo','p_address','p_auctionDate','p_deadline','p_note'].forEach(id=>document.getElementById(id).value='');
   ['t_price_mgr','t_field_mgr','t_report_mgr','p_court'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('C_addForm').style.display='none';
   if(!['all','active'].includes(C_tab))C_switchTab('active');
   B_showToast('✅ 등록되었습니다.');
-  C_api('addCase',{status:'ongoing',caseNo,address,court,auctionDate,deadline,types,note}).then(()=>C_scheduleSync());
+  C_api('addCase',{status:'ongoing',caseNo,address,court,auctionDate,deadline,types,note,clientName}).then(()=>C_scheduleSync());
 }
 
 function C_switchTab(t){
@@ -6810,16 +6812,50 @@ function C_restoreToActive(id){
   C_api('restoreCase',{id}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
 }
 
-// ── 고객 셀 (A_items 연동) ────────────────────────────────────
+// ── 고객 셀 (A_items 연동, 인라인 편집 가능) ──────────────────
 function C_clientCell(c) {
-  const clients = (typeof A_items !== 'undefined') ? A_items.filter(i => i.caseNo === c.caseNo && i.clientName) : [];
-  const chips = clients.map(ci => {
-    const esc = (ci.clientName||'').replace(/'/g,"&#39;");
-    return `<span onclick="C_goToClient('${c.caseNo}','${esc}')" title="더핀 일정표에서 보기"
-      style="display:inline-flex;align-items:center;background:#e8f0fe;color:#1a56db;border:1px solid #c7d8fc;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;gap:4px;transition:background .12s;"
-      onmouseover="this.style.background='#c7d8fc'" onmouseout="this.style.background='#e8f0fe'">${ci.clientName}</span>`;
-  }).join('');
-  return `<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;min-height:20px;">${chips}</div>`;
+  const aClients = (typeof A_items !== 'undefined') ? A_items.filter(i => i.caseNo === c.caseNo && i.clientName) : [];
+  const displayName = c.clientName || (aClients.length ? aClients[0].clientName : '');
+  const nameHtml = displayName
+    ? `<span onclick="C_editClientName('${c.id}')" title="클릭해서 수정"
+        style="font-size:13px;font-weight:700;color:#1e3a5f;cursor:pointer;border-bottom:1px dashed transparent;transition:border-color .15s;"
+        onmouseover="this.style.borderBottomColor='#c8a44a'" onmouseout="this.style.borderBottomColor='transparent'">${displayName}</span>`
+    : `<span onclick="C_editClientName('${c.id}')" title="고객명 입력"
+        style="font-size:11px;color:#ccc;cursor:pointer;">+ 입력</span>`;
+  return `<div id="C_cn_${c.id}" style="min-height:22px;padding:1px 0;">${nameHtml}</div>`;
+}
+
+function C_editClientName(id) {
+  const c = C_cases.find(x => x.id === id);
+  if (!c) return;
+  const cell = document.getElementById('C_cn_' + id);
+  if (!cell) return;
+  const aClients = (typeof A_items !== 'undefined') ? A_items.filter(i => i.caseNo === c.caseNo && i.clientName) : [];
+  const current = c.clientName || (aClients.length ? aClients[0].clientName : '');
+  cell.innerHTML = `<input type="text" value="${(current||'').replace(/"/g,'&quot;')}"
+    style="width:90px;padding:2px 6px;font-size:12px;border:1px solid #c8a44a;border-radius:4px;font-family:inherit;outline:none;"
+    onblur="C_saveClientName('${id}',this.value)"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape')C_render();">`;
+  cell.querySelector('input').focus();
+}
+
+async function C_saveClientName(id, newName) {
+  const c = C_cases.find(x => x.id === id);
+  if (!c) return;
+  const trimmed = newName.trim();
+  c.clientName = trimmed;
+  C_render();
+  setSync('loading');
+  const r = await C_api('updateCase', { id, status: c.status, clientName: trimmed });
+  // A_items 연동 동기화
+  if (typeof A_items !== 'undefined' && typeof A_gasPost === 'function') {
+    A_items.filter(i => i.caseNo === c.caseNo).forEach(ai => {
+      ai.clientName = trimmed;
+      A_gasPost('update', { id: ai.id, clientName: trimmed });
+    });
+  }
+  setSync(r && !r.error ? 'ok' : 'err');
+  if (typeof A_render === 'function') A_render();
 }
 
 // 더핀 일정표(A탭)로 이동 + 해당 고객 하이라이트
