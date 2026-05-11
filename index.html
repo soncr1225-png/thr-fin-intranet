@@ -3745,6 +3745,9 @@ body.view-mobile #cal-tooltip { display: none !important; }
     </div>
   </div>
 
+  <!-- 단계별 현황 -->
+  <div id="M_stageStatsBar" style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 0 2px;min-height:24px;"></div>
+
   <!-- 서브탭 -->
   <div style="display:flex;align-items:center;gap:16px;padding:12px 0 10px;border-bottom:1px solid #eee;">
     <span id="M_tab-active" onclick="M_switchTab('active')" style="font-size:12px;font-weight:700;color:var(--navy);cursor:pointer;border-bottom:2px solid var(--navy);padding-bottom:2px;">진행중 <span id="M_tc-active" style="font-size:10px;background:var(--navy);color:#fff;padding:1px 6px;border-radius:99px;margin-left:3px;">—</span></span>
@@ -3795,7 +3798,8 @@ body.view-mobile #cal-tooltip { display: none !important; }
           <option value="">선택</option>
         </select>
       </div>
-      <div class="pf" style="grid-column:1/-1;"><label>메모</label><input type="text" id="M_memo" placeholder="점유자 연락처, 협의 내용 등"></div>
+      <div class="pf"><label>연락처</label><input type="text" id="M_contactInfo" placeholder="010-0000-0000"></div>
+      <div class="pf" style="grid-column:1/-1;"><label>메모</label><input type="text" id="M_memo" placeholder="협의 내용, 특이사항 등"></div>
     </div>
     <div class="form-actions">
       <button class="btn-primary" onclick="M_saveForm()">저장</button>
@@ -5139,6 +5143,22 @@ body.view-mobile #cal-tooltip { display: none !important; }
 <!-- ════════════════════════════════════
      사건 상세 모달 (수수료 · 7단계 · 배분율)
 ════════════════════════════════════ -->
+<!-- 사건 히스토리 모달 -->
+<div id="C_histModal" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;" onclick="if(event.target===this)C_closeHistory()">
+  <div style="background:#fff;border-radius:12px;width:100%;max-width:560px;padding:24px 28px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div>
+        <div style="font-size:16px;font-weight:800;color:#0a1628;">사건 히스토리</div>
+        <div id="C_histCaseNo" style="font-size:12px;color:#888;margin-top:2px;"></div>
+      </div>
+      <button onclick="C_closeHistory()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888;">✕</button>
+    </div>
+    <div id="C_histBody" style="min-height:120px;">
+      <div style="text-align:center;color:#aaa;padding:40px 0;">불러오는 중...</div>
+    </div>
+  </div>
+</div>
+
 <div id="CD_modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;">
   <div style="background:#fff;border-radius:12px;width:100%;max-width:720px;padding:28px 32px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
 
@@ -6645,7 +6665,11 @@ function C_activeRow(c){
 <td style="overflow:visible;position:relative;">${C_buildTypeCell(c)}</td>
 <td style="overflow:visible;position:relative;">${C_buildFileCell(c)}</td>
 <td><span class="editable note-cell" title="${c.note||''}" onclick="C_startEdit(this,'${c.id}','note','${(c.note||'').replace(/'/g,"&#39;")}')">${c.note||'—'}</span></td>
-<td style="white-space:nowrap;"><button class="row-btn" onclick="CD_open('${c.id}')" style="background:#fff8e1;color:#8a5a00;border-color:#f2d67a;margin-right:3px;" title="수수료·낙찰·7단계 관리">💰</button><button class="row-btn del" onclick="C_delCase('${c.id}')">삭제</button></td></tr>`;
+<td style="white-space:nowrap;">
+  <button class="row-btn" onclick="CD_open('${c.id}')" style="background:#fff8e1;color:#8a5a00;border-color:#f2d67a;margin-right:3px;" title="수수료·낙찰·7단계 관리">💰</button>
+  <button class="row-btn" onclick="C_showHistory('${(c.caseNo||'').replace(/'/g,"&#39;")}')" style="background:#f0f7ff;color:#1d4ed8;border-color:#93c5fd;margin-right:3px;" title="사건 히스토리">📋</button>
+  <button class="row-btn del" onclick="C_delCase('${c.id}')">삭제</button>
+</td></tr>`;
 }
 
 function C_archiveRow(c, compact=false){
@@ -6712,19 +6736,66 @@ function C_chStatus(id,ns){
     const tabMap={closed:'closed',lost:'archive',cancel:'archive',drop:'archive',changed:'archive'};
     C_render(); C_switchTab(tabMap[ns]||'archive');
     A_render();
-    C_api('archiveCase',{id,status:ns}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
+    const _by=sessionStorage.getItem('thefin_auth_name')||'';
+    C_api('archiveCase',{id,status:ns,changedBy:_by}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
   }else if(ns==='lawsuit'){
     C_render(); C_switchTab('lawsuit');
     A_render();
-    C_api('updateCase',{id,status:ns}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
+    const _by=sessionStorage.getItem('thefin_auth_name')||'';
+    C_api('updateCase',{id,status:ns,changedBy:_by}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
   }else{
     C_render();
     A_render();
-    C_api('updateCase',{id,status:ns}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
+    const _by=sessionStorage.getItem('thefin_auth_name')||'';
+    C_api('updateCase',{id,status:ns,changedBy:_by}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
   }
   // 상태 변경 시 캘린더도 즉시 갱신 (탭 무관하게 항상 재렌더)
   if(typeof CAL_render==='function') CAL_render();
 }
+const C_HIST_ACTION_STYLE = {
+  '상태변경':     'background:#eff6ff;color:#1d4ed8;',
+  '보관처리':     'background:#fef2f2;color:#b91c1c;',
+  '입찰등록':     'background:#fff7ed;color:#c2410c;',
+  '낙찰':         'background:#f0fdf4;color:#15803d;',
+  '입찰상태변경': 'background:#fefce8;color:#854d0e;',
+  '명도시작':     'background:#fdf4ff;color:#7e22ce;',
+  '명도단계변경': 'background:#f5f3ff;color:#6d28d9;',
+  '명도완료':     'background:#f0fdf4;color:#15803d;'
+};
+async function C_showHistory(caseNo) {
+  const modal = document.getElementById('C_histModal');
+  const body  = document.getElementById('C_histBody');
+  document.getElementById('C_histCaseNo').textContent = caseNo || '';
+  modal.style.display = 'flex';
+  body.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px 0;">불러오는 중...</div>';
+  try {
+    const r = await fetch(`${GAS_URL}?action=getCaseHistory&caseNo=${encodeURIComponent(caseNo)}`);
+    const data = await r.json();
+    const items = (data && data.ok && data.data) ? data.data : [];
+    if (!items.length) {
+      body.innerHTML = '<div style="text-align:center;color:#bbb;padding:40px 0;font-size:13px;">기록된 히스토리가 없습니다</div>';
+      return;
+    }
+    body.innerHTML = items.map(h => {
+      const style = C_HIST_ACTION_STYLE[h.action] || 'background:#f1f5f9;color:#475569;';
+      return `<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f1f5f9;">
+        <div style="flex-shrink:0;margin-top:2px;">
+          <span style="font-size:10px;padding:2px 7px;border-radius:99px;font-weight:700;${style}">${h.action}</span>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;color:#1e293b;font-weight:600;">${h.detail||'—'}</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px;">${h.changedAt||''}${h.changedBy?' · '+h.changedBy:''}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    body.innerHTML = `<div style="text-align:center;color:#dc2626;padding:20px 0;">불러오기 실패: ${e.message}</div>`;
+  }
+}
+function C_closeHistory() {
+  document.getElementById('C_histModal').style.display = 'none';
+}
+
 function C_delCase(id){
   if(!confirm('삭제하시겠습니까?'))return;
   C_saveUndo('삭제');const idx=C_cases.findIndex(x=>x.id===id);
@@ -8568,6 +8639,7 @@ function M_render() {
     <th style="min-width:110px;text-align:center;">진행단계</th>
     <th style="min-width:80px;text-align:center;">협의상태</th>
     <th style="min-width:70px;text-align:center;">담당자</th>
+    <th style="min-width:110px;">연락처</th>
     <th style="min-width:200px;">메모</th>
     <th style="min-width:60px;"></th>
   </tr>`;
@@ -8578,8 +8650,19 @@ function M_render() {
   document.getElementById('M_tc-done').textContent   = doneFiltered.length;
   setBadge('mainBadge-myeongdo', activeFiltered.length);
 
+  const stageBar = document.getElementById('M_stageStatsBar');
+  if (stageBar) {
+    const sc = {}, nc = {};
+    M_STAGES.forEach(s => { sc[s] = 0; });
+    M_NEG_STATUS.forEach(s => { nc[s] = 0; });
+    activeFiltered.forEach(i => { if (sc[i.stage] !== undefined) sc[i.stage]++; if (nc[i.negotiationStatus] !== undefined) nc[i.negotiationStatus]++; });
+    const sp = M_STAGES.map(s => `<span style="font-size:10px;${M_STAGE_STYLE[s]||''}border-radius:99px;padding:1px 7px;">${s} ${sc[s]}</span>`).join('');
+    const np = M_NEG_STATUS.map(s => `<span style="font-size:10px;${M_NEG_STYLE[s]||''}border-radius:99px;padding:1px 7px;">${s} ${nc[s]}</span>`).join('');
+    stageBar.innerHTML = sp + '<span style="margin:0 4px;color:#ccc;font-size:10px;">|</span>' + np;
+  }
+
   if (!data.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="9">${M_tab==='active'?'진행중인 명도 건이 없습니다':'완료된 명도 건이 없습니다'}</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="10">${M_tab==='active'?'진행중인 명도 건이 없습니다':'완료된 명도 건이 없습니다'}</td></tr>`;
     return;
   }
   tbody.innerHTML = data.map(M_row).join('');
@@ -8627,6 +8710,9 @@ function M_row(item) {
     </td>
     <td style="text-align:center;vertical-align:middle;${rowBg}">
       <span style="font-size:12px;font-weight:600;color:#1e293b;">${item.staffName||'—'}</span>
+    </td>
+    <td style="vertical-align:middle;${rowBg}">
+      <span style="font-size:11px;color:#334155;">${item.contactInfo||'<span style="color:#ccc;">—</span>'}</span>
     </td>
     <td id="M_ic_${item.id}_memo" class="a-editable"
       onclick="M_inlineEdit('${item.id}','memo','${M_esc(item.memo||'')}')"
@@ -8700,19 +8786,29 @@ async function M_complete(id) {
 
 async function M_deleteRow(id) {
   if (!confirm('삭제하시겠습니까?')) return;
+  const snapActive = [...M_active];
+  const snapDone   = [...M_done];
   M_active = M_active.filter(i => i.id !== id);
   M_done   = M_done.filter(i => i.id !== id);
   M_render();
   setSync('loading');
   const r = await M_gasPost('delete', { id });
-  setSync(r && r.ok ? 'ok' : 'err');
+  if (r && r.ok) {
+    setSync('ok');
+  } else {
+    M_active = snapActive;
+    M_done   = snapDone;
+    M_render();
+    setSync('err');
+    alert('삭제 실패. 복구되었습니다.');
+  }
 }
 
 function M_toggleForm() {
   const form = document.getElementById('M_addForm');
   if (form.style.display === 'none' || !form.style.display) {
     document.getElementById('M_editId').value = '';
-    ['M_caseNo','M_address','M_memo'].forEach(eid => document.getElementById(eid).value = '');
+    ['M_caseNo','M_address','M_contactInfo','M_memo'].forEach(eid => document.getElementById(eid).value = '');
     document.getElementById('M_occupantType').value = '';
     document.getElementById('M_stage').value = '인도명령신청';
     document.getElementById('M_negotiationStatus').value = '소통중';
@@ -8737,6 +8833,7 @@ function M_editRow(id) {
   document.getElementById('M_occupantType').value       = item.occupantType       || '';
   document.getElementById('M_stage').value              = item.stage              || '인도명령신청';
   document.getElementById('M_negotiationStatus').value  = item.negotiationStatus  || '소통중';
+  document.getElementById('M_contactInfo').value        = item.contactInfo        || '';
   document.getElementById('M_memo').value               = item.memo               || '';
   const staffSel = document.getElementById('M_staffName');
   staffSel.innerHTML = '<option value="">선택</option>' +
@@ -8754,6 +8851,7 @@ async function M_saveForm() {
     occupantType:      document.getElementById('M_occupantType').value,
     stage:             document.getElementById('M_stage').value,
     negotiationStatus: document.getElementById('M_negotiationStatus').value,
+    contactInfo:       document.getElementById('M_contactInfo').value.trim(),
     staffName:         document.getElementById('M_staffName').value,
     memo:              document.getElementById('M_memo').value.trim()
   };
