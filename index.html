@@ -3647,8 +3647,8 @@ body.view-mobile #cal-tooltip { display: none !important; }
         </div>
       </div>
       <!-- 고객 정보 (수기 입력) -->
-      <div class="pf"><label>고객명 <span style="font-size:10px;color:#e55;">*수기 입력</span></label>
-        <input type="text" id="A_clientName" placeholder="홍길동"></div>
+      <div class="pf"><label>고객명</label>
+        <input type="text" id="A_clientName" placeholder="홍길동 (사건 선택 시 자동 입력)"></div>
       <div class="pf"><label>법원</label>
         <input type="text" id="A_court" placeholder="예: 서울중앙지방법원" list="A_courtList">
         <datalist id="A_courtList">
@@ -8478,6 +8478,9 @@ function A_onCaseChange(caseNo) {
     </span>`;
     const courtEl = document.getElementById('A_court');
     if (courtEl && !courtEl.value) courtEl.value = cas.court || '';
+    // 물건조사요청표(C_)에 등록된 고객명이 있으면 자동 채움
+    const nameEl = document.getElementById('A_clientName');
+    if (nameEl && !nameEl.value && cas.clientName) nameEl.value = cas.clientName;
     // 신규 등록 시 낙찰일 기준 날짜 자동 채우기
     const isNew = !document.getElementById('A_editId').value;
     if (isNew && cas.auctionDate) {
@@ -8563,6 +8566,15 @@ async function A_saveForm() {
   }
   setSync(r && r.ok ? 'ok' : 'err');
   if (r && r.ok) {
+    // 물건조사요청표(C_) 고객명 역방향 동기화
+    if (clientName) {
+      const _syncCas = A_allCases.find(c => c.caseNo === caseNo);
+      if (_syncCas && _syncCas.clientName !== clientName) {
+        _syncCas.clientName = clientName;
+        C_api('updateCase', { id: _syncCas.id, status: _syncCas.status, clientName });
+        if (typeof C_render === 'function') C_render();
+      }
+    }
     document.getElementById('A_addForm').style.display = 'none';
     // 월 필터 해제 — 구형 사건도 반드시 보이도록
     A_curMonth = '';
