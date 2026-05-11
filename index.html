@@ -3762,18 +3762,32 @@ body.view-mobile #cal-tooltip { display: none !important; }
     <div class="add-form-title">명도 정보 등록/수정</div>
     <input type="hidden" id="M_editId">
     <div class="add-grid">
-      <div class="pf"><label>고객명</label><input type="text" id="M_clientName" placeholder="홍길동"></div>
-      <div class="pf"><label>입찰기일(낙찰일)</label><input type="date" id="M_auctionDate"></div>
-      <div class="pf"><label>법원</label><input type="text" id="M_court" placeholder="서울중앙"></div>
       <div class="pf"><label>사건번호</label><input type="text" id="M_caseNo" placeholder="25-XXXXX"></div>
-      <div class="pf"><label>물건명</label><input type="text" id="M_propertyName" placeholder="아파트명"></div>
-      <div class="pf"><label>인도번호</label><input type="text" id="M_injunctionNo" placeholder="2025타인400"></div>
-      <div class="pf"><label>피신청인</label><input type="text" id="M_respondent" placeholder="홍길동"></div>
-      <div class="pf"><label>송달일</label><input type="date" id="M_serviceDate"></div>
-      <div class="pf"><label>강제집행신청</label><input type="date" id="M_enforcementDate"></div>
-      <div class="pf"><label>계고일</label><input type="date" id="M_warningDate"></div>
-      <div class="pf"><label>이사날짜</label><input type="date" id="M_moveDate"></div>
-      <div class="pf" style="grid-column:1/-1;"><label>비고</label><input type="text" id="M_note" placeholder="점유자 연락처, 협의 내용 등"></div>
+      <div class="pf"><label>주소</label><input type="text" id="M_address" placeholder="서울시 강남구 ..."></div>
+      <div class="pf"><label>점유자유형</label>
+        <select id="M_occupantType">
+          <option value="">선택</option>
+          <option value="임차인">임차인</option>
+          <option value="소유자">소유자</option>
+          <option value="점유자">점유자</option>
+          <option value="기타">기타</option>
+        </select>
+      </div>
+      <div class="pf"><label>진행단계</label>
+        <select id="M_stage">
+          <option value="내용증명">내용증명</option>
+          <option value="협의중">협의중</option>
+          <option value="인도명령">인도명령</option>
+          <option value="강제집행">강제집행</option>
+          <option value="완료">완료</option>
+        </select>
+      </div>
+      <div class="pf"><label>담당자</label>
+        <select id="M_staffName">
+          <option value="">선택</option>
+        </select>
+      </div>
+      <div class="pf" style="grid-column:1/-1;"><label>메모</label><input type="text" id="M_memo" placeholder="점유자 연락처, 협의 내용 등"></div>
     </div>
     <div class="form-actions">
       <button class="btn-primary" onclick="M_saveForm()">저장</button>
@@ -3785,7 +3799,7 @@ body.view-mobile #cal-tooltip { display: none !important; }
   <div style="overflow-x:auto;">
     <table>
       <thead id="M_tHead"></thead>
-      <tbody id="M_tBody"><tr class="empty-row"><td colspan="13">불러오는 중...</td></tr></tbody>
+      <tbody id="M_tBody"><tr class="empty-row"><td colspan="8">불러오는 중...</td></tr></tbody>
     </table>
   </div>
 
@@ -8128,19 +8142,15 @@ async function A_toggleReportSent(id) {
 async function A_autoAddMyeongdo(cas) {
   const exists = [...M_active, ...M_done].some(m => m.caseNo === cas.caseNo);
   if (exists) return;
-  const linked = A_items.filter(i => i.caseNo === cas.caseNo);
-  const clientName = linked.length > 0 ? (linked[0].clientName || '') : '';
   const tempItem = {
-    id: 'tmp_' + Date.now(), clientName,
-    auctionDate: cas.auctionDate||'', court: cas.court||'',
-    caseNo: cas.caseNo||'', propertyName: cas.address||'',
-    content:'', commissionRatio:'', injunctionNo:'',
-    respondent:'', warningDate:'', moveDate:'', note:'', status:'active'
+    id: 'tmp_' + Date.now(), caseNo: cas.caseNo||'',
+    address: cas.address||'', occupantType:'', stage:'내용증명',
+    staffName:'', memo:'', status:'active'
   };
   M_active.unshift(tempItem);
   M_render();
-  const r = await M_gasPost('add', { clientName, auctionDate: cas.auctionDate, court: cas.court, caseNo: cas.caseNo, propertyName: cas.address||'' });
-  if (r && r.ok) { tempItem.id = r.id; setSync('ok'); }
+  const r = await M_gasPost('add', { caseNo: cas.caseNo, address: cas.address||'', stage: '내용증명' });
+  if (r && r.ok) { tempItem.id = r.id; setSync('ok'); M_render(); }
   else { M_active = M_active.filter(m => m !== tempItem); M_render(); setSync('err'); }
 }
 
@@ -8468,15 +8478,26 @@ async function A_saveForm() {
 // ══════════════════════════════════════════════════════════════════
 let M_active = [], M_done = [], M_tab = 'active';
 
+const M_STAGES = ['내용증명', '협의중', '인도명령', '강제집행', '완료'];
+const M_STAGE_STYLE = {
+  '내용증명': 'background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;',
+  '협의중':   'background:#eff6ff;color:#1d4ed8;border:1px solid #93c5fd;',
+  '인도명령': 'background:#fff7ed;color:#c2410c;border:1px solid #fdba74;',
+  '강제집행': 'background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;',
+  '완료':     'background:#f0fdf4;color:#15803d;border:1px solid #86efac;'
+};
+
 async function M_gasGet(action) {
-  try { const r = await fetch(`${GAS_URL}?module=myeongdo&action=${action}`); return await r.json(); }
-  catch(e) { return { error: e.message }; }
+  try {
+    const r = await fetch(`${GAS_URL}?module=myeongdo&action=${action}`);
+    return await r.json();
+  } catch(e) { return { error: e.message }; }
 }
+
 async function M_gasPost(action, data) {
-  const map = { add:'addMyeongdo', update:'updateMyeongdo', complete:'completeMyeongdo', delete:'deleteMyeongdo' };
   try {
     const r = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
-      body: JSON.stringify({ action: map[action]||action, data }) });
+      body: JSON.stringify({ module:'myeongdo', action, data }) });
     return await r.json();
   } catch(e) { return { error: e.message }; }
 }
@@ -8510,14 +8531,11 @@ function M_render() {
   const thead = document.getElementById('M_tHead');
   const tbody = document.getElementById('M_tBody');
 
-  // 매니저 로그인 시: A_allCases의 typeMap에 본인이 포함된 사건의 명도만 표시
   const _mAuthName = sessionStorage.getItem('thefin_auth_name');
   const _mAuthRole = sessionStorage.getItem('thefin_auth_role');
   function _mMgrMatch(item) {
     if (_mAuthRole !== 'manager' || !_mAuthName) return true;
-    // 명도 담당자 직접 배정된 경우
-    if ((item.staffList||'').split(',').filter(Boolean).includes(_mAuthName)) return true;
-    // 사건 typeMap/manager/evictionStaff 기반 체크 (C_isAssigned 재사용)
+    if (item.staffName === _mAuthName) return true;
     const cas = (A_allCases || []).find(c => c.caseNo === item.caseNo);
     if (!cas) return false;
     return typeof C_isAssigned === 'function' ? C_isAssigned(cas, _mAuthName) : false;
@@ -8529,34 +8547,29 @@ function M_render() {
 
   thead.innerHTML = `<tr>
     <th style="min-width:50px;"></th>
-    <th style="min-width:110px;">고객명 / 사건번호</th>
-    <th style="min-width:80px;text-align:center;">입찰기일</th>
-    <th style="min-width:160px;">물건명 / 인도번호</th>
-    <th style="min-width:110px;">담당자</th>
-    <th style="min-width:80px;">피신청인</th>
-    <th style="min-width:80px;text-align:center;">송달일</th>
-    <th style="min-width:90px;text-align:center;">강제집행신청</th>
-    <th style="min-width:80px;text-align:center;">계고일</th>
-    <th style="min-width:80px;text-align:center;">이사날짜</th>
-    <th style="min-width:200px;">비고</th>
-    <th style="min-width:70px;"></th>
+    <th style="min-width:110px;">사건번호</th>
+    <th style="min-width:180px;">주소</th>
+    <th style="min-width:80px;text-align:center;">점유자유형</th>
+    <th style="min-width:120px;text-align:center;">진행단계</th>
+    <th style="min-width:80px;text-align:center;">담당자</th>
+    <th style="min-width:200px;">메모</th>
+    <th style="min-width:60px;"></th>
   </tr>`;
+
   document.getElementById('M_st-active').textContent = activeFiltered.length;
   document.getElementById('M_st-done').textContent   = doneFiltered.length;
   document.getElementById('M_tc-active').textContent = activeFiltered.length;
   document.getElementById('M_tc-done').textContent   = doneFiltered.length;
-
-  // 배지도 필터 기준으로
   setBadge('mainBadge-myeongdo', activeFiltered.length);
 
   if (!data.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="11">${M_tab==='active'?'진행중인 명도 건이 없습니다':'완료된 명도 건이 없습니다'}</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="8">${M_tab==='active'?'진행중인 명도 건이 없습니다':'완료된 명도 건이 없습니다'}</td></tr>`;
     return;
   }
   tbody.innerHTML = data.map(M_row).join('');
 }
 
-function M_fmt(s) { return s ? s.substring(2).replace(/-/g,'.') : ''; }
+function M_esc(s) { return String(s).replace(/'/g,"&#39;").replace(/"/g,"&quot;"); }
 
 function M_row(item) {
   const isDone = M_tab === 'done';
@@ -8564,39 +8577,34 @@ function M_row(item) {
   const completeBtn = !isDone
     ? `<button onclick="M_complete('${item.id}')" style="font-size:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:2px 6px;cursor:pointer;color:#15803d;display:block;margin-bottom:3px;">명도완료</button>`
     : '';
-  const eStyle = `font-size:11px;cursor:pointer;border-bottom:1px dashed #c8a44a;vertical-align:middle;white-space:nowrap;${rowBg}`;
-  const eDateTd = (field, v) =>
-    `<td id="M_ic_${item.id}_${field}" class="a-editable" onclick="M_inlineEdit('${item.id}','${field}','${v||''}',true)"
-      style="white-space:nowrap;font-size:12px;text-align:center;vertical-align:middle;${v?'color:#1e293b;':'color:#ccc;'}${rowBg}">${M_fmt(v)||'—'}</td>`;
+  const stageOptions = M_STAGES.map(s =>
+    `<option value="${s}"${s===item.stage?' selected':''}>${s}</option>`
+  ).join('');
   return `<tr style="${isDone?'opacity:0.75;':''}border-bottom:1px solid #f1f5f9;">
     <td style="vertical-align:middle;text-align:center;${rowBg}">
       <button onclick="M_editRow('${item.id}')" style="font-size:11px;background:#fffef5;border:1px solid #c8a44a;border-radius:4px;padding:3px 8px;cursor:pointer;color:#92400e;white-space:nowrap;">수정</button>
     </td>
     <td style="vertical-align:middle;${rowBg}">
-      <div style="font-size:13px;font-weight:700;color:#1a1a2e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;" title="${item.clientName||''}">${item.clientName||'—'}</div>
-      ${item.court||item.caseNo ? `<div style="font-size:10px;color:#64748b;margin-top:2px;white-space:nowrap;">
-        ${item.court ? `📍 ${item.court}` : ''}${item.court&&item.caseNo ? ' · ' : ''}${item.caseNo||''}
-      </div>` : ''}
+      <div style="font-size:13px;font-weight:700;color:#1a1a2e;white-space:nowrap;">${item.caseNo||'—'}</div>
     </td>
-    <td style="white-space:nowrap;font-size:12px;text-align:center;vertical-align:middle;${rowBg}">${M_fmt(item.auctionDate)||'—'}</td>
     <td style="vertical-align:middle;${rowBg}">
-      <div style="font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;" title="${item.propertyName||''}">${item.propertyName||'—'}</div>
-      <div id="M_ic_${item.id}_injunctionNo" class="a-editable"
-        onclick="M_inlineEdit('${item.id}','injunctionNo','${M_esc(item.injunctionNo||'')}',false)"
-        style="font-size:10px;color:#64748b;margin-top:2px;cursor:pointer;border-bottom:1px dashed #c8a44a;display:inline-block;">
-        ${item.injunctionNo ? `📋 ${item.injunctionNo}` : '<span style="color:#ccc;">인도번호 입력</span>'}
-      </div>
+      <div style="font-size:12px;color:#334155;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${M_esc(item.address||'')}">${item.address||'—'}</div>
     </td>
-    <td style="vertical-align:middle;${rowBg}" onclick="event.stopPropagation();">${M_staffCell(item)}</td>
-    <td id="M_ic_${item.id}_respondent" class="a-editable" onclick="M_inlineEdit('${item.id}','respondent','${M_esc(item.respondent||'')}',false)"
-      style="${eStyle}">${item.respondent||'<span style="color:#ccc;">—</span>'}</td>
-    ${eDateTd('serviceDate', item.serviceDate)}
-    ${eDateTd('enforcementDate', item.enforcementDate)}
-    ${eDateTd('warningDate', item.warningDate)}
-    <td id="M_ic_${item.id}_moveDate" class="a-editable" onclick="M_inlineEdit('${item.id}','moveDate','${item.moveDate||''}',true)"
-      style="white-space:nowrap;font-size:12px;text-align:center;vertical-align:middle;${item.moveDate?'color:#15803d;font-weight:700;':'color:#ccc;'}${rowBg}">${M_fmt(item.moveDate)||'—'}</td>
-    <td id="M_ic_${item.id}_note" class="a-editable" onclick="M_inlineEdit('${item.id}','note','${M_esc(item.note||'')}',false)"
-      style="font-size:11px;color:#555;min-width:200px;vertical-align:middle;cursor:pointer;border-bottom:1px dashed #c8a44a;${rowBg}">${item.note||'<span style="color:#ccc;">—</span>'}</td>
+    <td style="text-align:center;vertical-align:middle;${rowBg}">
+      <span style="font-size:12px;color:#475569;">${item.occupantType||'—'}</span>
+    </td>
+    <td style="text-align:center;vertical-align:middle;${rowBg}">
+      <select onchange="M_updateStage('${item.id}',this.value)"
+        style="font-size:11px;border:1px solid #e5e7eb;border-radius:6px;padding:3px 6px;background:#fff;cursor:pointer;font-weight:600;">
+        ${stageOptions}
+      </select>
+    </td>
+    <td style="text-align:center;vertical-align:middle;${rowBg}">
+      <span style="font-size:12px;font-weight:600;color:#1e293b;">${item.staffName||'—'}</span>
+    </td>
+    <td id="M_ic_${item.id}_memo" class="a-editable"
+      onclick="M_inlineEdit('${item.id}','memo','${M_esc(item.memo||'')}')"
+      style="font-size:11px;color:#555;vertical-align:middle;cursor:pointer;border-bottom:1px dashed #c8a44a;min-width:200px;${rowBg}">${item.memo||'<span style="color:#ccc;">—</span>'}</td>
     <td style="white-space:nowrap;vertical-align:middle;${rowBg}">
       ${completeBtn}
       <button onclick="M_deleteRow('${item.id}')" style="font-size:11px;background:none;border:none;cursor:pointer;color:#dc2626;">✕</button>
@@ -8604,65 +8612,25 @@ function M_row(item) {
   </tr>`;
 }
 
-function M_esc(s) { return String(s).replace(/'/g,"&#39;").replace(/"/g,"&quot;"); }
-
-function M_staffCell(item) {
-  const arr = (item.staffList||'').split(',').filter(Boolean);
-  const chips = arr.map(s => {
-    const se = M_esc(s);
-    return `<span style="display:inline-flex;align-items:center;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;white-space:nowrap;gap:2px;">
-      ${s}<button onclick="event.stopPropagation();M_removeStaff('${item.id}','${se}')" style="background:none;border:none;cursor:pointer;font-size:9px;color:#94a3b8;padding:0 0 0 2px;line-height:1;">×</button>
-    </span>`;
-  }).join('');
-  const addable = C_MANAGERS.filter(m => !arr.includes(m));
-  if (arr.length === 0) {
-    return `<select onchange="event.stopPropagation();M_addStaff('${item.id}',this.value);this.value='';"
-      style="font-size:11px;border:1px solid #e5e7eb;border-radius:6px;padding:2px 6px;background:#fafafa;cursor:pointer;color:#9ca3af;min-width:80px;">
-      <option value="">담당자 선택...</option>
-      ${C_MANAGERS.map(m=>`<option value="${m}">${m}</option>`).join('')}
-    </select>`;
-  }
-  const plusPart = addable.length > 0 ? `
-    <button onclick="event.stopPropagation();document.getElementById('M_staffSel_${item.id}').style.display='inline-block';"
-      style="width:16px;height:16px;border-radius:50%;border:1.5px solid #bae6fd;background:transparent;cursor:pointer;font-size:10px;font-weight:700;color:#0369a1;padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">+</button>
-    <select id="M_staffSel_${item.id}" onchange="event.stopPropagation();M_addStaff('${item.id}',this.value);this.style.display='none';this.value='';"
-      style="display:none;font-size:10px;border:1px solid #d1d5db;border-radius:4px;padding:1px 3px;max-width:70px;">
-      <option value="">선택</option>${addable.map(m=>`<option value="${m}">${m}</option>`).join('')}
-    </select>` : '';
-  return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:3px;">${chips}${plusPart}</div>`;
-}
-
-async function M_addStaff(id, staff) {
-  if (!staff) return;
-  const item = [...M_active, ...M_done].find(i => i.id === id); if (!item) return;
-  const arr = (item.staffList||'').split(',').filter(Boolean);
-  if (arr.includes(staff)) return;
-  arr.push(staff);
-  item.staffList = arr.join(',');
-  M_render(); setSync('loading');
-  const r = await M_gasPost('update', { id, staffList: item.staffList });
+async function M_updateStage(id, stage) {
+  const item = [...M_active, ...M_done].find(i => i.id === id);
+  if (!item) return;
+  item.stage = stage;
+  setSync('loading');
+  const r = await M_gasPost('update', { id, stage });
   setSync(r && r.ok ? 'ok' : 'err');
 }
 
-async function M_removeStaff(id, staff) {
-  const item = [...M_active, ...M_done].find(i => i.id === id); if (!item) return;
-  const arr = (item.staffList||'').split(',').filter(Boolean).filter(s => s !== staff);
-  item.staffList = arr.join(',');
-  M_render(); setSync('loading');
-  const r = await M_gasPost('update', { id, staffList: item.staffList });
-  setSync(r && r.ok ? 'ok' : 'err');
-}
-
-function M_inlineEdit(id, field, curVal, isDate) {
+function M_inlineEdit(id, field, curVal) {
   const cell = document.getElementById(`M_ic_${id}_${field}`);
   if (!cell) return;
-  const item = [...M_active, ...M_done].find(i => i.id === id); if (!item) return;
+  const item = [...M_active, ...M_done].find(i => i.id === id);
+  if (!item) return;
   const inp = document.createElement('input');
-  inp.type  = isDate ? 'date' : 'text';
+  inp.type  = 'text';
   inp.value = curVal;
-  inp.style.cssText = 'border:1px solid #c8a44a;border-radius:4px;padding:2px 6px;font-size:12px;font-family:inherit;width:100%;min-width:80px;box-sizing:border-box;background:#fffef5;';
+  inp.style.cssText = 'border:1px solid #c8a44a;border-radius:4px;padding:2px 6px;font-size:12px;font-family:inherit;width:100%;min-width:120px;box-sizing:border-box;background:#fffef5;';
   cell.innerHTML = ''; cell.appendChild(inp); inp.focus();
-
   const save = async () => {
     const nv = inp.value.trim();
     if (nv !== curVal) {
@@ -8670,8 +8638,6 @@ function M_inlineEdit(id, field, curVal, isDate) {
       setSync('loading');
       const r = await M_gasPost('update', { id, [field]: nv });
       setSync(r && r.ok ? 'ok' : 'err');
-      // 이사날짜 변경 시 구글 캘린더 동기화
-      if (field === 'moveDate' && item.caseNo) GCAL_syncByCaseNo(item.caseNo);
     }
     M_render();
   };
@@ -8684,50 +8650,59 @@ function M_inlineEdit(id, field, curVal, isDate) {
 
 async function M_complete(id) {
   if (!confirm('명도 완료 처리하시겠습니까?')) return;
-  const item = M_active.find(i=>i.id===id); if (!item) return;
-  M_active = M_active.filter(i=>i.id!==id);
-  item.status = 'done'; M_done.unshift(item); M_render(); setSync('loading');
+  const item = M_active.find(i => i.id === id);
+  if (!item) return;
+  M_active = M_active.filter(i => i.id !== id);
+  item.status = 'done';
+  M_done.unshift(item);
+  M_render();
+  setSync('loading');
   const r = await M_gasPost('complete', { id });
   setSync(r && r.ok ? 'ok' : 'err');
 }
 
 async function M_deleteRow(id) {
   if (!confirm('삭제하시겠습니까?')) return;
-  M_active = M_active.filter(i=>i.id!==id);
-  M_done   = M_done.filter(i=>i.id!==id);
-  M_render(); setSync('loading');
+  M_active = M_active.filter(i => i.id !== id);
+  M_done   = M_done.filter(i => i.id !== id);
+  M_render();
+  setSync('loading');
   const r = await M_gasPost('delete', { id });
   setSync(r && r.ok ? 'ok' : 'err');
 }
-
 
 function M_toggleForm() {
   const form = document.getElementById('M_addForm');
   if (form.style.display === 'none' || !form.style.display) {
     document.getElementById('M_editId').value = '';
-    ['M_clientName','M_court','M_caseNo','M_propertyName','M_injunctionNo','M_respondent','M_note'].forEach(id=>document.getElementById(id).value='');
-    ['M_auctionDate','M_serviceDate','M_enforcementDate','M_warningDate','M_moveDate'].forEach(id=>document.getElementById(id).value='');
-    form.style.display = 'block'; form.scrollIntoView({ behavior:'smooth' });
-  } else { form.style.display = 'none'; }
+    ['M_caseNo','M_address','M_memo'].forEach(eid => document.getElementById(eid).value = '');
+    document.getElementById('M_occupantType').value = '';
+    document.getElementById('M_stage').value = '내용증명';
+    const staffSel = document.getElementById('M_staffName');
+    staffSel.innerHTML = '<option value="">선택</option>' +
+      (C_MANAGERS||[]).map(m => `<option value="${m}">${m}</option>`).join('');
+    staffSel.value = '';
+    form.style.display = 'block';
+    form.scrollIntoView({ behavior: 'smooth' });
+  } else {
+    form.style.display = 'none';
+  }
 }
 
 function M_editRow(id) {
   const item = [...M_active, ...M_done].find(i => i.id === id);
   if (!item) return;
   const form = document.getElementById('M_addForm');
-  document.getElementById('M_editId').value = id;
-  document.getElementById('M_clientName').value   = item.clientName    || '';
-  document.getElementById('M_court').value        = item.court         || '';
-  document.getElementById('M_caseNo').value       = item.caseNo        || '';
-  document.getElementById('M_propertyName').value = item.propertyName  || '';
-  document.getElementById('M_injunctionNo').value = item.injunctionNo  || '';
-  document.getElementById('M_respondent').value   = item.respondent    || '';
-  document.getElementById('M_auctionDate').value  = item.auctionDate   || '';
-  document.getElementById('M_serviceDate').value  = item.serviceDate   || '';
-  document.getElementById('M_enforcementDate').value = item.enforcementDate || '';
-  document.getElementById('M_warningDate').value  = item.warningDate   || '';
-  document.getElementById('M_moveDate').value     = item.moveDate      || '';
-  document.getElementById('M_note').value         = item.note          || '';
+  document.getElementById('M_editId').value       = id;
+  document.getElementById('M_caseNo').value       = item.caseNo       || '';
+  document.getElementById('M_address').value      = item.address      || '';
+  document.getElementById('M_occupantType').value = item.occupantType || '';
+  document.getElementById('M_stage').value        = item.stage        || '내용증명';
+  document.getElementById('M_memo').value         = item.memo         || '';
+  const staffSel = document.getElementById('M_staffName');
+  staffSel.innerHTML = '<option value="">선택</option>' +
+    (C_MANAGERS||[]).map(m => `<option value="${m}">${m}</option>`).join('');
+  staffSel.value = item.staffName || '';
   form.style.display = 'block';
   form.scrollIntoView({ behavior: 'smooth' });
 }
@@ -8735,25 +8710,24 @@ function M_editRow(id) {
 async function M_saveForm() {
   const id = document.getElementById('M_editId').value;
   const d = {
-    clientName:       document.getElementById('M_clientName').value.trim(),
-    auctionDate:      document.getElementById('M_auctionDate').value,
-    court:            document.getElementById('M_court').value.trim(),
-    caseNo:           document.getElementById('M_caseNo').value.trim(),
-    propertyName:     document.getElementById('M_propertyName').value.trim(),
-    injunctionNo:     document.getElementById('M_injunctionNo').value.trim(),
-    respondent:       document.getElementById('M_respondent').value.trim(),
-    serviceDate:      document.getElementById('M_serviceDate').value,
-    enforcementDate:  document.getElementById('M_enforcementDate').value,
-    warningDate:      document.getElementById('M_warningDate').value,
-    moveDate:         document.getElementById('M_moveDate').value,
-    note:             document.getElementById('M_note').value.trim()
+    caseNo:       document.getElementById('M_caseNo').value.trim(),
+    address:      document.getElementById('M_address').value.trim(),
+    occupantType: document.getElementById('M_occupantType').value,
+    stage:        document.getElementById('M_stage').value,
+    staffName:    document.getElementById('M_staffName').value,
+    memo:         document.getElementById('M_memo').value.trim()
   };
-  if (!d.clientName) { alert('고객명은 필수입니다.'); return; }
-  setSync('loading'); let r;
+  if (!d.caseNo) { alert('사건번호는 필수입니다.'); return; }
+  setSync('loading');
+  let r;
   if (id) {
-    d.id = id; r = await M_gasPost('update', d);
+    d.id = id;
+    r = await M_gasPost('update', d);
     if (r && r.ok) {
-      [M_active, M_done].forEach(list => { const idx=list.findIndex(i=>i.id===id); if(idx>=0) list[idx]={...list[idx],...d}; });
+      [M_active, M_done].forEach(list => {
+        const idx = list.findIndex(i => i.id === id);
+        if (idx >= 0) list[idx] = { ...list[idx], ...d };
+      });
     }
   } else {
     r = await M_gasPost('add', d);
@@ -8763,7 +8737,9 @@ async function M_saveForm() {
   if (r && r.ok) {
     document.getElementById('M_addForm').style.display = 'none';
     M_render();
-  } else { alert('저장 실패: ' + (r && r.error || '오류')); }
+  } else {
+    alert('저장 실패: ' + (r && r.error || '오류'));
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════
