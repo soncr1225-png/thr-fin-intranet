@@ -1761,7 +1761,8 @@ function loadCaseHistory(ss, caseNo) {
 // ============================================================
 // MYEONGDO — GET
 // ============================================================
-// 명도 컬럼(11): id,caseNo,address,occupantType,stage,negotiationStatus,staffName,contactInfo,memo,status,createdAt
+// 명도 컬럼(12): id,caseNo,address,occupantType,stage,negotiationStatus,staffName,contactInfo,memo,status,createdAt,staffList
+// staffList: 콤마 구분 다중 담당자. 호환성 위해 staffName(단일=첫번째)은 그대로 유지.
 
 function myeongdoGet(p) {
   try {
@@ -1775,7 +1776,7 @@ function myeongdoGet(p) {
 function getMeongdo(ss, shName) {
   var sheet = sh(ss, shName);
   if (sheet.getLastRow() < 2) return { ok: true, data: [] };
-  var nCols = Math.min(sheet.getLastColumn(), 11);
+  var nCols = Math.min(sheet.getLastColumn(), 12);
   var vals  = sheet.getRange(2, 1, sheet.getLastRow() - 1, nCols).getValues();
   return { ok: true, data: vals.map(function(r) { return mapMeongdoRow(r, nCols); }) };
 }
@@ -1783,15 +1784,18 @@ function getMeongdo(ss, shName) {
 function mapMeongdoRow(r, nCols) {
   // 구버전 9컬럼 스키마 (협의상태 컬럼 없음): id,사건번호,주소,점유자유형,진행단계,담당자,연락처,메모,상태
   if ((nCols || r.length) <= 9) {
+    var staff9 = String(r[5]||'');
     return {
       id: String(r[0]||''), caseNo: String(r[1]||''), address: String(r[2]||''),
       occupantType: String(r[3]||''), stage: String(r[4]||'인도명령신청'),
       negotiationStatus: '소통중',
-      staffName: String(r[5]||''), contactInfo: String(r[6]||''),
+      staffName: staff9, staffList: staff9, contactInfo: String(r[6]||''),
       memo: String(r[7]||''), status: String(r[8]||'active'), createdAt: ''
     };
   }
-  // 현재 10/11컬럼 스키마 (+협의상태, +등록일)
+  // 10/11/12컬럼 스키마. staffList(12)는 구버전 시트엔 없으므로 staffName으로 fallback (자연 마이그레이션)
+  var staffName = String(r[6]  || '');
+  var staffList = String(r[11] || '') || staffName;
   return {
     id:                String(r[0]||''),
     caseNo:            String(r[1]  || ''),
@@ -1799,11 +1803,12 @@ function mapMeongdoRow(r, nCols) {
     occupantType:      String(r[3]  || ''),
     stage:             String(r[4]  || '인도명령신청'),
     negotiationStatus: String(r[5]  || '소통중'),
-    staffName:         String(r[6]  || ''),
+    staffName:         staffName,
     contactInfo:       String(r[7]  || ''),
     memo:              String(r[8]  || ''),
     status:            String(r[9]  || 'active'),
-    createdAt:         r[10] ? kstDate(r[10]) : ''
+    createdAt:         r[10] ? kstDate(r[10]) : '',
+    staffList:         staffList
   };
 }
 
@@ -1828,6 +1833,8 @@ function addMeongdo(ss, d) {
   var sheet = sh(ss, SH_MYEONGDO_A);
   if (sheet.getLastRow() === 0) setupMeongdoSheet(sheet, false);
   var id = Utilities.getUuid();
+  var staffList = d.staffList || d.staffName || '';
+  var staffName = d.staffName || (staffList.split(',')[0] || '').trim();
   sheet.appendRow([
     id,
     d.caseNo             || '',
@@ -1835,20 +1842,21 @@ function addMeongdo(ss, d) {
     d.occupantType       || '',
     d.stage              || '인도명령신청',
     d.negotiationStatus  || '소통중',
-    d.staffName          || '',
+    staffName,
     d.contactInfo        || '',
     d.memo               || '',
     'active',
-    new Date()
+    new Date(),
+    staffList
   ]);
-  addCaseHistory(ss, d.caseNo, '명도시작', d.stage || '인도명령신청', d.staffName || '');
+  addCaseHistory(ss, d.caseNo, '명도시작', d.stage || '인도명령신청', staffName);
   return { ok: true, id: id };
 }
 
 function updateMeongdo(ss, d) {
   var active  = sh(ss, SH_MYEONGDO_A);
   var done    = sh(ss, SH_MYEONGDO_D);
-  var rowInfo = findRowById(active, d.id, 11) || findRowById(done, d.id, 11);
+  var rowInfo = findRowById(active, d.id, 12) || findRowById(done, d.id, 12);
   if (!rowInfo) return { ok: false, error: '항목을 찾을 수 없습니다.' };
   var row = rowInfo.row; var sheet = rowInfo.sheet;
   var sv = function(col, val) { if (val !== undefined) sheet.getRange(row, col).setValue(val); };
@@ -1857,7 +1865,15 @@ function updateMeongdo(ss, d) {
   sv(4, d.occupantType);
   sv(5, d.stage);
   sv(6, d.negotiationStatus);
-  sv(7, d.staffName);
+  // staffList 우선, 없으면 staffName 단독 저장. staffName(7)은 staffList 첫 항목으로 동기화.
+  if (d.staffList !== undefined) {
+    var firstStaff = (d.staffList.split(',')[0] || '').trim();
+    sv(7, d.staffName !== undefined ? d.staffName : firstStaff);
+    // 12번 컬럼이 시트에 아직 없을 수 있음 — 헤더 마이그레이션 미실행 시 그냥 추가 컬럼으로 셀 생성
+    sv(12, d.staffList);
+  } else {
+    sv(7, d.staffName);
+  }
   sv(8, d.contactInfo);
   sv(9, d.memo);
   sv(10, d.status);
@@ -1869,7 +1885,7 @@ function completeMeongdo(ss, d) {
   var active  = sh(ss, SH_MYEONGDO_A);
   var done    = sh(ss, SH_MYEONGDO_D);
   if (done.getLastRow() === 0) setupMeongdoSheet(done, true);
-  var rowInfo = findRowById(active, d.id, 11);
+  var rowInfo = findRowById(active, d.id, 12);
   if (!rowInfo) return { ok: false, error: '항목을 찾을 수 없습니다.' };
   var vals = rowInfo.vals.slice();
   vals[9] = 'done';
@@ -1882,23 +1898,49 @@ function completeMeongdo(ss, d) {
 function deleteMeongdo(ss, d) {
   var active  = sh(ss, SH_MYEONGDO_A);
   var done    = sh(ss, SH_MYEONGDO_D);
-  var rowInfo = findRowById(active, d.id, 11) || findRowById(done, d.id, 11);
+  var rowInfo = findRowById(active, d.id, 12) || findRowById(done, d.id, 12);
   if (!rowInfo) return { ok: false, error: '항목을 찾을 수 없습니다.' };
   rowInfo.sheet.deleteRow(rowInfo.row);
   return { ok: true };
 }
 
 function setupMeongdoSheet(sheet, isDone) {
-  var h = ['ID','사건번호','주소','점유자유형','진행단계','협의상태','담당자','연락처','메모','상태','등록일'];
+  var h = ['ID','사건번호','주소','점유자유형','진행단계','협의상태','담당자','연락처','메모','상태','등록일','담당자목록'];
   var bg = isDone ? '#1a4731' : '#0a1628';
-  sheet.getRange(1,1,1,11).setValues([h])
+  sheet.getRange(1,1,1,12).setValues([h])
     .setBackground(bg).setFontColor('#c9a961').setFontWeight('bold').setFontSize(10)
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
   sheet.setRowHeight(1,36); sheet.setFrozenRows(1);
   sheet.setTabColor(isDone ? '#137333' : '#a61c00');
-  [[1,0],[2,120],[3,200],[4,80],[5,100],[6,80],[7,80],[8,110],[9,200],[10,60],[11,90]].forEach(function(p){
+  [[1,0],[2,120],[3,200],[4,80],[5,100],[6,80],[7,80],[8,110],[9,200],[10,60],[11,90],[12,140]].forEach(function(p){
     sheet.setColumnWidth(p[0], p[1]);
   });
+}
+
+// 기존 11열 시트에 담당자목록 컬럼 추가 — GAS 에디터에서 수동 1회 실행
+// 안 돌려도 동작 가능: addMeongdo는 12번째 셀에 그대로 쓰고, mapMeongdoRow는 12열 없으면 staffName fallback.
+// 다만 헤더 라벨이 없어서 시트 가독성 떨어짐 → 가급적 실행 권장.
+function addMeongdoStaffListCol() {
+  try {
+    var ss = casesSS();
+    [SH_MYEONGDO_A, SH_MYEONGDO_D].forEach(function(name) {
+      var sheet = ss.getSheetByName(name);
+      if (!sheet) return;
+      if (sheet.getLastColumn() >= 12) return; // 이미 마이그레이션 완료
+      sheet.getRange(1, 12).setValue('담당자목록')
+        .setBackground(name === SH_MYEONGDO_D ? '#1a4731' : '#0a1628')
+        .setFontColor('#c9a961').setFontWeight('bold').setFontSize(10)
+        .setHorizontalAlignment('center').setVerticalAlignment('middle');
+      sheet.setColumnWidth(12, 140);
+      // 기존 행의 staffName(7번)을 staffList(12번)로 복사
+      var lastRow = sheet.getLastRow();
+      if (lastRow >= 2) {
+        var staffNames = sheet.getRange(2, 7, lastRow - 1, 1).getValues();
+        sheet.getRange(2, 12, lastRow - 1, 1).setValues(staffNames);
+      }
+    });
+    return { ok: true, message: '담당자목록 컬럼 추가 및 기존 staffName 복사 완료' };
+  } catch(e) { return { ok: false, error: e.message }; }
 }
 
 // 기존 9열 시트에 협의상태 컬럼 삽입 — GAS 에디터에서 수동 실행 (1회)
