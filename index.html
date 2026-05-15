@@ -9120,7 +9120,20 @@ function applyBulkData(d, isFromCache) {
   if (d.feeData && typeof d.feeData === 'object') {
     try {
       const local = JSON.parse(localStorage.getItem(FEE_SHADOW_KEY) || '{}');
-      const merged = Object.assign({}, local, d.feeData); // GAS가 최신 소스
+      // 필드 단위 머지: GAS 값이 있으면 우선, 단 로컬에 값이 있고 GAS가 빈값이면 로컬 유지
+      const merged = {};
+      const allIds = new Set([...Object.keys(local), ...Object.keys(d.feeData)]);
+      allIds.forEach(id => {
+        const loc = local[id] || {};
+        const gas = (d.feeData)[id] || {};
+        merged[id] = { ...loc };
+        Object.keys(gas).forEach(field => {
+          const gv = gas[field];
+          if (gv !== null && gv !== undefined && gv !== '' && !(Array.isArray(gv) && !gv.length)) {
+            merged[id][field] = gv;
+          }
+        });
+      });
       localStorage.setItem(FEE_SHADOW_KEY, JSON.stringify(merged));
     } catch(e) {}
   }
@@ -15513,8 +15526,8 @@ function FEE_migrate() {
     if (c.fee2Date == null)     c.fee2Date     = s.fee2Date || '';
     if (c.staffShares == null)  c.staffShares  = s.staffShares || {};
     if (c.feeNote == null)      c.feeNote      = s.feeNote || '';
-    if (c.clientName == null)   c.clientName   = s.clientName || '';
-    if (c.manager    == null)   c.manager      = s.manager    || '';
+    if (!c.clientName)          c.clientName   = s.clientName || '';
+    if (!c.manager)             c.manager      = s.manager    || '';
     if (c.driveFiles == null)   c.driveFiles   = s.driveFiles  || {};
     if (c.manualFee  == null)   c.manualFee    = s.manualFee   || 0;
     if (c.blogStaff       == null) c.blogStaff       = s.blogStaff       || '';
@@ -16297,11 +16310,11 @@ function CD_save(showAlert) {
 
   FEE_saveShadow();
   GCAL_syncFromCaseId(CD_currentId);
-  // 법원 변경 시 API 반영
+  // 법원·고객명 변경 시 API 반영
   if (typeof C_apiBg === 'function') {
     C_apiBg('updateCase', {id: CD_currentId, status: c.status, caseNo: c.caseNo,
       address: c.address, court: c.court, auctionDate: c.auctionDate,
-      deadline: c.deadline, note: c.note});
+      deadline: c.deadline, note: c.note, clientName: c.clientName || ''});
   }
   if (typeof C_cacheSave === 'function' && typeof C_CACHE_CASES !== 'undefined') {
     C_cacheSave(C_CACHE_CASES, C_cases);
