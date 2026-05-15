@@ -8359,6 +8359,7 @@ async function A_toggleReportSent(id) {
 
 // ── 낙찰종료 시 명도 탭 자동 등록
 async function A_autoAddMyeongdo(cas) {
+  if (!cas || !cas.caseNo) return;
   const exists = [...M_active, ...M_done].some(m => m.caseNo === cas.caseNo);
   if (exists) return;
   const tempItem = {
@@ -8371,6 +8372,19 @@ async function A_autoAddMyeongdo(cas) {
   const r = await M_gasPost('add', { caseNo: cas.caseNo, address: cas.address||'', stage: '인도명령신청', negotiationStatus: '소통중' });
   if (r && r.ok) { tempItem.id = r.id; setSync('ok'); M_render(); }
   else { M_active = M_active.filter(m => m !== tempItem); M_render(); setSync('err'); }
+}
+
+// ── 페이지 로드 시 명도 누락 사건 자동 복구
+// 낙찰(closed) 또는 잔금납부 완료(balanceOk=O) 사건이 명도 탭에 없으면 자동 등록
+async function M_syncFromCases() {
+  if (!Array.isArray(A_allCases) || !Array.isArray(M_active)) return;
+  const allM = new Set([...M_active, ...M_done].map(m => m.caseNo));
+  const toAdd = A_allCases.filter(c => {
+    if (!c.caseNo || allM.has(c.caseNo)) return false;
+    if (c.status === 'closed') return true;
+    return Array.isArray(A_items) && A_items.some(i => i.caseNo === c.caseNo && (i.balanceOk === 'O' || i.balanceOk === true));
+  });
+  for (const cas of toAdd) await A_autoAddMyeongdo(cas);
 }
 
 // ── 경매기일 인라인 편집 (수정 시 매각결정기일·항고기간·잔금납부기일 자동 재계산)
@@ -9194,6 +9208,7 @@ function applyBulkData(d, isFromCache) {
     allCases.filter(c=>C_AUCTION_BADGE_STATUS.includes(c.status)).length);
 
   M_render();
+  M_syncFromCases();
 
   // 열려있는 탭에 따라 재렌더링
   if (document.getElementById('panel-cal')?.classList.contains('active')) CAL_render();
