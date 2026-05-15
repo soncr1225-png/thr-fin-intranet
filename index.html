@@ -8986,7 +8986,8 @@ function LW_render() {
     return;
   }
 
-  const colMap = {'손청락':'#7c3aed','이제훈':'#2563eb','장한빛':'#16a34a'};
+  // 대시보드(DASH_renderCaseList)와 동일한 컬러·조인 패턴 사용
+  const colMap = {'손청락':'#7c3aed','이제훈':'#2563eb','장한빛':'#16a34a','정은진':'#db2777'};
   host.innerHTML = `
   <div class="table-scroll-wrap">
   <table style="width:100%;border-collapse:collapse;">
@@ -8994,24 +8995,38 @@ function LW_render() {
       <th style="min-width:120px;">사건번호</th>
       <th style="min-width:80px;">고객명</th>
       <th style="min-width:200px;">주소</th>
-      <th style="min-width:90px;text-align:center;">담당자</th>
+      <th style="min-width:140px;text-align:center;">담당자</th>
       <th style="min-width:120px;">연락처</th>
       <th style="min-width:220px;">메모</th>
       <th style="min-width:80px;text-align:center;">사건 이동</th>
     </tr></thead>
     <tbody>
     ${list.map(c => {
-      const staffCol = colMap[c.staff] || '#666';
-      const staffChip = c.staff
-        ? `<span style="display:inline-block;background:${staffCol}18;color:${staffCol};border:1px solid ${staffCol}40;border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700;">${c.staff}</span>`
+      // 담당자: 대시보드와 동일하게 FEE_getAllStaff(총괄+명도+참여자) 사용
+      const staffList = (typeof FEE_getAllStaff === 'function')
+        ? FEE_getAllStaff(c)
+        : [c.manager, c.evictionStaff].filter(Boolean);
+      const staffChips = staffList.length
+        ? staffList.map(s => {
+            const col = colMap[s] || '#666';
+            return `<span style="display:inline-block;background:${col}18;color:${col};border:1px solid ${col}40;border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700;margin:1px 2px;">${s}</span>`;
+          }).join('')
         : '<span style="color:#ccc;font-size:11px;">—</span>';
+      // 연락처: 회원관리(MBR_members)에서 고객명으로 조인 (대시보드와 동일 방식)
+      const mbrMatch = (typeof MBR_members !== 'undefined' && c.clientName)
+        ? MBR_members.find(m => m.name === c.clientName) : null;
+      const phone = mbrMatch?.phone || '';
+      // 메모: 사건 메모(c.note) 우선, 없으면 명도진행 시트의 같은 사건 메모 폴백
+      const mMemo = (typeof M_active !== 'undefined' && Array.isArray(M_active) && c.caseNo)
+        ? (M_active.find(m => m.caseNo === c.caseNo)?.memo || '') : '';
+      const memo = c.note || mMemo || '';
       return `<tr style="border-bottom:1px solid #f1f5f9;background:#fff;">
         <td style="padding:10px 12px;font-size:13px;font-weight:700;color:#1a1a2e;white-space:nowrap;">${c.caseNo||'—'}</td>
         <td style="padding:10px 12px;font-size:13px;font-weight:700;color:#142040;white-space:nowrap;">${c.clientName||'—'}</td>
         <td style="padding:10px 12px;font-size:12px;color:#334155;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(c.address||'').replace(/"/g,'&quot;')}">${c.address||'—'}</td>
-        <td style="padding:10px 12px;text-align:center;">${staffChip}</td>
-        <td style="padding:10px 12px;font-size:11px;color:#334155;">${c.contact||c.phone||'—'}</td>
-        <td style="padding:10px 12px;font-size:11px;color:#555;">${c.memo||c.note||'<span style="color:#ccc;">—</span>'}</td>
+        <td style="padding:10px 12px;text-align:center;"><div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center;">${staffChips}</div></td>
+        <td style="padding:10px 12px;font-size:11px;color:#334155;white-space:nowrap;">${phone || '<span style="color:#ccc;">—</span>'}</td>
+        <td style="padding:10px 12px;font-size:11px;color:#555;">${memo || '<span style="color:#ccc;">—</span>'}</td>
         <td style="padding:10px 12px;text-align:center;">
           <button onclick="switchMainTab('cases');setTimeout(()=>C_openDetail&&C_openDetail('${c.id}'),200)"
             style="font-size:11px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 8px;cursor:pointer;color:#1d4ed8;white-space:nowrap;">상세보기</button>
