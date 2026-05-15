@@ -13082,7 +13082,9 @@ function _AUTH_updateViewBtns(mode) {
 function _AUTH_resolveViewMode() {
   const saved = localStorage.getItem('thefin_view_mode');
   if (saved === 'pc' || saved === 'mobile') return saved;
-  return window.innerWidth <= 768 ? 'mobile' : 'pc';
+  const detected = window.innerWidth <= 768 ? 'mobile' : 'pc';
+  localStorage.setItem('thefin_view_mode', detected);
+  return detected;
 }
 
 // ── 페이지 로드 시 세션 확인 ──────────────────────────────────────
