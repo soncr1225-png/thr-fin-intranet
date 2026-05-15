@@ -17215,6 +17215,13 @@ let _MBR_syncTimer = null;
     setTimeout(() => { if (!el.classList.contains('open')) { el.style.display = 'none'; el.style.pointerEvents = ''; } }, 320);
   };
 
+  // 햄버거 버튼 — onclick 속성이 모바일에서 무시될 때를 대비해 직접 바인딩
+  const _menuBtn = document.getElementById('mobileMenuBtn');
+  if (_menuBtn) {
+    _menuBtn.addEventListener('click', function(e){ e.stopPropagation(); window.v3OpenMoreSheet(); });
+    _menuBtn.addEventListener('touchend', function(e){ e.preventDefault(); e.stopPropagation(); window.v3OpenMoreSheet(); }, { passive: false });
+  }
+
   // ESC로 시트 닫기
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') v3CloseMoreSheet();
