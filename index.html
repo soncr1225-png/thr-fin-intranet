@@ -6925,10 +6925,30 @@ function C_closeHistory() {
   document.getElementById('C_histModal').style.display = 'none';
 }
 
-function C_delCase(id){
+async function C_delCase(id){
   if(!confirm('삭제하시겠습니까?'))return;
-  C_saveUndo('삭제');const idx=C_cases.findIndex(x=>x.id===id);
-  if(idx>-1){C_cases.splice(idx,1);C_cacheSave(C_CACHE_CASES,C_cases);C_render();C_apiBg('deleteCase',{id});}
+  C_saveUndo('삭제');
+  const idx = C_cases.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  const backup = C_cases[idx];
+  C_cases.splice(idx, 1);
+  C_cacheSave(C_CACHE_CASES, C_cases);
+  C_render();
+  SYNC_markDeleted(id); // SYNC_pullData가 옛 데이터로 복원시키지 않게 5분 보호
+  setSync('loading');
+  try {
+    const r = await C_api('deleteCase', { id });
+    if (r && r.error) throw new Error(r.error);
+    setSync('ok');
+  } catch(e) {
+    // GAS 삭제 실패 — array 복원 + 사용자 알림
+    SYNC_clearPendingDelete(id);
+    C_cases.splice(idx, 0, backup);
+    C_cacheSave(C_CACHE_CASES, C_cases);
+    C_render();
+    setSync('err');
+    alert('삭제 실패: ' + (e.message || '네트워크 오류') + '\n복구되었습니다.');
+  }
 }
 function C_restoreToActive(id){
   C_closeMenus();const c=C_cases.find(x=>x.id===id);if(!c)return;
@@ -8656,9 +8676,21 @@ function A_inlineEditDate(id, field, curVal) {
 
 async function A_deleteRow(id) {
   if (!confirm('이 고객 항목을 삭제하시겠습니까?')) return;
-  A_items = A_items.filter(i=>i.id!==id); A_render(); setSync('loading');
+  const backup = [...A_items];
+  A_items = A_items.filter(i => i.id !== id);
+  A_render();
+  SYNC_markDeleted(id);
+  setSync('loading');
   const r = await A_gasPost('delete', { id });
-  setSync(r && r.ok ? 'ok' : 'err');
+  if (r && r.ok) {
+    setSync('ok');
+  } else {
+    SYNC_clearPendingDelete(id);
+    A_items = backup;
+    A_render();
+    setSync('err');
+    alert('삭제 실패. 복구되었습니다.');
+  }
 }
 
 function A_openFormForCase(caseNo) {
@@ -9268,11 +9300,13 @@ async function M_deleteRow(id) {
   M_active = M_active.filter(i => i.id !== id);
   M_done   = M_done.filter(i => i.id !== id);
   M_render();
+  SYNC_markDeleted(id);
   setSync('loading');
   const r = await M_gasPost('delete', { id });
   if (r && r.ok) {
     setSync('ok');
   } else {
+    SYNC_clearPendingDelete(id);
     M_active = snapActive;
     M_done   = snapDone;
     M_render();
@@ -9599,6 +9633,12 @@ const STAGES = [
 ];
 
 function applyBulkData(d, isFromCache) {
+  // 삭제 보호 — pending 마커가 있는 id는 모든 컬렉션에서 제거 (5분간 SYNC_pullData 옛 데이터 반영 방지)
+  if (SYNC_pendingDeletes.size) {
+    ['cases','archive','auction','myeongdoActive','myeongdoDone','blog','members'].forEach(k => {
+      if (Array.isArray(d[k])) d[k] = SYNC_filterPendingDeleted(d[k]);
+    });
+  }
   const allCases = [...(d.cases||[]), ...(d.archive||[])];
   // 서버 응답이 빈 배열인데 기존에 데이터가 있으면 덮어쓰지 않음
   if (!isFromCache && allCases.length === 0 && C_cases.length > 0) {
@@ -11269,19 +11309,36 @@ function MBR_save() {
   CTR_syncMemberDropdown();
 }
 
-function MBR_delete(id) {
+async function MBR_delete(id) {
   if (!confirm('이 회원을 삭제하시겠습니까?')) return;
   MBR_load();
   const target = MBR_members.find(m => m.id === id);
+  if (!target) return;
+  const backup = [...MBR_members];
   MBR_members = MBR_members.filter(m => m.id !== id);
   MBR_save_store();
-  if (target && target.name) {
-    fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
-      body: JSON.stringify({ action: 'deleteMember', data: { name: target.name } })
-    }).catch(() => {});
-  }
+  SYNC_markDeleted(id);
   MBR_render();
   CTR_syncMemberDropdown();
+  if (target.name) {
+    try {
+      const res = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
+        body: JSON.stringify({ action: 'deleteMember', data: { name: target.name } })
+      });
+      const r = await res.json();
+      if (r && r.error) throw new Error(r.error);
+      setSync && setSync('ok');
+    } catch(e) {
+      SYNC_clearPendingDelete(id);
+      MBR_members = backup;
+      MBR_save_store();
+      MBR_render();
+      CTR_syncMemberDropdown();
+      setSync && setSync('err');
+      alert('회원 삭제 실패: ' + (e.message || '네트워크 오류') + '\n복구되었습니다.');
+      return;
+    }
+  }
 }
 
 // 이미지 드래그앤드롭 / 파일 선택
@@ -14290,6 +14347,27 @@ async function SYNC_run(silent) {
 }
 
 // ── 전체 데이터 pull (집↔사무실 양방향 실시간) ──
+// ── 삭제 후 재등장 방지 — 5분간 pending 마커 보호 ────────────────────────
+// 원인: 클라이언트가 array에서 제거 → SYNC_pullData(3분 주기)가 GAS 옛 데이터로 덮어쓰면 부활
+// 솔루션: 삭제 즉시 마커 등록, applyBulkData에서 마커 id는 모든 컬렉션에서 제외, 5분 후 자동 만료
+const SYNC_pendingDeletes = new Map(); // id → timestamp
+function SYNC_markDeleted(id) {
+  if (!id) return;
+  SYNC_pendingDeletes.set(String(id), Date.now());
+}
+function SYNC_isPendingDeleted(id) {
+  if (id == null) return false;
+  const t = SYNC_pendingDeletes.get(String(id));
+  if (!t) return false;
+  if (Date.now() - t > 5 * 60 * 1000) { SYNC_pendingDeletes.delete(String(id)); return false; }
+  return true;
+}
+function SYNC_clearPendingDelete(id) { SYNC_pendingDeletes.delete(String(id)); }
+function SYNC_filterPendingDeleted(arr) {
+  if (!Array.isArray(arr)) return arr;
+  return arr.filter(x => !x || !SYNC_isPendingDeleted(x.id));
+}
+
 async function SYNC_pullData() {
   if (SYNC_isPulling) return;
   SYNC_isPulling = true;
