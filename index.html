@@ -8848,15 +8848,23 @@ function M_render() {
   );
   function _mExcludeLawsuit(item) { return !item.caseNo || !_lawsuitCaseNos.has(item.caseNo); }
 
-  // 같은 caseNo 중복 행 제거 (첫 항목 우선)
+  // 같은 caseNo 중복 행 제거 — 정보가 풍부한(stage·memo·staffName·contactInfo 채워진) 행 우선
+  function _mScore(it) {
+    return (it.stage && it.stage !== '인도명령신청' ? 1 : 0)
+      + (it.memo ? 1 : 0)
+      + (it.staffName ? 1 : 0)
+      + (it.contactInfo ? 1 : 0)
+      + (it.negotiationStatus && it.negotiationStatus !== '소통중' ? 1 : 0);
+  }
   function _mDedupByCaseNo(arr) {
-    const seen = new Set();
-    return arr.filter(item => {
-      if (!item.caseNo) return true;
-      if (seen.has(item.caseNo)) return false;
-      seen.add(item.caseNo);
-      return true;
-    });
+    const out = [];
+    const byCase = new Map();
+    for (const it of arr) {
+      if (!it.caseNo) { out.push(it); continue; }
+      const prev = byCase.get(it.caseNo);
+      if (!prev || _mScore(it) > _mScore(prev)) byCase.set(it.caseNo, it);
+    }
+    return out.concat([...byCase.values()]);
   }
 
   const activeFiltered = _mDedupByCaseNo(M_active.filter(_mMgrMatch).filter(_mExcludeLawsuit));
@@ -15777,7 +15785,7 @@ function FEE_getAllStaff(c) {
   });
   const coPart = c.coParticipants || {};
   Object.values(coPart).forEach(arr => { if (Array.isArray(arr)) arr.forEach(x => { if (x) set.add(x); }); });
-  const VALID = new Set(['손청락','이제훈','장한빛']);
+  const VALID = new Set(['손청락','이제훈','장한빛','정은진']);
   return [...set].filter(s => s && VALID.has(s));
 }
 
