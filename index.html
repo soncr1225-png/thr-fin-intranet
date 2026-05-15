@@ -665,6 +665,7 @@ tr:hover td { background: #f8f6ff; }
 }
 .sbadge:hover { filter: brightness(.94); }
 .s-ongoing  {background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.s-failed-continue {background:#fef3c7;color:#b45309;border:1px solid #fcd34d;font-weight:700;}
 .s-report   {background:#faf5ff;color:#6d28d9;border:1px solid #ddd6fe;}
 .s-confirmed{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;}
 .s-done     {background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;}
@@ -6242,9 +6243,9 @@ setTimeout(() => {
 //  탭 1: 물건조사 요청표 (C_ 네임스페이스)
 // ══════════════════════════════════════════════════════════════════
 const C_CACHE_CASES='thefin_cases_v2', C_CACHE_TODOS='thefin_todos';
-const C_ACTIVE=['ongoing','done','report','confirmed','balance_wait','lawsuit'], C_ARCHIVE=['closed','cancel','drop','changed','lost'];
-const C_AUCTION_BADGE_STATUS=['ongoing','done','report','confirmed','balance_wait','lawsuit'];
-const C_SM={ongoing:{label:'진행',cls:'s-ongoing'},done:{label:'조사완료',cls:'s-done'},report:{label:'보고서완료',cls:'s-report'},confirmed:{label:'입찰확정',cls:'s-confirmed'},balance_wait:{label:'잔금납부대기중',cls:'s-balance-wait'},lawsuit:{label:'소송',cls:'s-lawsuit'},closed:{label:'낙찰',cls:'s-closed'},cancel:{label:'고객변심',cls:'s-cancel'},drop:{label:'기타종료',cls:'s-drop'},changed:{label:'기일변경',cls:'s-changed'},lost:{label:'패찰',cls:'s-lost'}};
+const C_ACTIVE=['ongoing','failed_continue','done','report','confirmed','balance_wait','lawsuit'], C_ARCHIVE=['closed','cancel','drop','changed','lost'];
+const C_AUCTION_BADGE_STATUS=['ongoing','failed_continue','done','report','confirmed','balance_wait','lawsuit'];
+const C_SM={ongoing:{label:'진행',cls:'s-ongoing'},failed_continue:{label:'1회 유찰 후 진행',cls:'s-failed-continue'},done:{label:'조사완료',cls:'s-done'},report:{label:'보고서완료',cls:'s-report'},confirmed:{label:'입찰확정',cls:'s-confirmed'},balance_wait:{label:'잔금납부대기중',cls:'s-balance-wait'},lawsuit:{label:'소송',cls:'s-lawsuit'},closed:{label:'낙찰',cls:'s-closed'},cancel:{label:'고객변심',cls:'s-cancel'},drop:{label:'기타종료',cls:'s-drop'},changed:{label:'기일변경',cls:'s-changed'},lost:{label:'패찰',cls:'s-lost'}};
 const C_MANAGERS=['손청락','이제훈','장한빛'];
 // 사건에 특정 이름이 담당자로 배정돼 있는지 확인 (6가지 역할 모두 체크)
 function C_isAssigned(c, name) {
@@ -6264,23 +6265,39 @@ function C_isAssigned(c, name) {
 let C_cases=[], C_todos=[], C_tab='active', C_filt='all', C_filtArc='all', C_undoStack=[], C_syncTimer=null;
 
 function C_cacheLoad(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
-function C_cacheSave(k,v){
-  try{
-    localStorage.setItem(k,JSON.stringify(v));
-    if(typeof SYS_flashSaved==='function'){SYS_flashSaved();SYS_checkStorage();}
-  }catch(e){
-    // 공간 부족 시: BULK_CACHE 자동 정리 후 재시도 (BULK는 매 페이지 로드 시 다시 받아옴)
-    try{
+
+// localStorage 쓰기 디바운싱 — 같은 키에 800ms 내 연속 호출 시 마지막만 저장 (UI 블록 감소)
+const _C_cacheSavePending = new Map(); // key → { timer, value }
+function _C_cacheSaveImmediate(k, v) {
+  try {
+    localStorage.setItem(k, JSON.stringify(v));
+    if (typeof SYS_flashSaved === 'function') { SYS_flashSaved(); SYS_checkStorage(); }
+  } catch(e) {
+    try {
       localStorage.removeItem('thefin_bulk_v2');
       localStorage.removeItem('thefin_bulk_age');
-      localStorage.setItem(k,JSON.stringify(v));
-      if(typeof SYS_flashSaved==='function'){SYS_flashSaved();SYS_checkStorage();}
+      localStorage.setItem(k, JSON.stringify(v));
+      if (typeof SYS_flashSaved === 'function') { SYS_flashSaved(); SYS_checkStorage(); }
       console.warn('저장공간 정리: BULK 캐시를 삭제했습니다.');
-    }catch(e2){
+    } catch(e2) {
       alert('저장 실패: 저장공간이 부족합니다.\n설정 > 저장공간 정리 버튼을 눌러주세요.');
     }
   }
 }
+function C_cacheSave(k, v) {
+  const pending = _C_cacheSavePending.get(k);
+  if (pending) clearTimeout(pending.timer);
+  const timer = setTimeout(() => {
+    _C_cacheSavePending.delete(k);
+    _C_cacheSaveImmediate(k, v);
+  }, 800);
+  _C_cacheSavePending.set(k, { timer, value: v });
+}
+// 페이지 떠나기 전 pending 캐시 강제 저장 — 데이터 유실 방지
+window.addEventListener('beforeunload', () => {
+  _C_cacheSavePending.forEach((p, k) => _C_cacheSaveImmediate(k, p.value));
+  _C_cacheSavePending.clear();
+});
 
 async function C_api(action,data){
   try{
@@ -6370,7 +6387,17 @@ function C_undoLast(){
 function C_today(){return new Date().toISOString().split('T')[0];}
 function C_pd(s){if(!s)return null;const p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
 function C_fmt(s){if(!s)return '—';try{const str=s.toString().substring(0,10);const p=str.split('-');if(p.length!==3)return s;return p[0].substring(2)+'.'+p[1]+'.'+p[2];}catch(e){return s;}}
-function C_calcDL(auc){if(!auc)return '';const a=C_pd(auc),t=C_pd(C_today()),diff=Math.floor((a-t)/86400000);if(diff<7)return C_today();let b=new Date(a);b.setDate(b.getDate()-9);let w=0,c=new Date(b);while(c<a){if(c.getDay()===0||c.getDay()===6)w++;c.setDate(c.getDate()+1);}b.setDate(b.getDate()-w);if(b.getDay()===0)b.setDate(b.getDate()-2);if(b.getDay()===6)b.setDate(b.getDate()-1);return b.toISOString().split('T')[0];}
+// 마감요청일 자동 계산 — 입찰기일 7일 전(캘린더), 주말이면 앞 평일로, 입찰기일이 7일 이내면 오늘
+function C_calcDL(auc){
+  if(!auc) return '';
+  const a = C_pd(auc), t = C_pd(C_today()), diff = Math.floor((a - t) / 86400000);
+  if (diff < 7) return C_today();
+  const b = new Date(a);
+  b.setDate(b.getDate() - 7);
+  if (b.getDay() === 0) b.setDate(b.getDate() - 2); // 일요일 → 금요일
+  if (b.getDay() === 6) b.setDate(b.getDate() - 1); // 토요일 → 금요일
+  return b.toISOString().split('T')[0];
+}
 function C_daysLeft(auc){if(!auc)return null;return Math.floor((C_pd(auc)-C_pd(C_today()))/86400000);}
 function C_isUrgent(c){if(C_ARCHIVE.includes(c.status))return false;const d=C_daysLeft(c.auctionDate);return d!==null&&d>=0&&d<7;}
 function C_dlCls(s){if(!s)return '';const d=Math.floor((C_pd(s)-C_pd(C_today()))/86400000);if(d<0)return 'dw';if(d<=3)return 'dc';return 'dok';}
@@ -6754,6 +6781,7 @@ function C_activeRow(c){
 <div class="status-menu" id="C_m${c.id}">
 <div class="smenu-label">진행 상태</div>
 <button class="smenu-item" onclick="C_chStatus('${c.id}','ongoing')" style="color:#1d4ed8;font-weight:700;">● 진행</button>
+<button class="smenu-item" onclick="C_chStatus('${c.id}','failed_continue')" style="color:#b45309;font-weight:700;">● 1회 유찰 후 진행</button>
 <button class="smenu-item" onclick="C_chStatus('${c.id}','done')" style="color:#15803d;font-weight:700;">● 조사완료</button>
 <button class="smenu-item" onclick="C_chStatus('${c.id}','report')" style="color:#7e22ce;font-weight:700;">● 보고서완료</button>
 <button class="smenu-item" onclick="C_chStatus('${c.id}','confirmed')" style="color:#065f46;font-weight:700;">● 입찰확정</button>
@@ -6859,10 +6887,10 @@ function C_chStatus(id,ns){
     const _by=sessionStorage.getItem('thefin_auth_name')||'';
     C_api('updateCase',{id,status:ns,changedBy:_by}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
   }
-  // 상태 변경 시 캘린더도 즉시 갱신 (탭 무관하게 항상 재렌더)
-  if(typeof CAL_render==='function') CAL_render();
-  // 명도 목록은 소송 상태 케이스를 자동 제외하므로 즉시 재렌더
-  if(typeof M_render==='function') M_render();
+  // 상태 변경 시 캘린더·명도는 활성 탭일 때만 재렌더 (성능)
+  // 비활성 탭은 탭 클릭 시 어차피 재렌더되므로 미리 안 그려도 됨
+  if (typeof CAL_render === 'function' && document.getElementById('panel-cal')?.classList.contains('active')) CAL_render();
+  if (typeof M_render === 'function' && document.getElementById('panel-myeongdo')?.classList.contains('active')) M_render();
   // 소송 페이지 뱃지 갱신
   if(typeof setBadge==='function'){
     const _lwCnt = C_cases.filter(x=>x.status==='lawsuit').length;
@@ -6913,10 +6941,30 @@ function C_closeHistory() {
   document.getElementById('C_histModal').style.display = 'none';
 }
 
-function C_delCase(id){
+async function C_delCase(id){
   if(!confirm('삭제하시겠습니까?'))return;
-  C_saveUndo('삭제');const idx=C_cases.findIndex(x=>x.id===id);
-  if(idx>-1){C_cases.splice(idx,1);C_cacheSave(C_CACHE_CASES,C_cases);C_render();C_apiBg('deleteCase',{id});}
+  C_saveUndo('삭제');
+  const idx = C_cases.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  const backup = C_cases[idx];
+  C_cases.splice(idx, 1);
+  C_cacheSave(C_CACHE_CASES, C_cases);
+  C_render();
+  SYNC_markDeleted(id); // SYNC_pullData가 옛 데이터로 복원시키지 않게 5분 보호
+  setSync('loading');
+  try {
+    const r = await C_api('deleteCase', { id });
+    if (r && r.error) throw new Error(r.error);
+    setSync('ok');
+  } catch(e) {
+    // GAS 삭제 실패 — array 복원 + 사용자 알림
+    SYNC_clearPendingDelete(id);
+    C_cases.splice(idx, 0, backup);
+    C_cacheSave(C_CACHE_CASES, C_cases);
+    C_render();
+    setSync('err');
+    alert('삭제 실패: ' + (e.message || '네트워크 오류') + '\n복구되었습니다.');
+  }
 }
 function C_restoreToActive(id){
   C_closeMenus();const c=C_cases.find(x=>x.id===id);if(!c)return;
@@ -8165,17 +8213,18 @@ function A_calcDates(auctionDate) {
 }
 function A_caseBg(status) {
   const map = {
-    ongoing:   '#ffffff',
-    done:      '#ffffff',
-    report:    '#ffffff',
-    confirmed: '#ffffff',
-    lawsuit:      '#fff7ed',
-    balance_wait: '#e0f2fe',
-    closed:       '#cff0f8',
-    changed:   '#f3f4f6',
-    cancel:    '#f3f4f6',
-    drop:      '#f3f4f6',
-    lost:      '#fef2f2'
+    ongoing:          '#ffffff',
+    failed_continue:  '#fef3c7',
+    done:             '#ffffff',
+    report:           '#ffffff',
+    confirmed:        '#ffffff',
+    lawsuit:          '#fff7ed',
+    balance_wait:     '#e0f2fe',
+    closed:           '#cff0f8',
+    changed:          '#f3f4f6',
+    cancel:           '#f3f4f6',
+    drop:             '#f3f4f6',
+    lost:             '#fef2f2'
   };
   return map[status] || '#fff';
 }
@@ -8184,7 +8233,7 @@ function A_escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 function A_caseRow(cas, cust, isFirst) {
   const caseLbl  = A_CASE_SM[cas.status] || cas.status;
   const isClosed   = cas.status === 'closed';
-  const isCaseActive = ['ongoing','done','report','confirmed','balance_wait','lawsuit'].includes(cas.status);
+  const isCaseActive = ['ongoing','failed_continue','done','report','confirmed','balance_wait','lawsuit'].includes(cas.status);
   const isArchived   = ['cancel','drop','changed','lost'].includes(cas.status);
   const caseBg  = A_caseBg(cas.status);
   const caseOpacity = isArchived ? 'opacity:0.8;' : '';
@@ -8513,8 +8562,9 @@ function A_showCaseStatusBtns(casId) {
     return;
   }
   const opts = [
-    { k:'ongoing',      l:'● 진행',           col:'#1d4ed8' },
-    { k:'done',         l:'● 조사완료',       col:'#15803d' },
+    { k:'ongoing',         l:'● 진행',              col:'#1d4ed8' },
+    { k:'failed_continue', l:'● 1회 유찰 후 진행',  col:'#b45309' },
+    { k:'done',            l:'● 조사완료',          col:'#15803d' },
     { k:'report',       l:'● 보고서완료',     col:'#7e22ce' },
     { k:'confirmed',    l:'● 입찰확정',       col:'#065f46' },
     { k:'balance_wait', l:'● 잔금납부대기중', col:'#0369a1' },
@@ -8642,9 +8692,21 @@ function A_inlineEditDate(id, field, curVal) {
 
 async function A_deleteRow(id) {
   if (!confirm('이 고객 항목을 삭제하시겠습니까?')) return;
-  A_items = A_items.filter(i=>i.id!==id); A_render(); setSync('loading');
+  const backup = [...A_items];
+  A_items = A_items.filter(i => i.id !== id);
+  A_render();
+  SYNC_markDeleted(id);
+  setSync('loading');
   const r = await A_gasPost('delete', { id });
-  setSync(r && r.ok ? 'ok' : 'err');
+  if (r && r.ok) {
+    setSync('ok');
+  } else {
+    SYNC_clearPendingDelete(id);
+    A_items = backup;
+    A_render();
+    setSync('err');
+    alert('삭제 실패. 복구되었습니다.');
+  }
 }
 
 function A_openFormForCase(caseNo) {
@@ -9254,11 +9316,13 @@ async function M_deleteRow(id) {
   M_active = M_active.filter(i => i.id !== id);
   M_done   = M_done.filter(i => i.id !== id);
   M_render();
+  SYNC_markDeleted(id);
   setSync('loading');
   const r = await M_gasPost('delete', { id });
   if (r && r.ok) {
     setSync('ok');
   } else {
+    SYNC_clearPendingDelete(id);
     M_active = snapActive;
     M_done   = snapDone;
     M_render();
@@ -9585,6 +9649,12 @@ const STAGES = [
 ];
 
 function applyBulkData(d, isFromCache) {
+  // 삭제 보호 — pending 마커가 있는 id는 모든 컬렉션에서 제거 (5분간 SYNC_pullData 옛 데이터 반영 방지)
+  if (SYNC_pendingDeletes.size) {
+    ['cases','archive','auction','myeongdoActive','myeongdoDone','blog','members'].forEach(k => {
+      if (Array.isArray(d[k])) d[k] = SYNC_filterPendingDeleted(d[k]);
+    });
+  }
   const allCases = [...(d.cases||[]), ...(d.archive||[])];
   // 서버 응답이 빈 배열인데 기존에 데이터가 있으면 덮어쓰지 않음
   if (!isFromCache && allCases.length === 0 && C_cases.length > 0) {
@@ -11255,19 +11325,36 @@ function MBR_save() {
   CTR_syncMemberDropdown();
 }
 
-function MBR_delete(id) {
+async function MBR_delete(id) {
   if (!confirm('이 회원을 삭제하시겠습니까?')) return;
   MBR_load();
   const target = MBR_members.find(m => m.id === id);
+  if (!target) return;
+  const backup = [...MBR_members];
   MBR_members = MBR_members.filter(m => m.id !== id);
   MBR_save_store();
-  if (target && target.name) {
-    fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
-      body: JSON.stringify({ action: 'deleteMember', data: { name: target.name } })
-    }).catch(() => {});
-  }
+  SYNC_markDeleted(id);
   MBR_render();
   CTR_syncMemberDropdown();
+  if (target.name) {
+    try {
+      const res = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
+        body: JSON.stringify({ action: 'deleteMember', data: { name: target.name } })
+      });
+      const r = await res.json();
+      if (r && r.error) throw new Error(r.error);
+      setSync && setSync('ok');
+    } catch(e) {
+      SYNC_clearPendingDelete(id);
+      MBR_members = backup;
+      MBR_save_store();
+      MBR_render();
+      CTR_syncMemberDropdown();
+      setSync && setSync('err');
+      alert('회원 삭제 실패: ' + (e.message || '네트워크 오류') + '\n복구되었습니다.');
+      return;
+    }
+  }
 }
 
 // 이미지 드래그앤드롭 / 파일 선택
@@ -14276,6 +14363,27 @@ async function SYNC_run(silent) {
 }
 
 // ── 전체 데이터 pull (집↔사무실 양방향 실시간) ──
+// ── 삭제 후 재등장 방지 — 5분간 pending 마커 보호 ────────────────────────
+// 원인: 클라이언트가 array에서 제거 → SYNC_pullData(3분 주기)가 GAS 옛 데이터로 덮어쓰면 부활
+// 솔루션: 삭제 즉시 마커 등록, applyBulkData에서 마커 id는 모든 컬렉션에서 제외, 5분 후 자동 만료
+const SYNC_pendingDeletes = new Map(); // id → timestamp
+function SYNC_markDeleted(id) {
+  if (!id) return;
+  SYNC_pendingDeletes.set(String(id), Date.now());
+}
+function SYNC_isPendingDeleted(id) {
+  if (id == null) return false;
+  const t = SYNC_pendingDeletes.get(String(id));
+  if (!t) return false;
+  if (Date.now() - t > 5 * 60 * 1000) { SYNC_pendingDeletes.delete(String(id)); return false; }
+  return true;
+}
+function SYNC_clearPendingDelete(id) { SYNC_pendingDeletes.delete(String(id)); }
+function SYNC_filterPendingDeleted(arr) {
+  if (!Array.isArray(arr)) return arr;
+  return arr.filter(x => !x || !SYNC_isPendingDeleted(x.id));
+}
+
 async function SYNC_pullData() {
   if (SYNC_isPulling) return;
   SYNC_isPulling = true;
@@ -14320,10 +14428,12 @@ function SYNC_updateBadge() {
 }
 
 function SYNC_autoStart() {
-  setInterval(() => SYNC_run(true), 10 * 60 * 1000);   // 10분마다 push (회원)
-  setInterval(SYNC_updateLastTime, 30 * 1000);           // 30초마다 push 시간 표시
-  setInterval(() => SYNC_pullData(), 3 * 60 * 1000);    // 3분마다 pull (전체)
-  setInterval(SYNC_updateBadge, 30 * 1000);              // 30초마다 badge 시간 갱신
+  // 탭이 백그라운드면 폴링 중단 — 배터리·대역폭·CPU 절약, 활성 탭만 빠르게
+  const isVisible = () => document.visibilityState === 'visible';
+  setInterval(() => { if (isVisible()) SYNC_run(true); }, 10 * 60 * 1000);
+  setInterval(SYNC_updateLastTime, 30 * 1000);
+  setInterval(() => { if (isVisible()) SYNC_pullData(); }, 3 * 60 * 1000);
+  setInterval(SYNC_updateBadge, 30 * 1000);
 
   // 브라우저 탭/창이 다시 활성화될 때 즉시 pull
   document.addEventListener('visibilitychange', () => {
