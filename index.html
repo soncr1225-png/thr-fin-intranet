@@ -15524,9 +15524,10 @@ function FEE_inferStage(c) {
     case 'ongoing':   return 3;
     case 'done':      return 4;
     case 'report':    return 4;
-    case 'confirmed': return 5;
-    case 'closed':    return c.fee1Received ? (c.fee2Received ? 7 : 7) : 6;
-    default:          return 3;
+    case 'confirmed':     return 5;
+    case 'balance_wait':  return 6;
+    case 'closed':        return c.fee1Received ? (c.fee2Received ? 7 : 7) : 6;
+    default:              return 3;
   }
 }
 
