@@ -919,7 +919,6 @@ tr:hover td { background: #f8f6ff; }
 .mgr-손청락 { background:#ede9fe; color:#5b21b6; }
 .mgr-이제훈 { background:#dbeafe; color:#1e40af; }
 .mgr-장한빛 { background:#dcfce7; color:#166534; }
-.mgr-정은진 { background:#fef9c3; color:#854d0e; }
 
 /* ══════════════════════════════════════
    캐시 배너
@@ -3356,7 +3355,7 @@ function v3CloseMoreSheet(){
       </select>
       <select id="todoManager" style="border:1px solid #ddd;border-radius:6px;padding:5px 6px;font-size:12px;font-family:inherit;background:#fff;flex-shrink:0;">
         <option value="">담당자</option>
-        <option>손청락</option><option>이제훈</option><option>장한빛</option><option>정은진</option>
+        <option>손청락</option><option>이제훈</option><option>장한빛</option>
       </select>
       <input type="text" id="todoInput" placeholder="새 할일 추가..." onkeydown="if(event.key==='Enter')addTodo()"
         style="flex:1;min-width:120px;border:1px solid #ddd;border-radius:6px;padding:6px 10px;font-size:13px;font-family:inherit;outline:none;">
@@ -3433,19 +3432,19 @@ function v3CloseMoreSheet(){
           <div style="display:flex;align-items:center;gap:5px;">
             <span style="font-size:12px;font-weight:700;color:#1e40af;background:#eff6ff;padding:2px 9px;border-radius:99px;">시세조사</span>
             <select id="t_price_mgr" style="font-size:12px;border:1px solid #bfdbfe;border-radius:6px;padding:4px 8px;">
-              <option value="">—미배정</option><option>손청락</option><option>이제훈</option><option>장한빛</option><option>정은진</option>
+              <option value="">—미배정</option><option>손청락</option><option>이제훈</option><option>장한빛</option>
             </select>
           </div>
           <div style="display:flex;align-items:center;gap:5px;">
             <span style="font-size:12px;font-weight:700;color:#166534;background:#f0fdf4;padding:2px 9px;border-radius:99px;">현장조사</span>
             <select id="t_field_mgr" style="font-size:12px;border:1px solid #bbf7d0;border-radius:6px;padding:4px 8px;">
-              <option value="">—미배정</option><option>손청락</option><option>이제훈</option><option>장한빛</option><option>정은진</option>
+              <option value="">—미배정</option><option>손청락</option><option>이제훈</option><option>장한빛</option>
             </select>
           </div>
           <div style="display:flex;align-items:center;gap:5px;">
             <span style="font-size:12px;font-weight:700;color:#6b21a8;background:#faf5ff;padding:2px 9px;border-radius:99px;">보고서작성</span>
             <select id="t_report_mgr" style="font-size:12px;border:1px solid #e9d5ff;border-radius:6px;padding:4px 8px;">
-              <option value="">—미배정</option><option>손청락</option><option>이제훈</option><option>장한빛</option><option>정은진</option>
+              <option value="">—미배정</option><option>손청락</option><option>이제훈</option><option>장한빛</option>
             </select>
           </div>
         </div>
@@ -4230,7 +4229,6 @@ function v3CloseMoreSheet(){
         <option value="손청락">손청락 대표</option>
         <option value="이제훈">이제훈 이사</option>
         <option value="장한빛">장한빛 매니저</option>
-        <option value="정은진">정은진 매니저</option>
       </select>
     </div>
   </div>
@@ -4352,7 +4350,6 @@ function v3CloseMoreSheet(){
             <option value="손청락">손청락 대표</option>
             <option value="이제훈">이제훈 이사</option>
             <option value="장한빛">장한빛 매니저</option>
-            <option value="정은진">정은진 매니저</option>
           </select>
         </div>
         <div id="admin-data-btns" style="display:contents;">
@@ -4397,7 +4394,6 @@ function v3CloseMoreSheet(){
         <option value="손청락">손청락</option>
         <option value="이제훈">이제훈</option>
         <option value="장한빛">장한빛</option>
-        <option value="정은진">정은진</option>
       </select>
       <select id="mbr-filter-status" onchange="MBR_render()">
         <option value="">전체 진행상황</option>
@@ -4479,7 +4475,6 @@ function v3CloseMoreSheet(){
         <option value="손청락">손청락 대표</option>
         <option value="이제훈">이제훈 이사</option>
         <option value="장한빛">장한빛 매니저</option>
-        <option value="정은진">정은진 매니저</option>
       </select>
       <button class="mbr-parse-btn" style="background:#1e3a8a;color:#fff;" onclick="MBR_bulkImport()">일괄 등록하기</button>
       <button class="mbr-parse-btn" style="background:#c8a44a;color:#0b1120;" onclick="MBR_loadNotion30()">노션 30명 불러오기</button>
@@ -4549,7 +4544,6 @@ function v3CloseMoreSheet(){
             <option value="손청락">손청락 대표</option>
             <option value="이제훈">이제훈 이사</option>
             <option value="장한빛">장한빛 매니저</option>
-            <option value="정은진">정은진 매니저</option>
           </select>
         </div>
         <div class="mbr-form-field">
@@ -6194,7 +6188,7 @@ const C_CACHE_CASES='thefin_cases_v2', C_CACHE_TODOS='thefin_todos';
 const C_ACTIVE=['ongoing','done','report','confirmed','balance_wait','lawsuit'], C_ARCHIVE=['closed','cancel','drop','changed','lost'];
 const C_AUCTION_BADGE_STATUS=['ongoing','done','report','confirmed','balance_wait','lawsuit'];
 const C_SM={ongoing:{label:'진행',cls:'s-ongoing'},done:{label:'조사완료',cls:'s-done'},report:{label:'보고서완료',cls:'s-report'},confirmed:{label:'입찰확정',cls:'s-confirmed'},balance_wait:{label:'잔금납부대기중',cls:'s-balance-wait'},lawsuit:{label:'소송',cls:'s-lawsuit'},closed:{label:'낙찰',cls:'s-closed'},cancel:{label:'고객변심',cls:'s-cancel'},drop:{label:'기타종료',cls:'s-drop'},changed:{label:'기일변경',cls:'s-changed'},lost:{label:'패찰',cls:'s-lost'}};
-const C_MANAGERS=['손청락','이제훈','장한빛','정은진'];
+const C_MANAGERS=['손청락','이제훈','장한빛'];
 // 사건에 특정 이름이 담당자로 배정돼 있는지 확인 (6가지 역할 모두 체크)
 function C_isAssigned(c, name) {
   if (!name) return true;
@@ -7210,7 +7204,7 @@ async function C_analyzeImage(base64,mediaType){
 
 // 담당자 통계
 function C_renderStats(){
-  const C_COLORS={'손청락':'#7c3aed','이제훈':'#2563eb','장한빛':'#16a34a','정은진':'#d97706'};
+  const C_COLORS={'손청락':'#7c3aed','이제훈':'#2563eb','장한빛':'#16a34a'};
   const _stName=sessionStorage.getItem('thefin_auth_name');
   const _stRole=sessionStorage.getItem('thefin_auth_role');
   // 매니저는 자신 카드만, 관리자는 전체
@@ -9285,7 +9279,6 @@ document.addEventListener('keydown',e=>{
 const AG_PHONES = {
   '손청락': '010-6406-9991',
   '이제훈': '010-6890-0059',
-  '정은진': '010-8072-1432',
   '장한빛': '010-2108-6403',
 };
 function AG_showAI(show, msg) {
@@ -10317,7 +10310,7 @@ function MBR_parseAndOpen() {
     else if (/SNS|인스타/.test(raw)) parsed.source='SNS';
     else if (/재상담|재방문/.test(raw)) parsed.source='재상담';
   }
-  const staffM = raw.match(/담당\s*[:\s]\s*(손청락|청락|이제훈|장한빛|정은진)/);
+  const staffM = raw.match(/담당\s*[:\s]\s*(손청락|청락|이제훈|장한빛)/);
   if (staffM) parsed.staff = staffM[1] === '청락' ? '손청락' : staffM[1];
 
   MBR_openForm(null, parsed);
@@ -10441,7 +10434,7 @@ function MBR_popFee(event, id) {
 function MBR_popStaff(event, id) {
   MBR_load();
   const m = MBR_members.find(x => x.id === id);
-  MBR_showPop(event, ['손청락','이제훈','장한빛','정은진','미배정'], val => {
+  MBR_showPop(event, ['손청락','이제훈','장한빛','미배정'], val => {
     MBR_inlineSave(id, 'staff', val === '미배정' ? '' : val);
   }, m ? m.staff : '');
   event.stopPropagation();
@@ -12501,7 +12494,6 @@ const AUTH_BASE_USERS = {
   '손청락':    { role: 'admin',   label: '대표' },
   '이제훈':    { role: 'admin',   label: '이사' },
   '장한빛':    { role: 'manager', label: '매니저' },
-  '정은진':    { role: 'manager', label: '매니저' },
   '테스트이사':  { role: 'admin',   label: '이사(테스트)', test: true },
   '테스트매니저': { role: 'manager', label: '매니저(테스트)', test: true },
 };
@@ -12567,7 +12559,7 @@ function AUTH_rebuildSelect() {
 
 // 로그인 화면 "계정 목록 초기화" — localStorage의 AUTH 커스터마이즈 상태 제거
 function AUTH_resetAccounts() {
-  if (!confirm('계정 목록을 기본값(손청락·이제훈·장한빛·정은진)으로 되돌립니다.\n저장된 비밀번호는 유지됩니다.\n계속하시겠습니까?')) return;
+  if (!confirm('계정 목록을 기본값(손청락·이제훈·장한빛)으로 되돌립니다.\n저장된 비밀번호는 유지됩니다.\n계속하시겠습니까?')) return;
   localStorage.removeItem('thefin_auth_users_v1');
   sessionStorage.removeItem('thefin_auth_name');
   sessionStorage.removeItem('thefin_auth_role');
@@ -14370,7 +14362,7 @@ document.addEventListener('click', e => {
 //  메시지 / 직원간 소통 + 베타 수정요청 (MSG_ v2)
 // ══════════════════════════════════════════════════════════════════
 
-const MSG_MEMBERS = ['손청락','이제훈','장한빛','정은진'];
+const MSG_MEMBERS = ['손청락','이제훈','장한빛'];
 
 function MSG_fmtTime(t) {
   if (!t) return '';
@@ -15614,7 +15606,7 @@ function FEE_getAllStaff(c) {
   });
   const coPart = c.coParticipants || {};
   Object.values(coPart).forEach(arr => { if (Array.isArray(arr)) arr.forEach(x => { if (x) set.add(x); }); });
-  const VALID = new Set(['손청락','이제훈','장한빛','정은진']);
+  const VALID = new Set(['손청락','이제훈','장한빛']);
   return [...set].filter(s => s && VALID.has(s));
 }
 
@@ -15638,8 +15630,8 @@ function DASH_render() {
 function DASH_renderStaffCards() {
   const host = document.getElementById('DASH_staffCards');
   if (!host || typeof C_cases === 'undefined') return;
-  const staff = ['손청락','이제훈','장한빛','정은진'];
-  const colors = { '손청락':'#7c3aed', '이제훈':'#2563eb', '장한빛':'#16a34a', '정은진':'#d97706' };
+  const staff = ['손청락','이제훈','장한빛'];
+  const colors = { '손청락':'#7c3aed', '이제훈':'#2563eb', '장한빛':'#16a34a' };
   const activeStatus = typeof C_ACTIVE !== 'undefined' ? C_ACTIVE : ['ongoing','done','report','confirmed'];
   const archiveStatus = typeof C_ARCHIVE !== 'undefined' ? C_ARCHIVE : ['closed','cancel','drop','changed'];
 
@@ -15770,7 +15762,7 @@ function DASH_renderCaseList() {
     host.innerHTML = '<div style="padding:16px;color:#aaa;font-size:13px;text-align:center;">사건이 없습니다</div>';
     return;
   }
-  const _PART_COLORS = { '손청락':'#7c3aed', '이제훈':'#2563eb', '장한빛':'#16a34a', '정은진':'#d97706' };
+  const _PART_COLORS = { '손청락':'#7c3aed', '이제훈':'#2563eb', '장한빛':'#16a34a' };
   host.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #eee;border-radius:8px;overflow:hidden;">
     <thead><tr style="background:#f8f8f8;">
       <th style="padding:8px 10px;text-align:left;">고객명 / 사건번호</th>
@@ -15869,7 +15861,7 @@ function DASH_applyMbrRate(caseId, rate) {
 //  👥 참여자 현황 모달 (PART_)
 // ══════════════════════════════════════════════════════════════════
 let PART_currentId = null;
-const _PART_COL = { '손청락':'#7c3aed', '이제훈':'#2563eb', '장한빛':'#16a34a', '정은진':'#d97706' };
+const _PART_COL = { '손청락':'#7c3aed', '이제훈':'#2563eb', '장한빛':'#16a34a' };
 
 function PART_open(caseId) {
   FEE_migrate();
@@ -16235,7 +16227,7 @@ function CD_setStage(n) {
 }
 
 function CD_renderShares(c) {
-  const staff = ['손청락','이제훈','장한빛','정은진'];
+  const staff = ['손청락','이제훈','장한빛'];
   const host = document.getElementById('CD_shares');
   host.innerHTML = staff.map(s => {
     const val = (c.staffShares && c.staffShares[s]) || 0;
