@@ -1744,12 +1744,23 @@ function getMeongdo(ss, shName) {
   if (sheet.getLastRow() < 2) return { ok: true, data: [] };
   var nCols = Math.min(sheet.getLastColumn(), 11);
   var vals  = sheet.getRange(2, 1, sheet.getLastRow() - 1, nCols).getValues();
-  return { ok: true, data: vals.map(mapMeongdoRow) };
+  return { ok: true, data: vals.map(function(r) { return mapMeongdoRow(r, nCols); }) };
 }
 
-function mapMeongdoRow(r) {
+function mapMeongdoRow(r, nCols) {
+  // 구버전 9컬럼 스키마 (협의상태 컬럼 없음): id,사건번호,주소,점유자유형,진행단계,담당자,연락처,메모,상태
+  if ((nCols || r.length) <= 9) {
+    return {
+      id: String(r[0]||''), caseNo: String(r[1]||''), address: String(r[2]||''),
+      occupantType: String(r[3]||''), stage: String(r[4]||'인도명령신청'),
+      negotiationStatus: '소통중',
+      staffName: String(r[5]||''), contactInfo: String(r[6]||''),
+      memo: String(r[7]||''), status: String(r[8]||'active'), createdAt: ''
+    };
+  }
+  // 현재 10/11컬럼 스키마 (+협의상태, +등록일)
   return {
-    id:                String(r[0]),
+    id:                String(r[0]||''),
     caseNo:            String(r[1]  || ''),
     address:           String(r[2]  || ''),
     occupantType:      String(r[3]  || ''),
