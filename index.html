@@ -6841,6 +6841,13 @@ function C_chStatus(id,ns){
   }
   // 상태 변경 시 캘린더도 즉시 갱신 (탭 무관하게 항상 재렌더)
   if(typeof CAL_render==='function') CAL_render();
+  // 명도 목록은 소송 상태 케이스를 자동 제외하므로 즉시 재렌더
+  if(typeof M_render==='function') M_render();
+  // 소송 페이지 뱃지 갱신
+  if(typeof setBadge==='function'){
+    const _lwCnt = C_cases.filter(x=>x.status==='lawsuit').length;
+    setBadge('mainBadge-lawsuit', _lwCnt);
+  }
 }
 const C_HIST_ACTION_STYLE = {
   '상태변경':     'background:#eff6ff;color:#1d4ed8;',
@@ -8418,6 +8425,7 @@ async function M_syncFromCases() {
   const allM = new Set([...M_active, ...M_done].map(m => m.caseNo));
   const toAdd = A_allCases.filter(c => {
     if (!c.caseNo || allM.has(c.caseNo)) return false;
+    if (c.status === 'lawsuit') return false; // 소송 진행 사건은 명도에 자동 추가 금지
     if (c.status === 'closed') return true;
     return Array.isArray(A_items) && A_items.some(i => i.caseNo === c.caseNo && (i.balanceOk === 'O' || i.balanceOk === true));
   });
@@ -8830,8 +8838,29 @@ function M_render() {
     return typeof C_isAssigned === 'function' ? C_isAssigned(cas, _mAuthName) : false;
   }
 
-  const activeFiltered = M_active.filter(_mMgrMatch);
-  const doneFiltered   = M_done.filter(_mMgrMatch);
+  // 소송(lawsuit) 상태인 사건은 명도 목록에서 제외 (시트 데이터는 보존)
+  const _lawsuitCaseNos = new Set(
+    ((typeof A_allCases !== 'undefined' && Array.isArray(A_allCases)) ? A_allCases
+      : (typeof C_cases !== 'undefined' && Array.isArray(C_cases)) ? C_cases
+      : [])
+    .filter(c => c.status === 'lawsuit' && c.caseNo)
+    .map(c => c.caseNo)
+  );
+  function _mExcludeLawsuit(item) { return !item.caseNo || !_lawsuitCaseNos.has(item.caseNo); }
+
+  // 같은 caseNo 중복 행 제거 (첫 항목 우선)
+  function _mDedupByCaseNo(arr) {
+    const seen = new Set();
+    return arr.filter(item => {
+      if (!item.caseNo) return true;
+      if (seen.has(item.caseNo)) return false;
+      seen.add(item.caseNo);
+      return true;
+    });
+  }
+
+  const activeFiltered = _mDedupByCaseNo(M_active.filter(_mMgrMatch).filter(_mExcludeLawsuit));
+  const doneFiltered   = _mDedupByCaseNo(M_done.filter(_mMgrMatch).filter(_mExcludeLawsuit));
   const data = M_tab === 'active' ? activeFiltered : doneFiltered;
 
   thead.innerHTML = `<tr>
