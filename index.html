@@ -3837,10 +3837,14 @@ function v3CloseMoreSheet(){
           <option value="결렬">결렬</option>
         </select>
       </div>
-      <div class="pf"><label>담당자</label>
-        <select id="M_staffName">
-          <option value="">선택</option>
-        </select>
+      <div class="pf"><label>담당자 <span style="font-size:10px;color:#94a3b8;font-weight:500;">(여러 명 선택 가능)</span></label>
+        <div id="M_staffPickerWrap" style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-height:32px;border:1px solid #e5e7eb;border-radius:6px;padding:4px 6px;background:#fff;">
+          <div id="M_staffChips" style="display:contents;"></div>
+          <select id="M_staffAddSel" onchange="M_pickerAdd(this.value);this.value='';"
+            style="font-size:12px;border:none;outline:none;background:transparent;cursor:pointer;flex:1;min-width:80px;">
+            <option value="">+ 담당자 추가</option>
+          </select>
+        </div>
       </div>
       <div class="pf"><label>연락처</label><input type="text" id="M_contactInfo" placeholder="010-0000-0000"></div>
       <div class="pf" style="grid-column:1/-1;"><label>메모</label><input type="text" id="M_memo" placeholder="협의 내용, 특이사항 등"></div>
@@ -8425,7 +8429,7 @@ async function A_autoAddMyeongdo(cas) {
   const tempItem = {
     id: 'tmp_' + Date.now(), caseNo: cas.caseNo||'',
     address: cas.address||'', occupantType:'', stage:'인도명령신청',
-    negotiationStatus:'소통중', staffName:'', memo:'', status:'active'
+    negotiationStatus:'소통중', staffName:'', staffList:'', memo:'', status:'active'
   };
   M_active.unshift(tempItem);
   M_render();
@@ -8848,7 +8852,7 @@ function M_render() {
   const _mAuthRole = sessionStorage.getItem('thefin_auth_role');
   function _mMgrMatch(item) {
     if (_mAuthRole !== 'manager' || !_mAuthName) return true;
-    if (item.staffName === _mAuthName) return true;
+    if (M_normalizeStaff(item).includes(_mAuthName)) return true;
     const cas = (A_allCases || []).find(c => c.caseNo === item.caseNo);
     if (!cas) return false;
     return typeof C_isAssigned === 'function' ? C_isAssigned(cas, _mAuthName) : false;
@@ -8864,11 +8868,11 @@ function M_render() {
   );
   function _mExcludeLawsuit(item) { return !item.caseNo || !_lawsuitCaseNos.has(item.caseNo); }
 
-  // 같은 caseNo 중복 행 제거 — 정보가 풍부한(stage·memo·staffName·contactInfo 채워진) 행 우선
+  // 같은 caseNo 중복 행 제거 — 정보가 풍부한(stage·메모·담당자·연락처 채워진) 행 우선
   function _mScore(it) {
     return (it.stage && it.stage !== '인도명령신청' ? 1 : 0)
       + (it.memo ? 1 : 0)
-      + (it.staffName ? 1 : 0)
+      + (M_normalizeStaff(it).length ? 1 : 0)
       + (it.contactInfo ? 1 : 0)
       + (it.negotiationStatus && it.negotiationStatus !== '소통중' ? 1 : 0);
   }
@@ -8971,7 +8975,16 @@ function M_row(item) {
       </select>
     </td>
     <td style="text-align:center;vertical-align:middle;${rowBg}">
-      <span style="font-size:12px;font-weight:600;color:#1e293b;">${item.staffName||'—'}</span>
+      ${(() => {
+        const arr = M_normalizeStaff(item);
+        if (!arr.length) return '<span style="color:#ccc;font-size:11px;">—</span>';
+        return `<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;">${
+          arr.map(name => {
+            const col = M_staffColor(name);
+            return `<span style="display:inline-block;background:${col}18;color:${col};border:1px solid ${col}40;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;">${M_esc(name)}</span>`;
+          }).join('')
+        }</div>`;
+      })()}
     </td>
     <td style="vertical-align:middle;${rowBg}">
       <span style="font-size:11px;color:#334155;">${item.contactInfo||'<span style="color:#ccc;">—</span>'}</span>
@@ -9248,6 +9261,57 @@ async function M_deleteRow(id) {
   }
 }
 
+// 담당자 칩 색상 — 매니저별 고정색 + 미등록(과거 데이터 포함) fallback 회색
+const M_STAFF_COLORS = { '손청락':'#7c3aed', '이제훈':'#2563eb', '장한빛':'#16a34a' };
+function M_staffColor(name) { return M_STAFF_COLORS[name] || '#64748b'; }
+
+// 폼 picker 상태 — 현재 선택된 담당자 배열
+let M_pickerSelected = [];
+
+function M_pickerSet(arr) {
+  M_pickerSelected = Array.isArray(arr) ? arr.filter(Boolean) : [];
+  M_pickerRender();
+}
+function M_pickerAdd(name) {
+  if (!name || M_pickerSelected.includes(name)) return;
+  M_pickerSelected.push(name);
+  M_pickerRender();
+}
+function M_pickerRemove(name) {
+  M_pickerSelected = M_pickerSelected.filter(s => s !== name);
+  M_pickerRender();
+}
+function M_pickerRender() {
+  const chipsEl = document.getElementById('M_staffChips');
+  const selEl   = document.getElementById('M_staffAddSel');
+  if (!chipsEl || !selEl) return;
+  // 칩
+  chipsEl.innerHTML = M_pickerSelected.map(name => {
+    const col = M_staffColor(name);
+    // 이름은 attribute 컨텍스트로 들어가므로 M_esc로 ' " 이스케이프 — 향후 직원 동적 로드 대비
+    return `<span style="display:inline-flex;align-items:center;gap:3px;background:${col}18;color:${col};border:1px solid ${col}40;border-radius:12px;padding:2px 4px 2px 9px;font-size:11px;font-weight:700;">
+      ${M_esc(name)}
+      <button type="button" data-staff="${M_esc(name)}" onclick="M_pickerRemove(this.dataset.staff)"
+        style="background:none;border:none;cursor:pointer;font-size:13px;color:${col};padding:0 2px;line-height:1;">×</button>
+    </span>`;
+  }).join('');
+  // 드롭다운 — 이미 추가된 담당자는 옵션에서 제외
+  const avail = (C_MANAGERS || []).filter(m => !M_pickerSelected.includes(m));
+  selEl.innerHTML = '<option value="">+ 담당자 추가</option>' +
+    avail.map(m => `<option value="${m}">${m}</option>`).join('');
+  selEl.style.display = avail.length ? '' : 'none';
+}
+
+// staffList 정규화 — 콤마 구분 문자열 또는 배열 → 배열
+function M_normalizeStaff(item) {
+  if (Array.isArray(item.staffList)) return item.staffList.filter(Boolean);
+  if (typeof item.staffList === 'string' && item.staffList.trim()) {
+    return item.staffList.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  // 신규 staffList 없으면 기존 단일 staffName으로 자연 마이그레이션
+  return item.staffName ? [item.staffName] : [];
+}
+
 function M_toggleForm() {
   const form = document.getElementById('M_addForm');
   if (form.style.display === 'none' || !form.style.display) {
@@ -9256,10 +9320,7 @@ function M_toggleForm() {
     document.getElementById('M_occupantType').value = '';
     document.getElementById('M_stage').value = '인도명령신청';
     document.getElementById('M_negotiationStatus').value = '소통중';
-    const staffSel = document.getElementById('M_staffName');
-    staffSel.innerHTML = '<option value="">선택</option>' +
-      (C_MANAGERS||[]).map(m => `<option value="${m}">${m}</option>`).join('');
-    staffSel.value = '';
+    M_pickerSet([]);
     form.style.display = 'block';
     form.scrollIntoView({ behavior: 'smooth' });
   } else {
@@ -9279,16 +9340,14 @@ function M_editRow(id) {
   document.getElementById('M_negotiationStatus').value  = item.negotiationStatus  || '소통중';
   document.getElementById('M_contactInfo').value        = item.contactInfo        || '';
   document.getElementById('M_memo').value               = item.memo               || '';
-  const staffSel = document.getElementById('M_staffName');
-  staffSel.innerHTML = '<option value="">선택</option>' +
-    (C_MANAGERS||[]).map(m => `<option value="${m}">${m}</option>`).join('');
-  staffSel.value = item.staffName || '';
+  M_pickerSet(M_normalizeStaff(item));
   form.style.display = 'block';
   form.scrollIntoView({ behavior: 'smooth' });
 }
 
 async function M_saveForm() {
   const id = document.getElementById('M_editId').value;
+  const staffArr = M_pickerSelected.slice();
   const d = {
     caseNo:            document.getElementById('M_caseNo').value.trim(),
     address:           document.getElementById('M_address').value.trim(),
@@ -9296,7 +9355,8 @@ async function M_saveForm() {
     stage:             document.getElementById('M_stage').value,
     negotiationStatus: document.getElementById('M_negotiationStatus').value,
     contactInfo:       document.getElementById('M_contactInfo').value.trim(),
-    staffName:         document.getElementById('M_staffName').value,
+    staffList:         staffArr.join(','),
+    staffName:         staffArr[0] || '',
     memo:              document.getElementById('M_memo').value.trim()
   };
   if (!d.caseNo) { alert('사건번호는 필수입니다.'); return; }
@@ -15907,7 +15967,7 @@ function FEE_getAllStaff(c) {
   });
   const coPart = c.coParticipants || {};
   Object.values(coPart).forEach(arr => { if (Array.isArray(arr)) arr.forEach(x => { if (x) set.add(x); }); });
-  const VALID = new Set(['손청락','이제훈','장한빛','정은진']);
+  const VALID = new Set(C_MANAGERS || ['손청락','이제훈','장한빛']);
   return [...set].filter(s => s && VALID.has(s));
 }
 
