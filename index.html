@@ -6921,10 +6921,29 @@ async function C_saveClientName(id, newName) {
   const r = await C_api('updateCase', { id, status: c.status, clientName: trimmed });
   // A_items 연동 동기화
   if (typeof A_items !== 'undefined' && typeof A_gasPost === 'function') {
-    A_items.filter(i => i.caseNo === c.caseNo).forEach(ai => {
-      ai.clientName = trimmed;
-      A_gasPost('update', { id: ai.id, clientName: trimmed });
-    });
+    const linked = A_items.filter(i => i.caseNo === c.caseNo);
+    if (linked.length) {
+      linked.forEach(ai => {
+        ai.clientName = trimmed;
+        A_gasPost('update', { id: ai.id, clientName: trimmed });
+      });
+    } else {
+      // 더핀일정표 기록 없으면 자동 생성
+      let dateFields = {};
+      if (c.auctionDate && typeof A_calcDates === 'function') {
+        const { saleDecisionDate, appealDate, balanceDate } = A_calcDates(c.auctionDate);
+        dateFields = { saleDecisionDate, appealDate, balanceDate };
+      }
+      const tempId = 'tmp_' + Date.now();
+      A_items.push({ id: tempId, caseNo: c.caseNo, clientName: trimmed, status: 'ongoing', content: '', note: '', ...dateFields });
+      A_gasPost('add', { caseNo: c.caseNo, clientName: trimmed, status: 'ongoing', content: '', ...dateFields })
+        .then(res => {
+          if (res && res.ok && res.id) {
+            const idx = A_items.findIndex(i => i.id === tempId);
+            if (idx >= 0) A_items[idx].id = res.id;
+          }
+        });
+    }
   }
   setSync(r && !r.error ? 'ok' : 'err');
   if (typeof A_render === 'function') A_render();
