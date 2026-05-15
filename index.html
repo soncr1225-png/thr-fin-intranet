@@ -7766,10 +7766,9 @@ let A_items = [], A_allCases = [], A_curMonth = '', A_filtStatus = 'active', A_c
 let A_openSpopCasId = null;
 
 async function A_gasPost(action, data) {
-  const map = { add:'addAuction', update:'updateAuction', delete:'deleteAuction' };
   try {
     const r = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
-      body: JSON.stringify({ action: map[action]||action, data }) });
+      body: JSON.stringify({ module: 'auction', action, data }) });
     return await r.json();
   } catch(e) { return { error: e.message }; }
 }
