@@ -13057,8 +13057,7 @@ let FB_list             = [];
 // ══════════════════════════════════════════════════════════════════
 
 function AUTH_setViewMode(mode) {
-  // 'pc_x' = 모바일 기기에서 PC 뷰를 명시적으로 선택한 경우
-  localStorage.setItem('thefin_view_mode', mode === 'pc' ? 'pc_x' : 'mobile');
+  localStorage.setItem('thefin_view_mode', mode);
   _AUTH_applyViewModeClass(mode);
   _AUTH_updateViewBtns(mode);
 }
@@ -13081,6 +13080,8 @@ function _AUTH_updateViewBtns(mode) {
 }
 
 function _AUTH_resolveViewMode() {
+  const saved = localStorage.getItem('thefin_view_mode');
+  if (saved === 'pc' || saved === 'mobile') return saved;
   return window.innerWidth <= 820 ? 'mobile' : 'pc';
 }
 
