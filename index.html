@@ -1062,11 +1062,14 @@ tr:hover td { background: #f8f6ff; }
 .a-spop button { font-size:10px; padding:3px 8px; border-radius:4px; cursor:pointer; font-family:inherit; }
 .a-spop .sp-cancel { background:none; border:none; color:#9ca3af; font-size:14px; margin-left:2px; }
 
-/* ══ 더핀 일정표 / 명도 공통 ══ */
+/* ══ 더핀 일정표 / 명도 / 소송 공통 ══ */
 #panel-auction .container,
-#panel-myeongdo .container { max-width:none; padding:0 24px 40px; }
+#panel-myeongdo .container,
+#panel-lawsuit .container { max-width:none; padding:0 24px 40px; }
 #panel-auction .add-form,
 #panel-myeongdo .add-form { margin-bottom:16px; }
+#panel-lawsuit th { background:#0a1e3a !important; color:#fff !important; font-size:var(--text-xs); font-weight:700; padding:10px 12px; border-bottom:2px solid var(--gold) !important; border-right:1px solid rgba(255,255,255,.07) !important; white-space:nowrap; }
+#panel-lawsuit th:last-child { border-right:none !important; }
 
 /* ══ 통계 패널 ══ */
 #panel-stats { background:var(--surface-3); min-height:calc(100vh - var(--header-h)); }
@@ -3091,6 +3094,9 @@ function v3CloseMoreSheet(){
         <div class="nav-dropdown-item" id="mainTab-myeongdo" onclick="switchMainTab('myeongdo')">
           🔑 명도 <span class="tab-badge" id="mainBadge-myeongdo">—</span>
         </div>
+        <div class="nav-dropdown-item" id="mainTab-lawsuit" onclick="switchMainTab('lawsuit');LW_render()">
+          ⚖️ 소송 <span class="tab-badge" id="mainBadge-lawsuit">—</span>
+        </div>
       </div>
     </div>
 
@@ -3853,6 +3859,23 @@ function v3CloseMoreSheet(){
     </table>
   </div>
 
+</div>
+</div>
+
+<!-- ════════════════════════════════════
+     탭: 소송 관리
+════════════════════════════════════ -->
+<div class="tab-panel" id="panel-lawsuit">
+<div class="container">
+  <div class="b-stats-bar">
+    <div class="b-stat-item">
+      <div class="b-stat-lbl">소송 진행중</div>
+      <div class="b-stat-val" style="color:#c2410c;" id="LW_count">—</div>
+    </div>
+  </div>
+  <div style="padding:12px 0 8px;">
+    <div id="LW_table"></div>
+  </div>
 </div>
 </div>
 
@@ -6113,7 +6136,7 @@ function setSync(s){
 
 // 탭 → 그룹 매핑
 const _tabGroupMap = {
-  cases:'work', auction:'work', myeongdo:'work',
+  cases:'work', auction:'work', myeongdo:'work', lawsuit:'work',
   blog:'content', draft:'content',
   member:'client', contract:'client', guide:'client'
 };
@@ -6149,6 +6172,8 @@ function switchMainTab(t) {
   }
   // 블로그 탭 진입 시 sticky 헤더 top 값 재계산 (panel이 visible 된 후 측정)
   if(t==='blog') requestAnimationFrame(B_updateTheadTop);
+  // 소송 탭 진입 시 렌더
+  if(t==='lawsuit' && typeof LW_render==='function') LW_render();
 }
 
 const _dd=new Date(),_days=['일','월','화','수','목','금','토'];
@@ -8896,6 +8921,67 @@ function M_row(item) {
   </tr>`;
 }
 
+// ══════════════════════════════════════════════════════════════════
+//  LW_ — 소송 관리 페이지
+// ══════════════════════════════════════════════════════════════════
+function LW_render() {
+  const host = document.getElementById('LW_table');
+  const countEl = document.getElementById('LW_count');
+  if (!host || typeof C_cases === 'undefined') return;
+
+  const _lwAuthName = sessionStorage.getItem('thefin_auth_name');
+  const _lwAuthRole = sessionStorage.getItem('thefin_auth_role');
+  const list = C_cases.filter(c => {
+    if (c.status !== 'lawsuit') return false;
+    if (_lwAuthRole !== 'manager' || !_lwAuthName) return true;
+    return typeof C_isAssigned === 'function' ? C_isAssigned(c, _lwAuthName) : true;
+  });
+
+  if (countEl) countEl.textContent = list.length;
+  setBadge('mainBadge-lawsuit', list.length);
+
+  if (!list.length) {
+    host.innerHTML = '<div style="padding:32px;text-align:center;color:#aaa;font-size:13px;">소송 진행중인 사건이 없습니다</div>';
+    return;
+  }
+
+  const colMap = {'손청락':'#7c3aed','이제훈':'#2563eb','장한빛':'#16a34a'};
+  host.innerHTML = `
+  <div class="table-scroll-wrap">
+  <table style="width:100%;border-collapse:collapse;">
+    <thead><tr>
+      <th style="min-width:120px;">사건번호</th>
+      <th style="min-width:80px;">고객명</th>
+      <th style="min-width:200px;">주소</th>
+      <th style="min-width:90px;text-align:center;">담당자</th>
+      <th style="min-width:120px;">연락처</th>
+      <th style="min-width:220px;">메모</th>
+      <th style="min-width:80px;text-align:center;">사건 이동</th>
+    </tr></thead>
+    <tbody>
+    ${list.map(c => {
+      const staffCol = colMap[c.staff] || '#666';
+      const staffChip = c.staff
+        ? `<span style="display:inline-block;background:${staffCol}18;color:${staffCol};border:1px solid ${staffCol}40;border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700;">${c.staff}</span>`
+        : '<span style="color:#ccc;font-size:11px;">—</span>';
+      return `<tr style="border-bottom:1px solid #f1f5f9;background:#fff;">
+        <td style="padding:10px 12px;font-size:13px;font-weight:700;color:#1a1a2e;white-space:nowrap;">${c.caseNo||'—'}</td>
+        <td style="padding:10px 12px;font-size:13px;font-weight:700;color:#142040;white-space:nowrap;">${c.clientName||'—'}</td>
+        <td style="padding:10px 12px;font-size:12px;color:#334155;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(c.address||'').replace(/"/g,'&quot;')}">${c.address||'—'}</td>
+        <td style="padding:10px 12px;text-align:center;">${staffChip}</td>
+        <td style="padding:10px 12px;font-size:11px;color:#334155;">${c.contact||c.phone||'—'}</td>
+        <td style="padding:10px 12px;font-size:11px;color:#555;">${c.memo||c.note||'<span style="color:#ccc;">—</span>'}</td>
+        <td style="padding:10px 12px;text-align:center;">
+          <button onclick="switchMainTab('cases');setTimeout(()=>C_openDetail&&C_openDetail('${c.id}'),200)"
+            style="font-size:11px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 8px;cursor:pointer;color:#1d4ed8;white-space:nowrap;">상세보기</button>
+        </td>
+      </tr>`;
+    }).join('')}
+    </tbody>
+  </table>
+  </div>`;
+}
+
 async function M_updateStage(id, stage) {
   const item = [...M_active, ...M_done].find(i => i.id === id);
   if (!item) return;
@@ -9215,6 +9301,8 @@ function applyBulkData(d, isFromCache) {
 
   M_render();
   M_syncFromCases();
+  if (typeof LW_render === 'function' && document.getElementById('panel-lawsuit')?.classList.contains('active')) LW_render();
+  setBadge('mainBadge-lawsuit', allCases.filter(c=>c.status==='lawsuit').length);
 
   // 열려있는 탭에 따라 재렌더링
   if (document.getElementById('panel-cal')?.classList.contains('active')) CAL_render();
