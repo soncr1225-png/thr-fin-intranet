@@ -287,8 +287,9 @@ function loadCases(ss, shName) {
   var last    = sheet.getLastRow();
   if (last < 2) return [];
   var isArc = (shName === SH_CASES_ARCHIVE);
-  // cols: active=15(+manager,evictionStaff,clientName), archive=16(+closedAt,clientName)
-  var maxCols = isArc ? 16 : 15;
+  // active=17(+manager,evictionStaff,clientName,lawsuitContact,lawsuitMemo)
+  // archive=16(+closedAt,clientName) — 소송 필드는 active 시트만 사용
+  var maxCols = isArc ? 16 : 17;
   var cols    = Math.min(sheet.getLastColumn(), maxCols);
   var hdr   = sheet.getRange(1, 1, 1, cols).getValues()[0];
   if (!hdr[12]) sheet.getRange(1, 13).setValue('담당자');
@@ -296,26 +297,30 @@ function loadCases(ss, shName) {
   if (isArc && cols >= 15 && !hdr[14]) sheet.getRange(1, 15).setValue('종료일');
   if (!isArc && cols >= 15 && !hdr[14]) sheet.getRange(1, 15).setValue('고객명');
   if (isArc && cols >= 16 && !hdr[15]) sheet.getRange(1, 16).setValue('고객명');
+  if (!isArc && cols >= 16 && !hdr[15]) sheet.getRange(1, 16).setValue('소송연락처');
+  if (!isArc && cols >= 17 && !hdr[16]) sheet.getRange(1, 17).setValue('소송메모');
   var vals  = sheet.getRange(2, 1, last - 1, cols).getValues();
   return vals.map(function(r) {
     return {
-      id:            String(r[0]),
-      status:        normalizeStatus(r[1]),
-      caseNo:        String(r[2]),
-      address:       String(r[3]),
-      court:         String(r[4]),
-      auctionDate:   r[5] ? kstDate(r[5]) : '',
-      deadline:      r[6] ? kstDate(r[6]) : '',
+      id:              String(r[0]),
+      status:          normalizeStatus(r[1]),
+      caseNo:          String(r[2]),
+      address:         String(r[3]),
+      court:           String(r[4]),
+      auctionDate:     r[5] ? kstDate(r[5]) : '',
+      deadline:        r[6] ? kstDate(r[6]) : '',
       typeMap: {
         '시세조사':   String(r[7]  || ''),
         '현장조사':   String(r[8]  || ''),
         '보고서작성': String(r[9]  || '')
       },
-      note:          String(r[10] || ''),
-      manager:       String(r[12] || ''),
-      evictionStaff: String(r[13] || ''),
-      closedAt:      isArc && r[14] ? kstDate(r[14]) : '',
-      clientName:    isArc ? String(r[15] || '') : String(r[14] || '')
+      note:            String(r[10] || ''),
+      manager:         String(r[12] || ''),
+      evictionStaff:   String(r[13] || ''),
+      closedAt:        isArc && r[14] ? kstDate(r[14]) : '',
+      clientName:      isArc ? String(r[15] || '') : String(r[14] || ''),
+      lawsuitContact:  isArc ? '' : String(r[15] || ''),
+      lawsuitMemo:     isArc ? '' : String(r[16] || '')
     };
   });
 }
@@ -701,6 +706,25 @@ function updateCase(ss, d) {
   if (d.manager       !== undefined) sheet.getRange(r, 13).setValue(d.manager);
   if (d.evictionStaff !== undefined) sheet.getRange(r, 14).setValue(d.evictionStaff);
   if (d.clientName    !== undefined) sheet.getRange(r, isArc ? 16 : 15).setValue(d.clientName);
+  // 소송 전용 필드 (active 시트만 적용) — 변경 시 이력 자동 기록 (분쟁 증거능력)
+  if (!isArc && d.lawsuitContact !== undefined) {
+    var prevContact = String(sheet.getRange(r, 16).getValue() || '');
+    sheet.getRange(r, 16).setValue(d.lawsuitContact);
+    if (prevContact !== String(d.lawsuitContact || '')) {
+      addCaseHistory(ss, d.caseNo || rowInfo.vals[2], '소송연락처변경',
+        (prevContact || '(빈값)') + ' → ' + (d.lawsuitContact || '(빈값)'),
+        d.changedBy || '');
+    }
+  }
+  if (!isArc && d.lawsuitMemo !== undefined) {
+    var prevMemo = String(sheet.getRange(r, 17).getValue() || '');
+    sheet.getRange(r, 17).setValue(d.lawsuitMemo);
+    if (prevMemo !== String(d.lawsuitMemo || '')) {
+      addCaseHistory(ss, d.caseNo || rowInfo.vals[2], '소송메모변경',
+        '(' + prevMemo.length + '자 → ' + String(d.lawsuitMemo || '').length + '자)',
+        d.changedBy || '');
+    }
+  }
   if (d.status) addCaseHistory(ss, d.caseNo || rowInfo.vals[2], '상태변경', d.status, d.changedBy || '');
   return { ok: true };
 }
