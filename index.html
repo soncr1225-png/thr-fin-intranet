@@ -3166,6 +3166,7 @@ function v3CloseMoreSheet(){
       <div class="auth-action-btns">
         <button class="auth-logout-btn" onclick="AUTH_showChangePw(false)" title="비밀번호 변경">🔑</button>
         <button class="auth-logout-btn" id="auth-admin-btn" onclick="AUTH_showAdmin()" title="계정 관리" style="display:none;">⚙️</button>
+        <button class="auth-logout-btn text-btn" onclick="AUTH_setViewMode('mobile')" title="모바일 버전으로 전환" style="color:#6366f1;">📱</button>
         <button class="auth-logout-btn text-btn" onclick="AUTH_logout()" style="color:#f87171;" title="로그아웃">로그아웃</button>
       </div>
     </div>
@@ -13056,7 +13057,8 @@ let FB_list             = [];
 // ══════════════════════════════════════════════════════════════════
 
 function AUTH_setViewMode(mode) {
-  localStorage.setItem('thefin_view_mode', mode);
+  // 'pc_x' = 모바일 기기에서 PC 뷰를 명시적으로 선택한 경우
+  localStorage.setItem('thefin_view_mode', mode === 'pc' ? 'pc_x' : 'mobile');
   _AUTH_applyViewModeClass(mode);
   _AUTH_updateViewBtns(mode);
 }
@@ -13080,10 +13082,12 @@ function _AUTH_updateViewBtns(mode) {
 
 function _AUTH_resolveViewMode() {
   const saved = localStorage.getItem('thefin_view_mode');
-  if (saved === 'pc' || saved === 'mobile') return saved;
-  const detected = window.innerWidth <= 768 ? 'mobile' : 'pc';
-  localStorage.setItem('thefin_view_mode', detected);
-  return detected;
+  const isMobileVP = window.innerWidth <= 820;
+  // 모바일 뷰포트: 사용자가 명시적으로 PC 선택('pc_x')하지 않으면 항상 모바일
+  if (isMobileVP && saved !== 'pc_x') return 'mobile';
+  // PC 뷰포트 or 명시적 PC 선택
+  if (saved === 'mobile') return 'mobile';
+  return 'pc';
 }
 
 // ── 페이지 로드 시 세션 확인 ──────────────────────────────────────
@@ -17085,7 +17089,8 @@ let _MBR_syncTimer = null;
       <button class="v3-sheet-item" onclick="v3SwitchTab('guide')"><span class="vsi-ico">📖</span><span>가이드</span></button>
       <button class="v3-sheet-item" onclick="v3SwitchTab('forms')"><span class="vsi-ico">🗂</span><span>자료실</span></button>
     </div>
-    <button onclick="v3CloseMoreSheet()" style="margin-top:16px;width:100%;min-height:48px;background:var(--bg-soft);border:1px solid var(--divider);border-radius:var(--r-sm);color:var(--text-2);font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;">닫기</button>
+    <button onclick="AUTH_setViewMode('pc');v3CloseMoreSheet();" style="margin-top:12px;width:100%;min-height:48px;background:#f0f4ff;border:1px solid #c7d2fe;border-radius:var(--r-sm);color:#3730a3;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">🖥 PC 버전으로 보기</button>
+    <button onclick="v3CloseMoreSheet()" style="margin-top:8px;width:100%;min-height:48px;background:var(--bg-soft);border:1px solid var(--divider);border-radius:var(--r-sm);color:var(--text-2);font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;">닫기</button>
   </div>
 </div>
 
