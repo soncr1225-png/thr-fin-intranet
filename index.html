@@ -15519,16 +15519,21 @@ function FEE_stageCell(stage, st) {
 
 // status → stage 자동 추론 (기존 데이터 보존용)
 function FEE_inferStage(c) {
-  if (c.currentStage && c.currentStage >= 1 && c.currentStage <= 9) return c.currentStage;
+  let statusStage;
   switch (c.status) {
-    case 'ongoing':   return 3;
-    case 'done':      return 4;
-    case 'report':    return 4;
-    case 'confirmed':     return 5;
-    case 'balance_wait':  return 6;
-    case 'closed':        return c.fee1Received ? (c.fee2Received ? 7 : 7) : 6;
-    default:              return 3;
+    case 'ongoing':      statusStage = 3; break;
+    case 'done':         statusStage = 4; break;
+    case 'report':       statusStage = 4; break;
+    case 'confirmed':    statusStage = 5; break;
+    case 'balance_wait': statusStage = 6; break;
+    case 'closed':       statusStage = 6; break;
+    default:             statusStage = 3;
   }
+  // currentStage는 status가 암시하는 단계보다 낮을 수 없음
+  if (c.currentStage && c.currentStage >= 1 && c.currentStage <= 9) {
+    return Math.max(c.currentStage, statusStage);
+  }
+  return statusStage;
 }
 
 // 케이스 데이터 자동 마이그레이션 (shadow 우선 복원 → 기본값)
