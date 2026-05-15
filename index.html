@@ -6371,7 +6371,17 @@ function C_undoLast(){
 function C_today(){return new Date().toISOString().split('T')[0];}
 function C_pd(s){if(!s)return null;const p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
 function C_fmt(s){if(!s)return '—';try{const str=s.toString().substring(0,10);const p=str.split('-');if(p.length!==3)return s;return p[0].substring(2)+'.'+p[1]+'.'+p[2];}catch(e){return s;}}
-function C_calcDL(auc){if(!auc)return '';const a=C_pd(auc),t=C_pd(C_today()),diff=Math.floor((a-t)/86400000);if(diff<7)return C_today();let b=new Date(a);b.setDate(b.getDate()-9);let w=0,c=new Date(b);while(c<a){if(c.getDay()===0||c.getDay()===6)w++;c.setDate(c.getDate()+1);}b.setDate(b.getDate()-w);if(b.getDay()===0)b.setDate(b.getDate()-2);if(b.getDay()===6)b.setDate(b.getDate()-1);return b.toISOString().split('T')[0];}
+// 마감요청일 자동 계산 — 입찰기일 7일 전(캘린더), 주말이면 앞 평일로, 입찰기일이 7일 이내면 오늘
+function C_calcDL(auc){
+  if(!auc) return '';
+  const a = C_pd(auc), t = C_pd(C_today()), diff = Math.floor((a - t) / 86400000);
+  if (diff < 7) return C_today();
+  const b = new Date(a);
+  b.setDate(b.getDate() - 7);
+  if (b.getDay() === 0) b.setDate(b.getDate() - 2); // 일요일 → 금요일
+  if (b.getDay() === 6) b.setDate(b.getDate() - 1); // 토요일 → 금요일
+  return b.toISOString().split('T')[0];
+}
 function C_daysLeft(auc){if(!auc)return null;return Math.floor((C_pd(auc)-C_pd(C_today()))/86400000);}
 function C_isUrgent(c){if(C_ARCHIVE.includes(c.status))return false;const d=C_daysLeft(c.auctionDate);return d!==null&&d>=0&&d<7;}
 function C_dlCls(s){if(!s)return '';const d=Math.floor((C_pd(s)-C_pd(C_today()))/86400000);if(d<0)return 'dw';if(d<=3)return 'dc';return 'dok';}
