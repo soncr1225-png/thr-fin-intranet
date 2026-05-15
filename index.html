@@ -6867,6 +6867,29 @@ function MBR_pickOpen(callback) {
   const modal = document.getElementById('MBR_pickModal');
   modal.style.display = 'flex';
   setTimeout(() => document.getElementById('MBR_pickSearch').focus(), 50);
+  // GAS에서 최신 회원 목록 가져와 목록 갱신 (기기간 동기화)
+  _MBR_pickRefreshFromGAS();
+}
+async function _MBR_pickRefreshFromGAS() {
+  try {
+    const r = await fetch(GAS_URL + '?action=getMembers');
+    const res = await r.json();
+    if (!res || !Array.isArray(res.data) || !res.data.length) return;
+    const existing = new Set(MBR_members.map(m => m.name));
+    let added = 0;
+    const delta = JSON.parse(localStorage.getItem(MBR_CACHE_KEY) || '[]');
+    res.data.forEach(s => {
+      if (s.name && !existing.has(s.name)) {
+        MBR_members.push(s);
+        delta.push(s);
+        added++;
+      }
+    });
+    if (added > 0) {
+      localStorage.setItem(MBR_CACHE_KEY, JSON.stringify(delta));
+      MBR_pickFilter(); // 열려 있으면 목록 갱신
+    }
+  } catch(e) {}
 }
 function MBR_pickFilter() {
   const q = (document.getElementById('MBR_pickSearch').value || '').trim().toLowerCase();
