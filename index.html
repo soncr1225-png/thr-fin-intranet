@@ -3359,7 +3359,10 @@ body.view-mobile #cal-tooltip { display: none !important; }
   <div class="add-form" id="C_addForm">
     <div class="add-form-title">새 사건 등록</div>
     <div class="add-grid">
-      <div class="pf"><label>고객명</label><input type="text" id="p_clientName" placeholder="홍길동"></div>
+      <div class="pf"><label>고객명</label>
+        <input type="text" id="p_clientName" placeholder="이름 검색..." list="p_clientNameList" autocomplete="off">
+        <datalist id="p_clientNameList"></datalist>
+      </div>
       <div class="pf"><label>사건번호</label><input type="text" id="p_caseNo" placeholder="25-XXXXX"></div>
       <div class="pf" style="grid-column:1/-1;"><label>주소지</label><input type="text" id="p_address" placeholder="아파트명 또는 주소"></div>
       <div class="pf"><label>법원</label>
@@ -3648,7 +3651,9 @@ body.view-mobile #cal-tooltip { display: none !important; }
       </div>
       <!-- 고객 정보 (수기 입력) -->
       <div class="pf"><label>고객명</label>
-        <input type="text" id="A_clientName" placeholder="홍길동 (사건 선택 시 자동 입력)"></div>
+        <input type="text" id="A_clientName" placeholder="이름 검색... (사건 선택 시 자동 입력)" list="A_clientNameList" autocomplete="off">
+        <datalist id="A_clientNameList"></datalist>
+      </div>
       <div class="pf"><label>법원</label>
         <input type="text" id="A_court" placeholder="예: 서울중앙지방법원" list="A_courtList">
         <datalist id="A_courtList">
@@ -6339,6 +6344,8 @@ function C_toggleForm(){
   const isOpen=f.style.display==='block';
   f.style.display=isOpen?'none':'block';
   if(!isOpen){
+    const _dl=document.getElementById('p_clientNameList');
+    if(_dl) _dl.innerHTML=_MBR_nameOptions();
     // 폼 열 때 매니저면 본인 이름 자동 배정
     const _ln=sessionStorage.getItem('thefin_auth_name')||'';
     const _lr=sessionStorage.getItem('thefin_auth_role')||'';
@@ -6355,6 +6362,7 @@ function C_registerCase(){
   const caseNo=document.getElementById('p_caseNo').value.trim();
   const address=document.getElementById('p_address').value.trim();
   if(!caseNo||!address){alert('사건번호와 주소지는 필수입니다.');return;}
+  if(!_MBR_validateClientName(clientName)){alert('등록되지 않은 고객입니다.\n먼저 더핀 회원 탭에서 등록해주세요.');return;}
   const types=[
     {type:'시세조사',manager:document.getElementById('t_price_mgr').value},
     {type:'현장조사',manager:document.getElementById('t_field_mgr').value},
@@ -6812,6 +6820,17 @@ function C_restoreToActive(id){
   C_api('restoreCase',{id}).then(r=>{setSync(r&&r.error?'err':'ok');}).catch(()=>setSync('err'));
 }
 
+// ── 회원 목록 헬퍼 ────────────────────────────────────────────
+function _MBR_nameOptions() {
+  if (typeof MBR_load === 'function' && (!window.MBR_members || !MBR_members.length)) MBR_load();
+  return (window.MBR_members || []).map(m => `<option value="${(m.name||'').replace(/"/g,'&quot;')}">`).join('');
+}
+function _MBR_validateClientName(name) {
+  if (!name) return true;
+  if (!window.MBR_members || !MBR_members.length) return true; // 목록 미로드 시 통과
+  return MBR_members.some(m => m.name === name);
+}
+
 // ── 고객 셀 (A_items 연동, 인라인 편집 가능) ──────────────────
 function C_clientCell(c) {
   const aClients = (typeof A_items !== 'undefined') ? A_items.filter(i => i.caseNo === c.caseNo && i.clientName) : [];
@@ -6833,9 +6852,11 @@ function C_editClientName(id) {
   const aClients = (typeof A_items !== 'undefined') ? A_items.filter(i => i.caseNo === c.caseNo && i.clientName) : [];
   const current = c.clientName || (aClients.length ? aClients[0].clientName : '');
   cell.innerHTML = `<input type="text" value="${(current||'').replace(/"/g,'&quot;')}"
-    style="width:90px;padding:2px 6px;font-size:12px;border:1px solid #c8a44a;border-radius:4px;font-family:inherit;outline:none;"
+    list="C_memberNameList"
+    style="width:100px;padding:2px 6px;font-size:12px;border:1px solid #c8a44a;border-radius:4px;font-family:inherit;outline:none;"
     onblur="C_saveClientName('${id}',this.value)"
-    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape')C_render();">`;
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape')C_render();">
+  <datalist id="C_memberNameList">${_MBR_nameOptions()}</datalist>`;
   cell.querySelector('input').focus();
 }
 
@@ -6843,6 +6864,10 @@ async function C_saveClientName(id, newName) {
   const c = C_cases.find(x => x.id === id);
   if (!c) return;
   const trimmed = newName.trim();
+  if (!_MBR_validateClientName(trimmed)) {
+    alert('등록되지 않은 고객입니다.\n먼저 더핀 회원 탭에서 등록해주세요.');
+    C_render(); return;
+  }
   c.clientName = trimmed;
   C_render();
   setSync('loading');
@@ -8462,6 +8487,7 @@ async function A_deleteRow(id) {
 
 function A_openFormForCase(caseNo) {
   A_clearForm();
+  const _dl=document.getElementById('A_clientNameList'); if(_dl) _dl.innerHTML=_MBR_nameOptions();
   // caseNo를 datalist와 hidden에 미리 세팅
   document.getElementById('A_caseNoInput').value = caseNo;
   A_onCaseChange(caseNo);
@@ -8520,7 +8546,9 @@ function A_editRow(id) {
 function A_toggleForm() {
   const form = document.getElementById('A_addForm');
   if (form.style.display === 'none' || !form.style.display) {
-    A_clearForm(); form.style.display = 'block'; form.scrollIntoView({ behavior:'smooth' });
+    A_clearForm();
+    const _dl=document.getElementById('A_clientNameList'); if(_dl) _dl.innerHTML=_MBR_nameOptions();
+    form.style.display = 'block'; form.scrollIntoView({ behavior:'smooth' });
   } else { form.style.display = 'none'; }
 }
 
@@ -8540,6 +8568,7 @@ async function A_saveForm() {
   if (!caseNo) { alert('사건번호를 입력하세요.'); return; }
   const clientName = document.getElementById('A_clientName').value.trim();
   if (!clientName) { alert('고객명을 입력하세요.'); return; }
+  if (!_MBR_validateClientName(clientName)) { alert('등록되지 않은 고객입니다.\n먼저 더핀 회원 탭에서 등록해주세요.'); return; }
   // 법원 변경 시 사건 데이터도 업데이트
   const _courtVal = document.getElementById('A_court').value.trim();
   const _savCas = A_allCases.find(c => c.caseNo === caseNo);
