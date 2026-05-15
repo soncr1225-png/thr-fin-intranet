@@ -9020,21 +9020,32 @@ function LW_render() {
             return `<span style="display:inline-block;background:${col}18;color:${col};border:1px solid ${col}40;border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700;margin:1px 2px;">${s}</span>`;
           }).join('')
         : '<span style="color:#ccc;font-size:11px;">—</span>';
-      // 연락처: 회원관리(MBR_members)에서 고객명으로 조인 (대시보드와 동일 방식)
+      // 연락처: 소송 전용 c.lawsuitContact 우선, 없으면 회원관리(MBR.phone) 폴백
       const mbrMatch = (typeof MBR_members !== 'undefined' && c.clientName)
         ? MBR_members.find(m => m.name === c.clientName) : null;
-      const phone = mbrMatch?.phone || '';
-      // 메모: 사건 메모(c.note) 우선, 없으면 명도진행 시트의 같은 사건 메모 폴백
+      const phone = c.lawsuitContact || mbrMatch?.phone || '';
+      // 메모: c.lawsuitMemo(소송 전용) → c.note(사건 메모) → 명도시트 메모 순 폴백
       const mMemo = (typeof M_active !== 'undefined' && Array.isArray(M_active) && c.caseNo)
         ? (M_active.find(m => m.caseNo === c.caseNo)?.memo || '') : '';
-      const memo = c.note || mMemo || '';
+      const memo = c.lawsuitMemo || c.note || mMemo || '';
+      // 편집 권한 — 매니저는 본인 사건만, 대표/이사는 전사
+      const _lwName = sessionStorage.getItem('thefin_auth_name') || '';
+      const _lwRole = sessionStorage.getItem('thefin_auth_role') || '';
+      const canEdit = _lwRole !== 'manager'
+        || (typeof C_isAssigned === 'function' ? C_isAssigned(c, _lwName) : false);
+      const editAttrs = canEdit
+        ? `style="padding:10px 12px;font-size:11px;color:#334155;white-space:nowrap;cursor:pointer;border-bottom:1px dashed #c8a44a;" onclick="LW_inlineEdit('${c.id}','lawsuitContact')" title="클릭해서 소송 연락처 편집"`
+        : `style="padding:10px 12px;font-size:11px;color:#334155;white-space:nowrap;"`;
+      const memoEditAttrs = canEdit
+        ? `style="padding:10px 12px;font-size:11px;color:#555;cursor:pointer;border-bottom:1px dashed #c8a44a;max-width:220px;" onclick="LW_inlineEdit('${c.id}','lawsuitMemo')" title="클릭해서 소송 메모 편집"`
+        : `style="padding:10px 12px;font-size:11px;color:#555;max-width:220px;"`;
       return `<tr style="border-bottom:1px solid #f1f5f9;background:#fff;">
         <td style="padding:10px 12px;font-size:13px;font-weight:700;color:#1a1a2e;white-space:nowrap;">${c.caseNo||'—'}</td>
         <td style="padding:10px 12px;font-size:13px;font-weight:700;color:#142040;white-space:nowrap;">${c.clientName||'—'}</td>
         <td style="padding:10px 12px;font-size:12px;color:#334155;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(c.address||'').replace(/"/g,'&quot;')}">${c.address||'—'}</td>
         <td style="padding:10px 12px;text-align:center;"><div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center;">${staffChips}</div></td>
-        <td style="padding:10px 12px;font-size:11px;color:#334155;white-space:nowrap;">${phone || '<span style="color:#ccc;">—</span>'}</td>
-        <td style="padding:10px 12px;font-size:11px;color:#555;">${memo || '<span style="color:#ccc;">—</span>'}</td>
+        <td id="LW_cell_${c.id}_lawsuitContact" ${editAttrs}>${phone ? LW_esc(phone) : '<span style="color:#ccc;">—</span>'}</td>
+        <td id="LW_cell_${c.id}_lawsuitMemo" ${memoEditAttrs}>${memo ? LW_esc(memo) : '<span style="color:#ccc;">—</span>'}</td>
         <td style="padding:10px 12px;text-align:center;">
           <button onclick="switchMainTab('cases');setTimeout(()=>C_openDetail&&C_openDetail('${c.id}'),200)"
             style="font-size:11px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:3px 8px;cursor:pointer;color:#1d4ed8;white-space:nowrap;">상세보기</button>
@@ -9044,6 +9055,101 @@ function LW_render() {
     </tbody>
   </table>
   </div>`;
+}
+
+// XSS 방어 — 메모·연락처는 사용자 입력이므로 textContent 의미로 escape 후 innerHTML 삽입
+function LW_esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// 소송 페이지 인라인 편집 — 데스크탑 인라인 input/textarea, 모바일은 prompt 폴백
+async function LW_inlineEdit(caseId, field) {
+  const c = (typeof C_cases !== 'undefined') ? C_cases.find(x => x.id === caseId) : null;
+  if (!c) return;
+  // 권한 가드 (UI 우회 방어 — 핸들러 진입 시점)
+  const authName = sessionStorage.getItem('thefin_auth_name') || '';
+  const authRole = sessionStorage.getItem('thefin_auth_role') || '';
+  if (authRole === 'manager' && (typeof C_isAssigned !== 'function' || !C_isAssigned(c, authName))) {
+    alert('본인 담당 사건만 편집할 수 있습니다.');
+    return;
+  }
+  const fieldLabel = field === 'lawsuitContact' ? '소송 연락처' : '소송 메모';
+  const curVal = c[field] || '';
+  const isMobile = document.body.classList.contains('view-mobile');
+
+  // 모바일 폴백 — prompt (가로 스크롤 컨테이너 안 셀 편집 충돌 회피)
+  if (isMobile) {
+    const nv = window.prompt(`⚠️ 이 변경은 영구 기록됩니다.\n\n${fieldLabel} 편집`, curVal);
+    if (nv === null || nv.trim() === curVal) return;
+    LW_saveField(c, field, nv.trim(), authName);
+    return;
+  }
+
+  // 데스크탑 인라인 편집
+  const cell = document.getElementById(`LW_cell_${caseId}_${field}`);
+  if (!cell || cell.querySelector('input,textarea')) return;
+  const isMemo = field === 'lawsuitMemo';
+  const el = document.createElement(isMemo ? 'textarea' : 'input');
+  if (!isMemo) el.type = 'text';
+  el.value = curVal;
+  el.style.cssText = isMemo
+    ? 'width:100%;min-height:60px;border:1.5px solid #c8a44a;border-radius:4px;padding:4px 6px;font-size:11px;font-family:inherit;background:#fffef5;box-sizing:border-box;resize:vertical;'
+    : 'width:100%;border:1.5px solid #c8a44a;border-radius:4px;padding:3px 6px;font-size:11px;font-family:inherit;background:#fffef5;box-sizing:border-box;';
+  cell.innerHTML = '';
+  cell.appendChild(el);
+  el.focus();
+  if (!isMemo) el.select();
+  let done = false;
+  const save = async () => {
+    if (done) return; done = true;
+    const nv = el.value.trim();
+    if (nv === curVal) { LW_render(); return; }
+    if (!confirm(`${fieldLabel}을(를) 변경합니다.\n이 변경은 영구 기록됩니다. 저장할까요?`)) {
+      LW_render();
+      return;
+    }
+    LW_saveField(c, field, nv, authName);
+  };
+  el.addEventListener('blur', save);
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { done = true; LW_render(); }
+    if (e.key === 'Enter' && !isMemo) { e.preventDefault(); el.blur(); }
+    if (e.key === 'Enter' && isMemo && (e.ctrlKey || e.metaKey)) { e.preventDefault(); el.blur(); }
+  });
+}
+
+async function LW_saveField(c, field, newVal, changedBy) {
+  // 권한 가드 (저장 직전 두 번째 체크 — UI 우회 방어)
+  const authName = sessionStorage.getItem('thefin_auth_name') || '';
+  const authRole = sessionStorage.getItem('thefin_auth_role') || '';
+  if (authRole === 'manager' && (typeof C_isAssigned !== 'function' || !C_isAssigned(c, authName))) {
+    alert('권한이 없습니다.');
+    LW_render();
+    return;
+  }
+  const oldVal = c[field] || '';
+  c[field] = newVal; // optimistic
+  LW_render();
+  setSync('loading');
+  const r = await C_api('updateCase', {
+    id: c.id, caseNo: c.caseNo, status: c.status,
+    [field]: newVal,
+    changedBy: changedBy || ''
+  });
+  if (r && !r.error && r.ok !== false) {
+    setSync('ok');
+    if (typeof C_cacheSave === 'function') C_cacheSave(C_CACHE_CASES, C_cases);
+  } else {
+    c[field] = oldVal; // 롤백
+    LW_render();
+    setSync('err');
+    alert('저장 실패. 변경이 취소되었습니다.');
+  }
 }
 
 async function M_updateStage(id, stage) {
