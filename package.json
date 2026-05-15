@@ -1,0 +1,13 @@
+{
+  "name": "thefin-intranet",
+  "private": true,
+  "version": "0.0.0",
+  "description": "THE FIN 더핀 인트라넷 (Phase 1) — Netlify 정적 호스팅 + GAS 백엔드",
+  "scripts": {
+    "validate": "node scripts/validate.js",
+    "validate:strict": "node scripts/validate.js --strict"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -70,38 +70,47 @@ function shortDate() {
 // 메인 라우터
 // ============================================================
 function doGet(e) {
-  var p = (e && e.parameter) ? e.parameter : {};
-  if (p.module === 'blog')      return blogGet(p);
-  if (p.module === 'auction')   return auctionGet(p);
-  if (p.module === 'myeongdo')  return myeongdoGet(p);
-  if (p.module === 'stats')     return statsGet(p);
-  if (p.module === 'drive')     return driveGet(p);
-  if (p.module === 'msg')       return msgGet(p);
-  return casesGet(p);
+  try {
+    var p = (e && e.parameter) ? e.parameter : {};
+    if (p.module === 'blog')      return blogGet(p);
+    if (p.module === 'auction')   return auctionGet(p);
+    if (p.module === 'myeongdo')  return myeongdoGet(p);
+    if (p.module === 'stats')     return statsGet(p);
+    if (p.module === 'drive')     return driveGet(p);
+    if (p.module === 'msg')       return msgGet(p);
+    return casesGet(p);
+  } catch (err) {
+    // 진입점은 항상 {ok,error} 형태로 응답해서 프런트가 일관 처리 가능하게 함
+    return json({ ok: false, error: String((err && err.message) || err) });
+  }
 }
 
 function doPost(e) {
-  var b;
-  try { b = JSON.parse(e.postData.contents); } catch(x) { b = null; }
-  // Telegram webhook
-  if (b && (b.message || b.update_id !== undefined)) {
-    handleTelegram(b);
-    return json({ ok: true });
+  try {
+    var b;
+    try { b = JSON.parse(e.postData.contents); } catch(x) { b = null; }
+    // Telegram webhook
+    if (b && (b.message || b.update_id !== undefined)) {
+      handleTelegram(b);
+      return json({ ok: true });
+    }
+    if (!b) return json({ ok: false, error: 'no body' });
+    if (b.module === 'blog' || b.action === 'analyze') return blogPost(b);
+    if (b.module === 'auction')   return auctionPost(b);
+    if (b.module === 'myeongdo')  return myeongdoPost(b);
+    if (b.module === 'drive')     return drivePost(b);
+    if (b.module === 'beta')      return betaPost(b);
+    if (b.module === 'msg')       return msgPost(b);
+    if (b.module === 'calendar')  return calendarPost(b);
+    if (b.action === 'setFeeEntries')  return setFeeEntries(b.entries);
+    if (b.action === 'saveCtrArchive') return saveCtrArchive(b.data);
+    if (b.action === 'deleteCtrArchive') return deleteCtrRow(SH_CTR_ARCHIVE, b.id);
+    if (b.action === 'saveCtrEsign')   return saveCtrEsign(b.data);
+    if (b.action === 'deleteCtrEsign') return deleteCtrRow(SH_CTR_ESIGN, b.id);
+    return casesPost(b);
+  } catch (err) {
+    return json({ ok: false, error: String((err && err.message) || err) });
   }
-  if (!b) return json({ error: 'no body' });
-  if (b.module === 'blog' || b.action === 'analyze') return blogPost(b);
-  if (b.module === 'auction')   return auctionPost(b);
-  if (b.module === 'myeongdo')  return myeongdoPost(b);
-  if (b.module === 'drive')     return drivePost(b);
-  if (b.module === 'beta')      return betaPost(b);
-  if (b.module === 'msg')       return msgPost(b);
-  if (b.module === 'calendar')  return calendarPost(b);
-  if (b.action === 'setFeeEntries')  return setFeeEntries(b.entries);
-  if (b.action === 'saveCtrArchive') return saveCtrArchive(b.data);
-  if (b.action === 'deleteCtrArchive') return deleteCtrRow(SH_CTR_ARCHIVE, b.id);
-  if (b.action === 'saveCtrEsign')   return saveCtrEsign(b.data);
-  if (b.action === 'deleteCtrEsign') return deleteCtrRow(SH_CTR_ESIGN, b.id);
-  return casesPost(b);
 }
 
 // ============================================================
