@@ -665,6 +665,7 @@ tr:hover td { background: #f8f6ff; }
 }
 .sbadge:hover { filter: brightness(.94); }
 .s-ongoing  {background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.s-failed-continue {background:#fef3c7;color:#b45309;border:1px solid #fcd34d;font-weight:700;}
 .s-report   {background:#faf5ff;color:#6d28d9;border:1px solid #ddd6fe;}
 .s-confirmed{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;}
 .s-done     {background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;}
@@ -6242,9 +6243,9 @@ setTimeout(() => {
 //  탭 1: 물건조사 요청표 (C_ 네임스페이스)
 // ══════════════════════════════════════════════════════════════════
 const C_CACHE_CASES='thefin_cases_v2', C_CACHE_TODOS='thefin_todos';
-const C_ACTIVE=['ongoing','done','report','confirmed','balance_wait','lawsuit'], C_ARCHIVE=['closed','cancel','drop','changed','lost'];
-const C_AUCTION_BADGE_STATUS=['ongoing','done','report','confirmed','balance_wait','lawsuit'];
-const C_SM={ongoing:{label:'진행',cls:'s-ongoing'},done:{label:'조사완료',cls:'s-done'},report:{label:'보고서완료',cls:'s-report'},confirmed:{label:'입찰확정',cls:'s-confirmed'},balance_wait:{label:'잔금납부대기중',cls:'s-balance-wait'},lawsuit:{label:'소송',cls:'s-lawsuit'},closed:{label:'낙찰',cls:'s-closed'},cancel:{label:'고객변심',cls:'s-cancel'},drop:{label:'기타종료',cls:'s-drop'},changed:{label:'기일변경',cls:'s-changed'},lost:{label:'패찰',cls:'s-lost'}};
+const C_ACTIVE=['ongoing','failed_continue','done','report','confirmed','balance_wait','lawsuit'], C_ARCHIVE=['closed','cancel','drop','changed','lost'];
+const C_AUCTION_BADGE_STATUS=['ongoing','failed_continue','done','report','confirmed','balance_wait','lawsuit'];
+const C_SM={ongoing:{label:'진행',cls:'s-ongoing'},failed_continue:{label:'1회 유찰 후 진행',cls:'s-failed-continue'},done:{label:'조사완료',cls:'s-done'},report:{label:'보고서완료',cls:'s-report'},confirmed:{label:'입찰확정',cls:'s-confirmed'},balance_wait:{label:'잔금납부대기중',cls:'s-balance-wait'},lawsuit:{label:'소송',cls:'s-lawsuit'},closed:{label:'낙찰',cls:'s-closed'},cancel:{label:'고객변심',cls:'s-cancel'},drop:{label:'기타종료',cls:'s-drop'},changed:{label:'기일변경',cls:'s-changed'},lost:{label:'패찰',cls:'s-lost'}};
 const C_MANAGERS=['손청락','이제훈','장한빛'];
 // 사건에 특정 이름이 담당자로 배정돼 있는지 확인 (6가지 역할 모두 체크)
 function C_isAssigned(c, name) {
@@ -6754,6 +6755,7 @@ function C_activeRow(c){
 <div class="status-menu" id="C_m${c.id}">
 <div class="smenu-label">진행 상태</div>
 <button class="smenu-item" onclick="C_chStatus('${c.id}','ongoing')" style="color:#1d4ed8;font-weight:700;">● 진행</button>
+<button class="smenu-item" onclick="C_chStatus('${c.id}','failed_continue')" style="color:#b45309;font-weight:700;">● 1회 유찰 후 진행</button>
 <button class="smenu-item" onclick="C_chStatus('${c.id}','done')" style="color:#15803d;font-weight:700;">● 조사완료</button>
 <button class="smenu-item" onclick="C_chStatus('${c.id}','report')" style="color:#7e22ce;font-weight:700;">● 보고서완료</button>
 <button class="smenu-item" onclick="C_chStatus('${c.id}','confirmed')" style="color:#065f46;font-weight:700;">● 입찰확정</button>
@@ -8165,17 +8167,18 @@ function A_calcDates(auctionDate) {
 }
 function A_caseBg(status) {
   const map = {
-    ongoing:   '#ffffff',
-    done:      '#ffffff',
-    report:    '#ffffff',
-    confirmed: '#ffffff',
-    lawsuit:      '#fff7ed',
-    balance_wait: '#e0f2fe',
-    closed:       '#cff0f8',
-    changed:   '#f3f4f6',
-    cancel:    '#f3f4f6',
-    drop:      '#f3f4f6',
-    lost:      '#fef2f2'
+    ongoing:          '#ffffff',
+    failed_continue:  '#fef3c7',
+    done:             '#ffffff',
+    report:           '#ffffff',
+    confirmed:        '#ffffff',
+    lawsuit:          '#fff7ed',
+    balance_wait:     '#e0f2fe',
+    closed:           '#cff0f8',
+    changed:          '#f3f4f6',
+    cancel:           '#f3f4f6',
+    drop:             '#f3f4f6',
+    lost:             '#fef2f2'
   };
   return map[status] || '#fff';
 }
@@ -8184,7 +8187,7 @@ function A_escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 function A_caseRow(cas, cust, isFirst) {
   const caseLbl  = A_CASE_SM[cas.status] || cas.status;
   const isClosed   = cas.status === 'closed';
-  const isCaseActive = ['ongoing','done','report','confirmed','balance_wait','lawsuit'].includes(cas.status);
+  const isCaseActive = ['ongoing','failed_continue','done','report','confirmed','balance_wait','lawsuit'].includes(cas.status);
   const isArchived   = ['cancel','drop','changed','lost'].includes(cas.status);
   const caseBg  = A_caseBg(cas.status);
   const caseOpacity = isArchived ? 'opacity:0.8;' : '';
@@ -8513,8 +8516,9 @@ function A_showCaseStatusBtns(casId) {
     return;
   }
   const opts = [
-    { k:'ongoing',      l:'● 진행',           col:'#1d4ed8' },
-    { k:'done',         l:'● 조사완료',       col:'#15803d' },
+    { k:'ongoing',         l:'● 진행',              col:'#1d4ed8' },
+    { k:'failed_continue', l:'● 1회 유찰 후 진행',  col:'#b45309' },
+    { k:'done',            l:'● 조사완료',          col:'#15803d' },
     { k:'report',       l:'● 보고서완료',     col:'#7e22ce' },
     { k:'confirmed',    l:'● 입찰확정',       col:'#065f46' },
     { k:'balance_wait', l:'● 잔금납부대기중', col:'#0369a1' },
