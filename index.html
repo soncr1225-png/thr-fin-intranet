@@ -3094,7 +3094,7 @@ body.view-mobile #cal-tooltip { display: none !important; }
         👥 고객 <span class="grp-arrow">▾</span>
       </div>
       <div class="nav-dropdown">
-        <div class="nav-dropdown-item" id="mainTab-member" onclick="switchMainTab('member');MBR_render()">
+        <div class="nav-dropdown-item" id="mainTab-member" onclick="switchMainTab('member');MBR_render();MBR_silentSyncFromGAS()">
           👥 더핀 회원 <span class="tab-badge" id="mainBadge-member">—</span>
         </div>
         <div class="nav-dropdown-item" id="mainTab-contract" onclick="switchMainTab('contract');CTR_init()">
@@ -10642,6 +10642,10 @@ function MBR_save() {
   }
 
   MBR_save_store();
+  // GAS per-record 동기화 (전체 덮어쓰기 없이 해당 건만)
+  fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
+    body: JSON.stringify({ action: editId ? 'updateMember' : 'addMember', data: record })
+  }).catch(() => {});
   document.getElementById('mbr-modal').classList.remove('open');
   // 지역칩 초기화
   document.querySelectorAll('.mbr-region-chips .mbr-chip').forEach(c => c.classList.remove('active'));
@@ -10653,8 +10657,14 @@ function MBR_save() {
 function MBR_delete(id) {
   if (!confirm('이 회원을 삭제하시겠습니까?')) return;
   MBR_load();
+  const target = MBR_members.find(m => m.id === id);
   MBR_members = MBR_members.filter(m => m.id !== id);
   MBR_save_store();
+  if (target && target.name) {
+    fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action: 'deleteMember', data: { name: target.name } })
+    }).catch(() => {});
+  }
   MBR_render();
   CTR_syncMemberDropdown();
 }
@@ -16753,6 +16763,27 @@ function BACKUP_importAll() {
     }
   };
   input.click();
+}
+
+// 탭 진입 시 자동 호출 — GAS에서 신규 회원만 조용히 병합
+async function MBR_silentSyncFromGAS() {
+  try {
+    const r = await fetch(GAS_URL + '?action=getMembers');
+    const res = await r.json();
+    if (!res || !Array.isArray(res.data) || !res.data.length) return;
+    const localDelta = JSON.parse(localStorage.getItem(MBR_CACHE_KEY) || '[]');
+    const localByName = {};
+    localDelta.forEach(m => { if (m.name) localByName[m.name] = m; });
+    let added = 0;
+    res.data.forEach(s => {
+      if (s.name && !localByName[s.name]) { localDelta.push(s); added++; }
+    });
+    if (added > 0) {
+      localStorage.setItem(MBR_CACHE_KEY, JSON.stringify(localDelta));
+      MBR_load(); MBR_render();
+      if (typeof B_showToast === 'function') B_showToast(`✅ 회원 ${added}명 동기화됨`);
+    }
+  } catch(e) { /* silent */ }
 }
 
 // ══════════════════════════════════════════════════════════════════
