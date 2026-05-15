@@ -8800,6 +8800,7 @@ function M_render() {
   thead.innerHTML = `<tr>
     <th style="min-width:50px;"></th>
     <th style="min-width:110px;">사건번호</th>
+    <th style="min-width:80px;">고객명</th>
     <th style="min-width:180px;">주소</th>
     <th style="min-width:70px;text-align:center;">점유자유형</th>
     <th style="min-width:110px;text-align:center;">진행단계</th>
@@ -8828,7 +8829,7 @@ function M_render() {
   }
 
   if (!data.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="10">${M_tab==='active'?'진행중인 명도 건이 없습니다':'완료된 명도 건이 없습니다'}</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="11">${M_tab==='active'?'진행중인 명도 건이 없습니다':'완료된 명도 건이 없습니다'}</td></tr>`;
     return;
   }
   tbody.innerHTML = data.map(M_row).join('');
@@ -8849,12 +8850,17 @@ function M_row(item) {
     `<option value="${s}"${s===item.negotiationStatus?' selected':''}>${s}</option>`
   ).join('');
   const negStyle = M_NEG_STYLE[item.negotiationStatus] || 'background:#f1f5f9;color:#475569;';
+  const _mCase = (typeof A_allCases !== 'undefined' ? A_allCases : []).find(c => c.caseNo === item.caseNo);
+  const _mClientName = _mCase?.clientName || '';
   return `<tr style="${isDone?'opacity:0.75;':''}border-bottom:1px solid #f1f5f9;">
     <td style="vertical-align:middle;text-align:center;${rowBg}">
       <button onclick="M_editRow('${item.id}')" style="font-size:11px;background:#fffef5;border:1px solid #c8a44a;border-radius:4px;padding:3px 8px;cursor:pointer;color:#92400e;white-space:nowrap;">수정</button>
     </td>
     <td style="vertical-align:middle;${rowBg}">
       <div style="font-size:13px;font-weight:700;color:#1a1a2e;white-space:nowrap;">${item.caseNo||'—'}</div>
+    </td>
+    <td style="vertical-align:middle;${rowBg}">
+      <div style="font-size:13px;font-weight:700;color:#142040;white-space:nowrap;">${_mClientName||'—'}</div>
     </td>
     <td style="vertical-align:middle;${rowBg}">
       <div style="font-size:12px;color:#334155;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${M_esc(item.address||'')}">${item.address||'—'}</div>
