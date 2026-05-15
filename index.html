@@ -9159,11 +9159,19 @@ function applyBulkData(d, isFromCache) {
   setBadgeShared('mainBadge-blog', B_items.length);
 
   // 명도 — A_render가 M_active/M_done 참조하므로 먼저 세팅
+  // pending temp 항목 보존 (GAS 응답 전에 SYNC_pullData가 덮어쓰는 경우 대비)
+  const _pendingM = (typeof M_active !== 'undefined') ? M_active.filter(i => String(i.id).startsWith('tmp_')) : [];
   M_active = d.myeongdoActive || [];
   M_done   = d.myeongdoDone   || [];
+  _pendingM.forEach(t => { if (!M_active.some(i => i.caseNo === t.caseNo && i.id !== t.id)) M_active.push(t); });
 
   // 더핀 일정표
+  const _pendingA = (typeof A_items !== 'undefined') ? A_items.filter(i => String(i.id).startsWith('tmp_')) : [];
   A_items    = d.auction || [];
+  // pending temp 항목 복원 (GAS 확인 전 SYNC_pullData가 날리는 경우 대비)
+  _pendingA.forEach(t => {
+    if (!A_items.some(i => i.caseNo === t.caseNo && i.clientName === t.clientName)) A_items.push(t);
+  });
   A_allCases = allCases;
   A_buildMonthSelector(); A_render();
   setBadge('mainBadge-auction',
