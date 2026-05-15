@@ -13081,13 +13081,7 @@ function _AUTH_updateViewBtns(mode) {
 }
 
 function _AUTH_resolveViewMode() {
-  const saved = localStorage.getItem('thefin_view_mode');
-  const isMobileVP = window.innerWidth <= 820;
-  // 모바일 뷰포트: 사용자가 명시적으로 PC 선택('pc_x')하지 않으면 항상 모바일
-  if (isMobileVP && saved !== 'pc_x') return 'mobile';
-  // PC 뷰포트 or 명시적 PC 선택
-  if (saved === 'mobile') return 'mobile';
-  return 'pc';
+  return window.innerWidth <= 820 ? 'mobile' : 'pc';
 }
 
 // ── 페이지 로드 시 세션 확인 ──────────────────────────────────────
