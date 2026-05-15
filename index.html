@@ -3809,7 +3809,7 @@ function v3CloseMoreSheet(){
     <div class="add-form-title">명도 정보 등록/수정</div>
     <input type="hidden" id="M_editId">
     <div class="add-grid">
-      <div class="pf"><label>사건번호</label><input type="text" id="M_caseNo" placeholder="25-XXXXX"></div>
+      <div class="pf"><label>사건번호</label><input type="text" id="M_caseNo" placeholder="25-XXXXX" onblur="M_prefillFromCase()"></div>
       <div class="pf"><label>주소</label><input type="text" id="M_address" placeholder="서울시 강남구 ..."></div>
       <div class="pf"><label>점유자유형</label>
         <select id="M_occupantType">
@@ -7134,6 +7134,8 @@ function C_setEvictionStaff(id,staff){
   C_apiBg('updateCase',{id,status:c.status,caseNo:c.caseNo,address:c.address,court:c.court,auctionDate:c.auctionDate,deadline:c.deadline,note:c.note,manager:c.manager,evictionStaff:staff});
   C_cacheSave(C_CACHE_CASES,C_cases);
   C_render();
+  // 양방향 동기화 — 명도 탭 staffList 자동 미러
+  if (typeof M_mirrorFromCase === 'function') M_mirrorFromCase(c);
 }
 function C_getMgrs(c,type){const v=(c.typeMap||{})[type];if(!v)return[];return Array.isArray(v)?v.filter(Boolean):[v];}
 function C_saveMgrs(c,type,arr){c.typeMap=c.typeMap||{};if(!arr||!arr.length)delete c.typeMap[type];else c.typeMap[type]=arr.length===1?arr[0]:arr;}
@@ -8421,19 +8423,23 @@ async function A_toggleReportSent(id) {
   setSync(r && r.ok ? 'ok' : 'err');
 }
 
-// ── 낙찰종료 시 명도 탭 자동 등록
+// ── 낙찰종료 시 명도 탭 자동 등록 (사건의 명도담당자 자동 인계)
 async function A_autoAddMyeongdo(cas) {
   if (!cas || !cas.caseNo) return;
   const exists = [...M_active, ...M_done].some(m => m.caseNo === cas.caseNo);
   if (exists) return;
+  // 양방향 동기화 — 사건 c의 evictionStaff + coParticipants.evictionStaff를 staffList로 prefill
+  const evicList = (typeof C_getEvictionStaffList === 'function') ? C_getEvictionStaffList(cas) : [];
+  const staffList = evicList.join(',');
+  const staffName = evicList[0] || '';
   const tempItem = {
     id: 'tmp_' + Date.now(), caseNo: cas.caseNo||'',
     address: cas.address||'', occupantType:'', stage:'인도명령신청',
-    negotiationStatus:'소통중', staffName:'', staffList:'', memo:'', status:'active'
+    negotiationStatus:'소통중', staffName, staffList, memo:'', status:'active'
   };
   M_active.unshift(tempItem);
   M_render();
-  const r = await M_gasPost('add', { caseNo: cas.caseNo, address: cas.address||'', stage: '인도명령신청', negotiationStatus: '소통중' });
+  const r = await M_gasPost('add', { caseNo: cas.caseNo, address: cas.address||'', stage: '인도명령신청', negotiationStatus: '소통중', staffList, staffName });
   if (r && r.ok) { tempItem.id = r.id; setSync('ok'); M_render(); }
   else { M_active = M_active.filter(m => m !== tempItem); M_render(); setSync('err'); }
 }
@@ -9312,6 +9318,101 @@ function M_normalizeStaff(item) {
   return item.staffName ? [item.staffName] : [];
 }
 
+// ── 양방향 동기화 헬퍼 ─────────────────────────────────────────────
+// 사건 c의 명도 담당자 union — c.evictionStaff + c.coParticipants.evictionStaff
+function C_getEvictionStaffList(c) {
+  if (!c) return [];
+  const set = new Set();
+  if (c.evictionStaff) set.add(c.evictionStaff);
+  const co = (c.coParticipants && c.coParticipants.evictionStaff) || [];
+  co.forEach(n => { if (n) set.add(n); });
+  return [...set];
+}
+
+// 명도 staffList → 같은 caseNo의 사건 c.evictionStaff + coParticipants 갱신 + GAS 푸시
+// 호출처: M_saveForm 직후
+async function C_syncFromMyeongdo(caseNo, staffArr) {
+  if (!caseNo || typeof C_cases === 'undefined') return;
+  const c = C_cases.find(x => x.caseNo === caseNo);
+  if (!c) return;
+  const list = (staffArr || []).filter(Boolean);
+  const before = C_getEvictionStaffList(c).join(',');
+  if (list.join(',') === before) return; // 변경 없음 — 무한 루프 방지
+  c.evictionStaff = list[0] || '';
+  c.coParticipants = c.coParticipants || {};
+  c.coParticipants.evictionStaff = list.slice(1);
+  if (typeof FEE_saveShadow === 'function') FEE_saveShadow();
+  if (typeof C_cacheSave === 'function' && typeof C_CACHE_CASES !== 'undefined') C_cacheSave(C_CACHE_CASES, C_cases);
+  if (typeof C_apiBg === 'function') {
+    C_apiBg('updateCase', { id: c.id, status: c.status, caseNo: c.caseNo, address: c.address,
+      court: c.court, auctionDate: c.auctionDate, deadline: c.deadline, note: c.note,
+      manager: c.manager, evictionStaff: c.evictionStaff });
+  }
+  if (typeof C_render === 'function') C_render();
+  if (typeof DASH_render === 'function') DASH_render();
+}
+
+// 사건 c → 같은 caseNo의 명도 항목 staffList 갱신 + GAS 푸시
+// 호출처: C_setEvictionStaff, PART_addCo/removeCo (field='evictionStaff' 시)
+// (M_syncFromCases 복수형은 별개 함수 — 누락 명도 자동 복구)
+async function M_mirrorFromCase(c) {
+  if (!c || !c.caseNo) return;
+  const list = C_getEvictionStaffList(c);
+  const staffList = list.join(',');
+  const staffName = list[0] || '';
+  const items = [...(typeof M_active !== 'undefined' ? M_active : []),
+                 ...(typeof M_done   !== 'undefined' ? M_done   : [])].filter(m => m.caseNo === c.caseNo);
+  if (!items.length) return;
+  let changed = false;
+  items.forEach(m => {
+    const cur = (m.staffList || m.staffName || '');
+    if (cur === staffList) return;
+    m.staffList = staffList;
+    m.staffName = staffName;
+    changed = true;
+  });
+  if (!changed) return; // 무한 루프 방지
+  if (typeof M_render === 'function') M_render();
+  if (typeof setSync === 'function') setSync('loading');
+  let allOk = true;
+  for (const m of items) {
+    try {
+      const r = await M_gasPost('update', { id: m.id, staffList, staffName });
+      if (!r || !r.ok) allOk = false;
+    } catch(e) { allOk = false; }
+  }
+  if (typeof setSync === 'function') setSync(allOk ? 'ok' : 'err');
+}
+
+// 페이지 로드 직후 — 명도 시트(staffList)를 사건 c.coParticipants.evictionStaff에 reconcile.
+// 다른 PC 접속 시 localStorage가 비어 coParticipants가 비었을 때 명도 시트로부터 복구.
+// (명도 시트 staffList는 GAS에 영속, c.coParticipants는 shadow only이므로 시트가 SoT)
+function M_reconcileCoParticipantsFromSheet() {
+  if (typeof C_cases === 'undefined' || !Array.isArray(C_cases)) return;
+  const mAll = [...(typeof M_active !== 'undefined' ? M_active : []),
+                ...(typeof M_done   !== 'undefined' ? M_done   : [])];
+  if (!mAll.length) return;
+  let touched = false;
+  mAll.forEach(m => {
+    if (!m.caseNo) return;
+    const list = M_normalizeStaff(m); // 명도 시트 기준 담당자 배열
+    if (!list.length) return;
+    const c = C_cases.find(x => x.caseNo === m.caseNo);
+    if (!c) return;
+    // c.evictionStaff는 list[0], coParticipants.evictionStaff는 list.slice(1)
+    const beforeMain = c.evictionStaff || '';
+    const beforeCo = ((c.coParticipants||{}).evictionStaff || []).join(',');
+    const wantMain = list[0] || '';
+    const wantCo = list.slice(1).join(',');
+    if (beforeMain === wantMain && beforeCo === wantCo) return;
+    c.evictionStaff = wantMain;
+    c.coParticipants = c.coParticipants || {};
+    c.coParticipants.evictionStaff = list.slice(1);
+    touched = true;
+  });
+  if (touched && typeof FEE_saveShadow === 'function') FEE_saveShadow();
+}
+
 function M_toggleForm() {
   const form = document.getElementById('M_addForm');
   if (form.style.display === 'none' || !form.style.display) {
@@ -9379,9 +9480,27 @@ async function M_saveForm() {
   if (r && r.ok) {
     document.getElementById('M_addForm').style.display = 'none';
     M_render();
+    // 양방향 동기화 — 사건 c의 evictionStaff + coParticipants.evictionStaff에 역미러
+    C_syncFromMyeongdo(d.caseNo, staffArr);
   } else {
     alert('저장 실패: ' + (r && r.error || '오류'));
   }
+}
+
+// 명도 신규 등록 폼에서 사건번호 입력 후 blur 시: 사건의 명도담당자로 picker 자동 채움
+// (사용자가 이미 칩을 추가했으면 덮어쓰지 않음 — staffList prefill만)
+function M_prefillFromCase() {
+  const editId = (document.getElementById('M_editId') || {}).value;
+  if (editId) return; // 수정 모드는 prefill 안 함
+  if (M_pickerSelected && M_pickerSelected.length) return; // 이미 사용자 입력 있으면 skip
+  const caseNo = (document.getElementById('M_caseNo').value || '').trim();
+  if (!caseNo || typeof C_cases === 'undefined') return;
+  const c = C_cases.find(x => x.caseNo === caseNo);
+  if (!c) return;
+  // 주소도 비어있으면 같이 prefill
+  const addrEl = document.getElementById('M_address');
+  if (addrEl && !addrEl.value.trim() && c.address) addrEl.value = c.address;
+  M_pickerSet(C_getEvictionStaffList(c));
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -9547,6 +9666,9 @@ function applyBulkData(d, isFromCache) {
 
   M_render();
   M_syncFromCases();
+  // 양방향 동기화 — 명도 시트의 staffList를 c.coParticipants.evictionStaff에 reconcile
+  // (다른 PC 접속·localStorage 초기화 후 첫 로드 시 추가 명도 담당자 복구)
+  M_reconcileCoParticipantsFromSheet();
   if (typeof LW_render === 'function' && document.getElementById('panel-lawsuit')?.classList.contains('active')) LW_render();
   setBadge('mainBadge-lawsuit', allCases.filter(c=>c.status==='lawsuit').length);
 
@@ -16477,6 +16599,8 @@ function PART_addCo(id, field, name) {
   if (typeof C_cacheSave === 'function') C_cacheSave(C_CACHE_CASES, C_cases);
   PART_render(c);
   DASH_render();
+  // 양방향 동기화 — evictionStaff 필드 변경 시 명도 탭 staffList도 미러
+  if (field === 'evictionStaff' && typeof M_mirrorFromCase === 'function') M_mirrorFromCase(c);
 }
 
 function PART_removeCo(id, field, name) {
@@ -16487,6 +16611,7 @@ function PART_removeCo(id, field, name) {
   if (typeof C_cacheSave === 'function') C_cacheSave(C_CACHE_CASES, C_cases);
   PART_render(c);
   DASH_render();
+  if (field === 'evictionStaff' && typeof M_mirrorFromCase === 'function') M_mirrorFromCase(c);
 }
 
 function PART_addTypeMgr(id, type, mgr) {
